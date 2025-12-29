@@ -14,12 +14,12 @@
             // Un paths ki list jinko Authorization ki zaroorat nahi
             var allowedPaths = new[] {
                 "/api/values/login",
-                "/api/values/register",
                 "/api/values/logout",
+                "/api/values/register",
                 "/api/values/refreshToken"
             };
 
-           // Request ke path ko normalize karein
+            // Request ke path ko normalize karein
             var requestPath = context.Request.Path.Value?.ToLowerInvariant();
 
             // Agar request ka path allowed routes mein se kisi se match karta hai

@@ -77,11 +77,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors("AllowSpecificOrigin");
-app.UseAuthentication();        //  JWT validation
-app.UseJwtHeaderMiddleware();   //  custom guard
-app.UseSerilogRequestLogging(); //  Serilog request logging
-app.UseAuthorization();         //  role/claims
+app.UseRouting();                   // Pehle Routing
+app.UseCors("AllowSpecificOrigin"); // Phir CORS
+app.UseAuthentication();            //  JWT validation
+app.UseJwtHeaderMiddleware();       //  custom guard
+app.UseSerilogRequestLogging();     //  Serilog request logging
+app.UseAuthorization();             //  role/claims
 app.MapControllers();
 
 app.Run();

@@ -49,11 +49,13 @@ namespace LearningCoreWebApi.Helpers
             return new RefreshTokenConfiguration
             {
                 RefreshToken = Convert.ToBase64String(Guid.NewGuid().ToByteArray()),
-                RefreshTokenExpiryDate = DateTime.UtcNow.AddDays(
-                    Convert.ToDouble(_config["Jwt:RefreshTokenExpireDays"])
+                // Changed AddDays to AddMinutes
+                RefreshTokenExpiryDate = DateTime.UtcNow.AddMinutes(
+                    Convert.ToDouble(_config["Jwt:RefreshTokenExpireMinutes"])
                 )
             };
         }
+
 
         // *** New function add here ***
         public ClaimsPrincipal GetPrincipalFromExpiredToken(string token)

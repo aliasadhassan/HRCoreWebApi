@@ -21,7 +21,6 @@ namespace LearningCoreWebApi.Controllers
     {
         private readonly AppDbContext _context;
         private readonly JwtTokenHelper _jwt;
-        private static Dictionary<string, RefreshTokenConfiguration> _refreshTokens = new();
         private readonly ILogger<ValuesController> _logger;
         public ValuesController(AppDbContext context, JwtTokenHelper jwt, ILogger<ValuesController> logger)
         {
@@ -86,7 +85,6 @@ namespace LearningCoreWebApi.Controllers
             }
         }
 
-
         [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
@@ -95,46 +93,40 @@ namespace LearningCoreWebApi.Controllers
             {
                 var user = await _context.Users.FirstOrDefaultAsync(x => x.Email == request.Email);
 
+                // 1. Generic message for security
                 if (user == null || !PasswordHelper.Verify(request.Password, user.PasswordHash))
                 {
-                    return Unauthorized(new { message = "Invalid Login! user not found" });
+                    return Unauthorized(new { message = "Invalid Email or Password" });
                 }
 
-                // Generate Token Here
                 var accessToken = _jwt.GenerateToken(user.Email);
                 var refreshTokenObj = _jwt.GenerateRefreshToken();
 
-                var expiredTokens = await _context.RefreshTokenConfiguration
-                                    .Where(t => t.UserId == user.Id && t.RefreshTokenExpiryDate < DateTime.UtcNow)
-                                    .ToListAsync();
+                // 3. Cleanup: Purane expired tokens remove karein
+                var expiredTokens = _context.RefreshTokenConfiguration
+                                    .Where(t => t.UserId == user.Id && t.RefreshTokenExpiryDate < DateTime.UtcNow);
+                _context.RefreshTokenConfiguration.RemoveRange(expiredTokens);
 
-                if (expiredTokens.Any())
-                {
-                    _context.RefreshTokenConfiguration.RemoveRange(expiredTokens);
-                    // Expired tokens ko delete karna behtar hai taake DB heavy na ho
-                }
-
-                // Naya Refresh Token DB mein save karein
+                // 4. Save new refresh token
                 _context.RefreshTokenConfiguration.Add(new RefreshTokenConfiguration
                 {
                     UserId = user.Id,
-                    AccessToken = accessToken, // Jo abhi generate hua
+                    AccessToken = accessToken,
                     RefreshToken = refreshTokenObj.RefreshToken,
                     RefreshTokenExpiryDate = refreshTokenObj.RefreshTokenExpiryDate,
                     RefreshTokenCreatedDate = DateTime.UtcNow,
-                    IsRevoked = false,
-                    NewAccessToken = "" // Filhaal khali hai
+                    IsRevoked = false
                 });
 
                 await _context.SaveChangesAsync();
 
-                // 4. Cookie Configuration
                 var cookieOptions = new CookieOptions
                 {
                     HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
-                    Expires = refreshTokenObj.RefreshTokenExpiryDate
+                    Secure = true, // Production mein true rakhein
+                    SameSite = SameSiteMode.None,
+                    Expires = refreshTokenObj.RefreshTokenExpiryDate,
+                    Path = "/" // Yeh line add karein taake har API call mein cookie jaye
                 };
                 Response.Cookies.Append("refreshToken", refreshTokenObj.RefreshToken, cookieOptions);
 
@@ -142,11 +134,12 @@ namespace LearningCoreWebApi.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Login error");
-                return StatusCode(500, new { message = "Internal server error" });
+                _logger.LogError(ex, "Login error occurred");
+                return StatusCode(500, new { message = "An internal error occurred" });
             }
         }
 
+        [AllowAnonymous]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
@@ -177,7 +170,8 @@ namespace LearningCoreWebApi.Controllers
                 {
                     HttpOnly = true,
                     Secure = true,
-                    SameSite = SameSiteMode.Strict
+                    SameSite = SameSiteMode.None,
+                    Path = "/" // Yeh line add karein taake har API call mein cookie jaye
                 });
 
                 _logger.LogInformation("User logged out and refresh token revoked.");
@@ -191,7 +185,7 @@ namespace LearningCoreWebApi.Controllers
             }
         }
 
-        [HttpGet("refreshToken")]
+        [HttpPost("refreshToken")]
         [AllowAnonymous]
         public async Task<IActionResult> RefreshToken()
         {
@@ -251,15 +245,12 @@ namespace LearningCoreWebApi.Controllers
                 {
                     HttpOnly = true,
                     Secure = true,
-                    SameSite = SameSiteMode.Strict,
-                    Expires = newRefreshTokenObj.RefreshTokenExpiryDate
+                    SameSite = SameSiteMode.None,
+                    Expires = newRefreshTokenObj.RefreshTokenExpiryDate,
+                    Path = "/" // Yeh line add karein taake har API call mein cookie jaye
                 });
 
-                return Ok(new
-                {
-                    token = newAccessToken,
-                    refreshToken = newRefreshTokenObj.RefreshToken
-                });
+                return Ok(new { accessToken = newAccessToken });
             }
             catch (Exception ex)
             {
