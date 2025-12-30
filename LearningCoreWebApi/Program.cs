@@ -67,7 +67,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection")
     ));
 
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails(); // Default error structure ke liye
+
 var app = builder.Build();
+
+app.UseExceptionHandler();          //  Global exception handler
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -77,8 +82,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseRouting();                   // Pehle Routing
-app.UseCors("AllowSpecificOrigin"); // Phir CORS
+app.UseRouting();                   //  Pehle Routing
+app.UseCors("AllowSpecificOrigin"); //  Phir CORS
 app.UseAuthentication();            //  JWT validation
 app.UseJwtHeaderMiddleware();       //  custom guard
 app.UseSerilogRequestLogging();     //  Serilog request logging

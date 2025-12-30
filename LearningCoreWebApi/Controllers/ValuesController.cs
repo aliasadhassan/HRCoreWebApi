@@ -123,8 +123,8 @@ namespace LearningCoreWebApi.Controllers
                 var cookieOptions = new CookieOptions
                 {
                     HttpOnly = true,
-                    Secure = true, // Production mein true rakhein
-                    SameSite = SameSiteMode.None,
+                    Secure = false, // Production mein true rakhein or localhost/DEV me false
+                    SameSite = SameSiteMode.Lax, // None in production and Lax for local testing
                     Expires = refreshTokenObj.RefreshTokenExpiryDate,
                     Path = "/" // Yeh line add karein taake har API call mein cookie jaye
                 };
@@ -169,8 +169,8 @@ namespace LearningCoreWebApi.Controllers
                 Response.Cookies.Delete("refreshToken", new CookieOptions
                 {
                     HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.None,
+                    Secure = false, // Production mein true rakhein or localhost/DEV me false
+                    SameSite = SameSiteMode.Lax, // None in production and Lax for local testing
                     Path = "/" // Yeh line add karein taake har API call mein cookie jaye
                 });
 
@@ -191,10 +191,10 @@ namespace LearningCoreWebApi.Controllers
         {
             // 1. Headers se tokens nikalna
             if (!Request.Headers.TryGetValue("Authorization", out var authHeader))
-                return StatusCode(403, "Authorization header missing.");
+                return StatusCode(403, new { message = "Authorization header missing." });
 
             if (!Request.Cookies.TryGetValue("refreshToken", out var existingRefreshToken))
-                return StatusCode(403, "Refresh token cookie missing.");
+                return StatusCode(403, new { message = "Refresh token cookie missing." });
 
             string accessToken = authHeader.ToString().Replace("Bearer", "", StringComparison.OrdinalIgnoreCase).Trim();
 
@@ -214,10 +214,10 @@ namespace LearningCoreWebApi.Controllers
                                          && x.User.Email == email);
 
                 if (storedToken == null || storedToken.IsRevoked)
-                    return StatusCode(403, "Invalid Request");
+                    return StatusCode(403, new { message = "Invalid Request" });
 
                 if (storedToken.RefreshTokenExpiryDate < DateTime.UtcNow)
-                    return StatusCode(403, "Token expired.");
+                    return StatusCode(403, new { message = "Token expired." });
 
                 // 4. Purane tokens ko revoke ya delete karein (Multiple devices ke liye sirf isko revoke karein)
                 storedToken.IsRevoked = true;
@@ -244,8 +244,8 @@ namespace LearningCoreWebApi.Controllers
                 Response.Cookies.Append("refreshToken", newRefreshTokenObj.RefreshToken, new CookieOptions
                 {
                     HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.None,
+                    Secure = false, // Production mein true rakhein or localhost/DEV me false
+                    SameSite = SameSiteMode.Lax, // None in production and Lax for local testing
                     Expires = newRefreshTokenObj.RefreshTokenExpiryDate,
                     Path = "/" // Yeh line add karein taake har API call mein cookie jaye
                 });
@@ -255,7 +255,7 @@ namespace LearningCoreWebApi.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Token refresh failed");
-                return StatusCode(403, "Invalid Credentials");
+                return StatusCode(403, new { message = "Invalid Credentials" });
             }
         }
         [Authorize(Roles = "Admin")]
