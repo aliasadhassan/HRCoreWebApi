@@ -50,8 +50,8 @@ namespace LearningCoreWebApi.Helpers
             {
                 RefreshToken = Convert.ToBase64String(Guid.NewGuid().ToByteArray()),
                 // Changed AddDays to AddMinutes
-                RefreshTokenExpiryDate = DateTime.UtcNow.AddMinutes(
-                    Convert.ToDouble(_config["Jwt:RefreshTokenExpireMinutes"])
+                RefreshTokenExpiryDate = DateTime.UtcNow.AddDays(
+                    Convert.ToDouble(_config["Jwt:RefreshTokenExpireDays"])
                 )
             };
         }

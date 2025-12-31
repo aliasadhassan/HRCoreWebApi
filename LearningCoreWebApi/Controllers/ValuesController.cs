@@ -10,8 +10,6 @@ using Serilog;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-
 namespace LearningCoreWebApi.Controllers
 {
     [Authorize]
@@ -40,7 +38,6 @@ namespace LearningCoreWebApi.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] Models.RegisterRequest request)
         {
-            // 1. Basic Validation Check
             if (request == null || string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
             {
                 return BadRequest(new { message = "Email and Password are required." });
@@ -50,18 +47,15 @@ namespace LearningCoreWebApi.Controllers
 
             try
             {
-                // 2. Email ko normalize karein (Trim aur Lowercase)
                 var normalizedEmail = request.Email.Trim().ToLower();
 
-                // 3. User existence check
                 var exists = await _context.Users.AnyAsync(x => x.Email == normalizedEmail);
                 if (exists)
                 {
                     _logger.LogWarning("Registration failed: User {Email} already exists", normalizedEmail);
-                    return Conflict(new { message = "User with this email already exists" }); // Conflict (409) behtar status code hai
+                    return Conflict(new { message = "User with this email already exists" });
                 }
 
-                // 4. Create User object
                 var user = new User
                 {
                     Username = request.Username,
@@ -75,8 +69,7 @@ namespace LearningCoreWebApi.Controllers
 
                 _logger.LogInformation("User {Email} registered successfully with ID: {UserId}", user.Email, user.Id);
 
-                // 5. Success Response
-                return StatusCode(201, new { message = "User registered successfully" }); // 201 Created status code
+                return StatusCode(201, new { message = "User registered successfully" });
             }
             catch (Exception ex)
             {
@@ -93,7 +86,6 @@ namespace LearningCoreWebApi.Controllers
             {
                 var user = await _context.Users.FirstOrDefaultAsync(x => x.Email == request.Email);
 
-                // 1. Generic message for security
                 if (user == null || !PasswordHelper.Verify(request.Password, user.PasswordHash))
                 {
                     return Unauthorized(new { message = "Invalid Email or Password" });
@@ -102,12 +94,11 @@ namespace LearningCoreWebApi.Controllers
                 var accessToken = _jwt.GenerateToken(user.Email);
                 var refreshTokenObj = _jwt.GenerateRefreshToken();
 
-                // 3. Cleanup: Purane expired tokens remove karein
                 var expiredTokens = _context.RefreshTokenConfiguration
                                     .Where(t => t.UserId == user.Id && t.RefreshTokenExpiryDate < DateTime.UtcNow);
                 _context.RefreshTokenConfiguration.RemoveRange(expiredTokens);
 
-                // 4. Save new refresh token
+                // Save new refresh token in DB
                 _context.RefreshTokenConfiguration.Add(new RefreshTokenConfiguration
                 {
                     UserId = user.Id,
@@ -120,17 +111,8 @@ namespace LearningCoreWebApi.Controllers
 
                 await _context.SaveChangesAsync();
 
-                var cookieOptions = new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = false, // Production mein true rakhein or localhost/DEV me false
-                    SameSite = SameSiteMode.Lax, // None in production and Lax for local testing
-                    Expires = refreshTokenObj.RefreshTokenExpiryDate,
-                    Path = "/" // Yeh line add karein taake har API call mein cookie jaye
-                };
-                Response.Cookies.Append("refreshToken", refreshTokenObj.RefreshToken, cookieOptions);
-
-                return Ok(new { accessToken });
+                // *** CHANGE 1: Return Refresh Token in the response body (not cookie) ***
+                return Ok(new { accessToken, refreshToken = refreshTokenObj.RefreshToken });
             }
             catch (Exception ex)
             {
@@ -145,34 +127,22 @@ namespace LearningCoreWebApi.Controllers
         {
             try
             {
-                // 1. Cookie se Refresh Token nikalein
-                if (Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
+                // *** CHANGE 2: Read Refresh Token from Header, not Cookie ***
+                if (!Request.Headers.TryGetValue("X-Refresh-Token", out var refreshTokenHeaderValue))
                 {
-                    // 2. DB mein us token ko dhoondein aur revoke/delete karein
-                    var storedToken = await _context.RefreshTokenConfiguration
-                        .FirstOrDefaultAsync(x => x.RefreshToken == refreshToken);
-
-                    if (storedToken != null)
-                    {
-                        // Option A: Token delete kar dein (Cleanest way)
-                        _context.RefreshTokenConfiguration.Remove(storedToken);
-
-                        // Option B: Sirf Revoke mark karein (Agar record rakhna ho)
-                        // storedToken.IsRevoked = true;
-                        // _context.Update(storedToken);
-
-                        await _context.SaveChangesAsync();
-                    }
+                    return StatusCode(403, new { message = "Refresh token header missing." });
                 }
+                var refreshToken = refreshTokenHeaderValue.FirstOrDefault();
 
-                // 3. Browser se Refresh Token ki Cookie remove karein
-                Response.Cookies.Delete("refreshToken", new CookieOptions
+                // 2. DB mein us token ko dhoondein aur revoke/delete karein
+                var storedToken = await _context.RefreshTokenConfiguration
+                    .FirstOrDefaultAsync(x => x.RefreshToken == refreshToken);
+
+                if (storedToken != null)
                 {
-                    HttpOnly = true,
-                    Secure = false, // Production mein true rakhein or localhost/DEV me false
-                    SameSite = SameSiteMode.Lax, // None in production and Lax for local testing
-                    Path = "/" // Yeh line add karein taake har API call mein cookie jaye
-                });
+                    _context.RefreshTokenConfiguration.Remove(storedToken);
+                    await _context.SaveChangesAsync();
+                }
 
                 _logger.LogInformation("User logged out and refresh token revoked.");
 
@@ -193,14 +163,15 @@ namespace LearningCoreWebApi.Controllers
             if (!Request.Headers.TryGetValue("Authorization", out var authHeader))
                 return StatusCode(403, new { message = "Authorization header missing." });
 
-            if (!Request.Cookies.TryGetValue("refreshToken", out var existingRefreshToken))
-                return StatusCode(403, new { message = "Refresh token cookie missing." });
+            // *** CHANGE 3: Read Refresh Token from Header, not Cookie/mixed logic ***
+            if (!Request.Headers.TryGetValue("X-Refresh-Token", out var existingRefreshTokenHeaderValue))
+                return StatusCode(403, new { message = "Refresh token header missing." });
 
             string accessToken = authHeader.ToString().Replace("Bearer", "", StringComparison.OrdinalIgnoreCase).Trim();
 
             try
             {
-                // 2. Expired Access Token se User ki details nikalna (Helper use karte hue)
+                // 2. Expired Access Token se User ki details nikalna
                 var principal = _jwt.GetPrincipalFromExpiredToken(accessToken);
                 var email = principal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
 
@@ -210,60 +181,41 @@ namespace LearningCoreWebApi.Controllers
                 // 3. DB se Refresh Token verify karna
                 var storedToken = await _context.RefreshTokenConfiguration
                     .Include(u => u.User)
-                    .FirstOrDefaultAsync(x => x.RefreshToken == existingRefreshToken.ToString()
+                    .FirstOrDefaultAsync(x => x.RefreshToken == existingRefreshTokenHeaderValue.ToString()
                                          && x.User.Email == email);
 
-                if (storedToken == null || storedToken.IsRevoked)
-                    return StatusCode(403, new { message = "Invalid Request" });
-
-                if (storedToken.RefreshTokenExpiryDate < DateTime.UtcNow)
-                    return StatusCode(403, new { message = "Token expired." });
+                if (storedToken == null || storedToken.IsRevoked || storedToken.RefreshTokenExpiryDate < DateTime.UtcNow)
+                    return StatusCode(403, new { message = "Invalid or expired refresh token." });
 
                 // 4. Purane tokens ko revoke ya delete karein (Multiple devices ke liye sirf isko revoke karein)
                 storedToken.IsRevoked = true;
                 _context.Update(storedToken);
 
-                // 5. Naye Tokens Generate karein
+                // 5. Token Rotation (Generate new access and refresh tokens)
                 var newAccessToken = _jwt.GenerateToken(email);
                 var newRefreshTokenObj = _jwt.GenerateRefreshToken();
 
-                // 6. DB mein naya record save karein
+                // 6. Database mein Naya Token Record Add Karein
                 _context.RefreshTokenConfiguration.Add(new RefreshTokenConfiguration
                 {
-                    UserId = storedToken.UserId,
+                    UserId = storedToken.UserId, // Purane user ki ID use karein
                     AccessToken = newAccessToken,
                     RefreshToken = newRefreshTokenObj.RefreshToken,
                     RefreshTokenExpiryDate = newRefreshTokenObj.RefreshTokenExpiryDate,
                     RefreshTokenCreatedDate = DateTime.UtcNow,
-                    IsRevoked = false
+                    IsRevoked = false // Naya token revoke nahi hai
                 });
 
                 await _context.SaveChangesAsync();
 
-                // 7. Security: Naya refresh token cookie mein update karein
-                Response.Cookies.Append("refreshToken", newRefreshTokenObj.RefreshToken, new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = false, // Production mein true rakhein or localhost/DEV me false
-                    SameSite = SameSiteMode.Lax, // None in production and Lax for local testing
-                    Expires = newRefreshTokenObj.RefreshTokenExpiryDate,
-                    Path = "/" // Yeh line add karein taake har API call mein cookie jaye
-                });
-
-                return Ok(new { accessToken = newAccessToken });
+                // *** CHANGE 4: Return new Access and Refresh tokens in the body ***
+                return Ok(new { accessToken = newAccessToken, refreshToken = newRefreshTokenObj.RefreshToken });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Token refresh failed");
-                return StatusCode(403, new { message = "Invalid Credentials" });
+                _logger.LogError(ex, "Error during token refresh: {Message}", ex.Message);
+                return StatusCode(500, new { message = "Internal server error during token refresh" });
             }
         }
-        [Authorize(Roles = "Admin")]
-        [HttpGet("admin")]
-        public IActionResult AdminOnly()
-        {
-            return Ok("Admin access granted");
-        }
-
     }
 }

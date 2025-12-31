@@ -17,8 +17,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins("http://localhost:4200") // Yahan apna Angular project ka URL likhein
               .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials(); // Yeh sab se zaroori hai cookies (credentials) ke liye
+              .AllowAnyMethod();
+              //.AllowCredentials(); // Yeh sab se zaroori hai cookies (credentials) ke liye
     });
 });
 
