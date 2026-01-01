@@ -13,10 +13,10 @@
         {
             // Un paths ki list jinko Authorization ki zaroorat nahi
             var allowedPaths = new[] {
-                "/api/values/login",
-                "/api/values/logout",
-                "/api/values/register",
-                "/api/values/refreshToken"
+                "/api/auth/login",
+                "/api/auth/logout",
+                "/api/auth/register",
+                "/api/auth/refreshToken"
             };
 
             // Request ke path ko normalize karein

@@ -15,12 +15,12 @@ namespace LearningCoreWebApi.Controllers
     [Authorize]
     [Route("api/[controller]")]
     [ApiController]
-    public class ValuesController : ControllerBase
+    public class AuthController : ControllerBase
     {
         private readonly AppDbContext _context;
         private readonly JwtTokenHelper _jwt;
-        private readonly ILogger<ValuesController> _logger;
-        public ValuesController(AppDbContext context, JwtTokenHelper jwt, ILogger<ValuesController> logger)
+        private readonly ILogger<AuthController> _logger;
+        public AuthController(AppDbContext context, JwtTokenHelper jwt, ILogger<AuthController> logger)
         {
             _context = context;
             _jwt = jwt;
