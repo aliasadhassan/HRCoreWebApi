@@ -16,7 +16,8 @@
                 "/api/auth/login",
                 "/api/auth/logout",
                 "/api/auth/register",
-                "/api/auth/refreshToken"
+                "/api/auth/refreshToken",
+                "/api/auth/forgot-password"
             };
 
             // Request ke path ko normalize karein

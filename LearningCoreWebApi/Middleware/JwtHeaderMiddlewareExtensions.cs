@@ -17,10 +17,9 @@
         }
         private static readonly string[] AnonymousEndpoints =
         {
-            "/api/values/login",
-            "/api/values/register",
-            "/health",
-            "/swagger"
+            "/api/auth/login",
+            "/api/auth/register",
+            "/api/auth/forgot-password"
         };
     }
 }
