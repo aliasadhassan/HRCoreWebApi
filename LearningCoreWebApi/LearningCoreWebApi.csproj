@@ -30,4 +30,8 @@
     <Folder Include="Migrations\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="wwwroot\EmailTemplates\PasswordReset.html" />
+  </ItemGroup>
+
 </Project>

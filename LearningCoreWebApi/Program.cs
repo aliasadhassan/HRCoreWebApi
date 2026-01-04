@@ -44,6 +44,8 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
     // Yahan hum aapki class se hours le kar TimeSpan mein convert kar rahe hain
     options.TokenLifespan = TimeSpan.FromHours(authSettings.ResetPasswordTokenLifespanHours);
 });
+
+builder.Services.AddTransient<EmailTemplatesHelper>();
 #endregion
 
 #region Serilog Configuration
@@ -89,8 +91,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddScoped<JwtTokenHelper>();
 #endregion
 
-builder.Services.AddTransient<EmailTemplatesHelper>();
-
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -115,12 +115,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseRouting();                   //  Pehle Routing
-app.UseCors("AllowSpecificOrigin"); //  Phir CORS
-app.UseAuthentication();            //  JWT validation
-app.UseJwtHeaderMiddleware();       //  custom guard
-app.UseSerilogRequestLogging();     //  Serilog request logging
-app.UseAuthorization();             //  role/claims
-app.MapControllers();
-
+app.UseRouting();                   // 1. Routing sab se pehle
+app.UseCors("AllowSpecificOrigin"); // 2. CORS Routing ke baad
+app.UseAuthentication();            // 3. Pehle Authentication (Identity check karna)
+app.UseAuthorization();             // 4. Phir Authorization (Policies/Roles check karna, [AllowAnonymous] ko handle karta hai)
+app.UseJwtHeaderMiddleware();       // 5. Custom Middleware ko Authorization ke BAAD rakhein,Taa ke woh standard auth checks ke baad chale aur [AllowAnonymous] routes ko disturb na kare.
+app.UseSerilogRequestLogging();     // 6. Logging middleware (position theek hai)
+app.MapControllers();               // 7. Endpoints map karna
 app.Run();
