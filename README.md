@@ -99,10 +99,18 @@ Drop-Database
 Add-Migration InitialClean
 
 Update-Database
-
-
-
 Add-Migration InitialAuthTables
-
 Update-Database
 
+docker build -f LearningCoreWebApi/Dockerfile -t learningcoreapi-image .
+
+docker.io/library/learningcoreapi-image:latest
+
+docker run -d -p 8080:80 --name my-running-api learningcoreapi-image
+
+http://localhost:8080/swagger/index.html
+
+powershell -Command "Test-NetConnection -ComputerName 'localhost' -Port 1433"
+sqlservermanager16.msc
+docker network ls
+netstat -ant
