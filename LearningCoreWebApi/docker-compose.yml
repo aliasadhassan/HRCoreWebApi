@@ -1,0 +1,42 @@
+﻿version: '3.8'
+
+services:
+  hr-frontend:
+    build:
+      # Context path sahi hai D drive ke liye
+      context: D:/hr-ui
+      dockerfile: Dockerfile
+    ports:
+      - "4200:80"
+    depends_on:
+      - hr-api
+    
+  hr-api:
+    image: ${DOCKER_REGISTRY-}hrcorewebapi
+    build:
+      # Context ko wapas current directory '.' par set karein
+      context: .
+      # Aur Dockerfile ka poora path dein relative to context
+      dockerfile: LearningCoreWebApi/Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - sql-server
+    environment:
+      - ConnectionStrings:DefaultConnection=Server=sql-server;Database=LearningCoreAuthDb;User Id=sa;Password=DEVELOPER_NETWORKS;
+
+  sql-server:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql-server
+    environment:
+      - ACCEPT_EULA=Y
+      # Password yahan define hua hai: DEVELOPER_NETWORKS
+      - MSSQL_SA_PASSWORD=DEVELOPER_NETWORKS 
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+
+volumes:
+  sqlserver_data:
