@@ -114,7 +114,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseRouting();                   // 1. Routing sab se pehle
 app.UseCors("AllowSpecificOrigin"); // 2. CORS Routing ke baad
 app.UseAuthentication();            // 3. Pehle Authentication (Identity check karna)
