@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Xunit;
-using LearningCoreWebApi.Middleware;
 
-namespace LearningCoreWebApi.Tests.Middleware
+namespace HR.Identity.API.Tests.Middleware
 {
     public class JwtHeaderMiddlewareTests
     {

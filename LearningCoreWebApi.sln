@@ -3,9 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36705.20
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LearningCoreWebApi", "LearningCoreWebApi\LearningCoreWebApi.csproj", "{3EBE7032-F52F-47EA-904F-0FDD26D41F35}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LearningCoreWebApi.Tests", "LearningCoreWebApi.Tests\LearningCoreWebApi.Tests.csproj", "{42C064A6-038A-48B1-B65B-D708759A308E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HR.Identity.API", "HR.Identity.API\HR.Identity.API.csproj", "{285BE9A8-F92D-4B61-80F9-54D76EFA5265}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HR.Employee.API", "HR.Employee.API\HR.Employee.API.csproj", "{0E26FF10-3C2F-4D32-98BC-BFCCEB565B58}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HR.Payroll.API", "HR.Payroll.API\HR.Payroll.API.csproj", "{6B2E745F-7632-499F-888C-3FF32B96903F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HR.Gateway", "HR.Gateway\HR.Gateway.csproj", "{E87DF1F8-28B0-4384-A43D-84867A34F585}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,14 +19,26 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{3EBE7032-F52F-47EA-904F-0FDD26D41F35}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3EBE7032-F52F-47EA-904F-0FDD26D41F35}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3EBE7032-F52F-47EA-904F-0FDD26D41F35}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3EBE7032-F52F-47EA-904F-0FDD26D41F35}.Release|Any CPU.Build.0 = Release|Any CPU
 		{42C064A6-038A-48B1-B65B-D708759A308E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{42C064A6-038A-48B1-B65B-D708759A308E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{42C064A6-038A-48B1-B65B-D708759A308E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{42C064A6-038A-48B1-B65B-D708759A308E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{285BE9A8-F92D-4B61-80F9-54D76EFA5265}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{285BE9A8-F92D-4B61-80F9-54D76EFA5265}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{285BE9A8-F92D-4B61-80F9-54D76EFA5265}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{285BE9A8-F92D-4B61-80F9-54D76EFA5265}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0E26FF10-3C2F-4D32-98BC-BFCCEB565B58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E26FF10-3C2F-4D32-98BC-BFCCEB565B58}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E26FF10-3C2F-4D32-98BC-BFCCEB565B58}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E26FF10-3C2F-4D32-98BC-BFCCEB565B58}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B2E745F-7632-499F-888C-3FF32B96903F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B2E745F-7632-499F-888C-3FF32B96903F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B2E745F-7632-499F-888C-3FF32B96903F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B2E745F-7632-499F-888C-3FF32B96903F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E87DF1F8-28B0-4384-A43D-84867A34F585}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E87DF1F8-28B0-4384-A43D-84867A34F585}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E87DF1F8-28B0-4384-A43D-84867A34F585}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E87DF1F8-28B0-4384-A43D-84867A34F585}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

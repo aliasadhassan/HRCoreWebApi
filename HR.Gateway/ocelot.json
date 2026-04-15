@@ -1,0 +1,55 @@
+{
+  "Routes": [
+    // 1. Payroll Service Route (With Admin Policy)
+    {
+      "DownstreamPathTemplate": "/api/payroll/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "hr-payroll", // Docker service name jo .yml mein hai
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/payroll/{everything}",
+      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "ApiGatewayKey"
+      },
+      "RouteClaimsRequirement": {
+        "UserRole": "Admin"
+      }
+    },
+
+    // 2. Employee Service Route (General Access)
+    {
+      "DownstreamPathTemplate": "/api/employee/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "hr-employee",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/employee/{everything}",
+      "UpstreamHttpMethod": [ "Get", "Post" ]
+      // Isme policy nahi lagayi taake general employees bhi access kar sakein
+    },
+
+    // 3. Identity/Auth Service Route (Login/Register)
+    {
+      "DownstreamPathTemplate": "/api/auth/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "hr-identity",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/auth/{everything}",
+      "UpstreamHttpMethod": [ "Post" ]
+    }
+  ],
+  "GlobalConfiguration": {
+    "BaseUrl": "http://localhost:5000"
+  }
+}

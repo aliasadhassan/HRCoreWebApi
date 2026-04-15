@@ -1,4 +1,4 @@
-namespace LearningCoreWebApi
+namespace HR.Gateway
 {
     public class WeatherForecast
     {
