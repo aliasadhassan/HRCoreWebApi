@@ -8,6 +8,16 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin", policy => // Policy ka naam change kiya hai
+    {
+        policy.WithOrigins("http://localhost:4200") // Yahan apna Angular project ka URL likhein
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+        //.AllowCredentials(); // Yeh sab se zaroori hai cookies (credentials) ke liye
+    });
+});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -45,7 +55,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+app.UseRouting();                   // 1. Routing sab se pehle
+app.UseCors("AllowSpecificOrigin"); // 2. CORS Routing ke baad
 app.UseAuthentication(); // Ye line JWT Authentication ko active kar degi
 app.UseAuthorization();
 await app.UseOcelot(); // Ye line Ocelot ko active kar degi
