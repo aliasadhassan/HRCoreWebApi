@@ -1,7 +1,7 @@
 ﻿using Azure.Core;
 using HR.Identity.API.Configuration;
 using HR.Identity.API.Data;
-using HR.Identity.API.Helpers;
+using HR.Shared.Library.Helpers;
 using HR.Identity.API.Models;
 using HR.Identity.API.Services;
 using Microsoft.AspNetCore.Authorization;

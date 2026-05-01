@@ -1,55 +1,51 @@
 {
   "Routes": [
-    // 1. Payroll Service Route (With Admin Policy)
     {
-      "DownstreamPathTemplate": "/api/payroll/{everything}",
-      "DownstreamScheme": "http",
+      "DownstreamPathTemplate": "/api/auth/{everything}",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "hr-payroll", // Docker service name jo .yml mein hai
-          "Port": 8080
+          "Host": "localhost",
+          "Port": 7085
+        }
+      ],
+      "UpstreamPathTemplate": "/identity/{everything}",
+      "UpstreamHttpMethod": [ "Post", "Get" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/employees/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7259
+        }
+      ],
+      "UpstreamPathTemplate": "/employees/{everything}",
+      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "ApiGatewayKey",
+        "AllowedScopes": []
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/payroll/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7251
         }
       ],
       "UpstreamPathTemplate": "/payroll/{everything}",
       "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete" ],
       "AuthenticationOptions": {
-        "AuthenticationProviderKey": "ApiGatewayKey"
-      },
-      "RouteClaimsRequirement": {
-        "UserRole": "Admin"
+        "AuthenticationProviderKey": "ApiGatewayKey",
+        "AllowedScopes": []
       }
-    },
-
-    // 2. Employee Service Route (General Access)
-    {
-      "DownstreamPathTemplate": "/api/employee/{everything}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "hr-employee",
-          "Port": 8080
-        }
-      ],
-      "UpstreamPathTemplate": "/employee/{everything}",
-      "UpstreamHttpMethod": [ "Get", "Post" ]
-      // Isme policy nahi lagayi taake general employees bhi access kar sakein
-    },
-
-    // 3. Identity/Auth Service Route (Login/Register)
-    {
-      "DownstreamPathTemplate": "/api/auth/{everything}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "hr-identity",
-          "Port": 8080
-        }
-      ],
-      "UpstreamPathTemplate": "/auth/{everything}",
-      "UpstreamHttpMethod": [ "Post" ]
     }
   ],
   "GlobalConfiguration": {
-    "BaseUrl": "http://localhost:5000"
+    "BaseUrl": "https://localhost:7164"
   }
 }

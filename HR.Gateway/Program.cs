@@ -5,6 +5,8 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddServiceDefaults();
+
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -31,9 +33,9 @@ builder.Services.AddAuthentication()
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = "AapkaIssuerName", // Identity API wala hona chahiye
-            ValidAudience = "AapkaAudienceName", // Identity API wala hona chahiye
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("Aapki_Secret_Key_Jo_Min_16_Chars_Ho"))
+            ValidIssuer = builder.Configuration["Jwt:Issuer"], // File se uthayega
+            ValidAudience = builder.Configuration["Jwt:Audience"], // File se uthayega
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)) // File se uthayega
         };
     });
 
@@ -63,8 +65,13 @@ app.UseRouting();                   // 1. Routing sab se pehle
 app.UseCors("AllowSpecificOrigin"); // 2. CORS Routing ke baad
 app.UseAuthentication(); // Ye line JWT Authentication ko active kar degi
 app.UseAuthorization();
-await app.UseOcelot(); // Ye line Ocelot ko active kar degi
+await app.UseOcelot(); // Ye line Ocelot ko active kar degi 
+
+// Ocelot middleware ko sab se last mein rakhna chahiye, kyunki Ocelot apne internal processing ke baad hi request ko aage forward karta hai.
+// Pipeline Completion: Ocelot chahta hai ke jab tak uska apna internal system (routes ki checking wagaira)
+// poora set na ho jaye, tab tak request processing shuru na ho.
 
 app.MapControllers();
+app.MapDefaultEndpoints();
 
 app.Run();

@@ -14,4 +14,9 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\HR.Shared.Library\HR.Shared.Library.csproj" />
+    <ProjectReference Include="..\LearningCoreWebApi.ServiceDefaults\LearningCoreWebApi.ServiceDefaults.csproj" />
+  </ItemGroup>
+
 </Project>

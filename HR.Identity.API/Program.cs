@@ -1,6 +1,6 @@
 using HR.Identity.API.Configuration;
 using HR.Identity.API.Data;
-using HR.Identity.API.Helpers;
+using HR.Shared.Library.Helpers;
 using HR.Identity.API.Middleware;
 using HR.Identity.API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -11,6 +11,7 @@ using Serilog;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddServiceDefaults();
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -125,4 +126,5 @@ app.UseAuthorization();             // 4. Phir Authorization (Policies/Roles che
 app.UseJwtHeaderMiddleware();       // 5. Custom Middleware ko Authorization ke BAAD rakhein,Taa ke woh standard auth checks ke baad chale aur [AllowAnonymous] routes ko disturb na kare.
 app.UseSerilogRequestLogging();     // 6. Logging middleware (position theek hai)
 app.MapControllers();               // 7. Endpoints map karna
+app.MapDefaultEndpoints();          // 8. Default endpoints map karna (Health checks wagaira ke liye)
 app.Run();

@@ -1,8 +1,17 @@
+using HR.Payroll.API.Models;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
+builder.AddServiceDefaults(); // isse hum apne microservice ke liye kuch default configurations set kar sakte hain (jaise ki CORS, logging, etc.)
 
 // Add services to the container.
-
 builder.Services.AddControllers();
+
+// DB Connection register
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(connectionString));
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -17,9 +26,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
-app.MapControllers();
+app.MapControllers();      // Endpoints map karna
+app.MapDefaultEndpoints(); // Health checks wagaira ke liye
 
 app.Run();

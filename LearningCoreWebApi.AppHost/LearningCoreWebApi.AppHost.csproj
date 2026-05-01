@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Sdk Name="Aspire.AppHost.Sdk" Version="9.5.0" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>fa04bb80-937a-4fb8-8293-ca9516c38d2d</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" Version="9.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\HR.Employee.API\HR.Employee.API.csproj" />
+    <ProjectReference Include="..\HR.Gateway\HR.Gateway.csproj" />
+    <ProjectReference Include="..\HR.Identity.API\HR.Identity.API.csproj" />
+    <ProjectReference Include="..\HR.Payroll.API\HR.Payroll.API.csproj" />
+  </ItemGroup>
+
+</Project>

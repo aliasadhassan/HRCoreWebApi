@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\HR.Shared.Library\HR.Shared.Library.csproj" />
+    <ProjectReference Include="..\LearningCoreWebApi.ServiceDefaults\LearningCoreWebApi.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>

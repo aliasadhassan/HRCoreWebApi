@@ -1,0 +1,86 @@
+﻿services:
+  # 1. SQL Server - Sab services ka Database
+  sql-server:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql-server
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Dev@12345!"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1435:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - hr-network       
+      
+  # 2. HR.Employee.API Service
+  hr-employee:
+    build:
+      context: .
+      dockerfile: HR.Employee.API/Dockerfile
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sql-server,1433;Database=HR_Employee_Db;User Id=sa;Password=Dev@12345!;TrustServerCertificate=True;Encrypt=False;
+    networks:
+      - hr-network     
+    depends_on:
+      - sql-server      
+
+  # 3. Identity Service (Purana project jo login handle krta ha)
+  hr-identity:
+    build:
+      context: .
+      dockerfile: HR.Identity.API/Dockerfile
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sql-server,1433;Database=HR_Identity_Db;User Id=sa;Password=Dev@12345!;TrustServerCertificate=True;Encrypt=False;
+    networks:
+      - hr-network     
+    depends_on:
+      - sql-server
+
+  # 4. Payroll Service (Naya Project)
+  hr-payroll:
+    build:
+      context: .
+      dockerfile: HR.Payroll.API/Dockerfile
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sql-server,1433;Database=HR_Payroll_Db;User Id=sa;Password=Dev@12345!;TrustServerCertificate=True;Encrypt=False;
+    networks:
+      - hr-network 
+    depends_on:
+      - sql-server
+
+  # 5. API Gateway (Ocelot - Main Entry Point)
+  hr-gateway:
+    build:
+      context: .
+      dockerfile: HR.Gateway/Dockerfile
+    ports:
+      - "5000:8080" # Bahar se log 5000 port use krenge
+    networks:
+      - hr-network 
+    depends_on:
+      - hr-identity
+      - hr-payroll
+      - hr-employee      
+
+  # 6. Frontend (Angular/React)
+  hr-frontend:
+    build:
+      context: D:/hr-ui
+      dockerfile: Dockerfile
+    ports:
+      - "4200:80"
+    networks:
+      - hr-network 
+    depends_on:
+      - hr-gateway # Frontend ab direct API ko nhi, Gateway ko hit krega
+
+# --- YEAH SAB SE ZAROORI HAI (Bahar hona chahiye) ---
+# --- YEAH LINE BILKUL LEFT PAR HONI CHAHIYE ---
+networks:
+    hr-network:
+       driver: bridge
+
+volumes:
+  sqlserver_data:  
