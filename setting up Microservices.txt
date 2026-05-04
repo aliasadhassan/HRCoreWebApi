@@ -1,0 +1,436 @@
+
+
+Enable container support: Aapne screenshot mein ise uncheck rakha hai. Kyunke aapne kaha tha ke aap Docker implement kr chuke hain, to behtar hai ke ise Check 
+(tick) kr dein. Is se Visual Studio khud hi Dockerfile bana dega, jo Microservices ke liye zaroori hai.
+Authentication type: Ise "None" hi rehne dein kyunke hum apni JWT/Identity logic khud likhenge.
+
+HR.Identity.API (Isme login/registration aur JWT token ka kaam hoga)
+HR.Employee.API (Isme Employee CRUD operations honge)
+HR.Payroll.API (Isme salary aur payroll ka kaam hoga)
+HR.Gateway (Ye project Ocelot ke liye hoga)
+
+User HR.Identity.API se login ho kar ek JWT Token lega.
+Wo token HR.Gateway ko bhejega.
+Gateway check karega ke kya user ke paas "Admin" ki Policy hai? Agar hai, to hi wo request HR.Payroll.API tak jayegi.
+
+3. Agla Step: Docker Compose
+Kyunke aapke paas ab 4-5 alag projects hain, to in sab ko ek sath chalane ke liye aapko Docker Compose use karna hoga.
+Solution par right-click karein.
+Add -> Container Orchestrator Support select karein.
+Docker Compose choose karein.
+Is se Visual Studio ek docker-compose file bana dega jo aapke saare Microservices ko ek hi click par start kar degi.
+
+1. Policy Kya Hai? (Simple Concept)
+Policy ka matlab hai "Rules". Jab koi user login karta hai, to aap use ek JWT Token dete hain jisme uski information (Claims) hoti hai, jaise: Role = Admin.
+Authentication: "Kya aap valid user hain?" (Sirf Token check hota hai).
+Authorization (Policy): "Kya aapko is specific kaam (e.g. Salary delete karna) ki ijazat hai?" (Token ke andar ka Role ya Claim check hota hai).
+
+Ocelot ko use karne ke liye aapko NuGet package install karna hoga.
+Aap apne HR.Gateway project par right-click karein, Manage NuGet Packages mein jayein aur ye search karke install karein:
+Ocelot: Ye main package hai jo gateway functionality deta hai.
+Microsoft.AspNetCore.Authentication.JwtBearer: Ye zaroori hai taake Gateway aapke JWT Token ko pehchan sakay aur Policy check kar sakay.
+Ocelot Setup karne ka Quick Tarika:
+Jab aap package install kar lein, to ye 3 chote kaam karein:
+1. ocelot.json File Banayein:
+HR.Gateway project ke root mein ek nayi JSON file banayein jiska naam ocelot.json rakhein. Isme aap apne saare "Routes" (kon si request kis service ko jayegi) likhenge.
+2. Program.cs mein Ocelot Add Karein:
+Gateway ke Program.cs mein ye lines likhein:
+
+builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
+builder.Services.AddOcelot(builder.Configuration);
+
+// ... Authentication aur Policy yahan add hogi ...
+
+var app = builder.Build();
+await app.UseOcelot(); // Ye line Ocelot ko active kar degi
+app.Run();
+
+3. Policy ka Role:
+Jab aap NuGet se JwtBearer install kar lenge, to aap Ocelot ko bata sakenge ke: "Bhai, agar token mein Role: Admin nahi hai, to use HR.Payroll.API tak mat janay 
+dena." Isi ko Policy Enforcement kehte hain.
+
+in packages ko install kro HR.Gateway k project mein
+Microsoft.AspNetCore.Authentication.JwtBearer
+System.IdentityModel.Tokens.Jwt
+Ocelot
+
+Architecture ka Flow Samajh Lein (Interview ke liye)
+Jab aap se pucha jaye ke ye kaam kaise kar raha hai:
+Client Request: User HR.Identity.API ko username/password bhejta hai.
+Token Issuance: Identity API usey ek JWT Token deti hai jisme UserRole: Admin ka claim hota hai.
+Gateway Entry: User ab Gateway ke raste /payroll access karne ki koshish karta hai aur sath Token bhejta hai.
+Policy Check: Gateway (Ocelot) pehle token verify karta hai, phir dekhta hai ke aapne ocelot.json mein UserRole: Admin ki condition lagayi hui hai.
+Forwarding: Agar Role match kar jaye, to Gateway request ko HR.Payroll.API tak bhej deta hai.
+
+hr-gateway mein ocelot.json ke andar humne RouteClaimsRequirement lagayi hai jo JWT token se UserRole check karti hai. Ye Policy Enforcement hai jo ensure karti hai ke sirf 
+authorized users hi sensitive services (jaise Payroll) tak pohnchein.
+
+Maine HR system ko Microservices mein divide kiya hai jahan har service ka apna database hai. Ocelot API Gateway central entry point hai jo JWT-based Policies ke zariye security 
+handle karta hai. Saara infrastructure Docker Compose par containerized hai, jo scaling aur deployment ko asaan banata hai.
+
+points to remember
+==================
+microservices k concept me api hit phly api gateway prr jaegi ya phirr Identity Api prr jaegi?
+Microservices architecture mein standard flow ke mutabiq, API hit pehly API Gateway par jati hai. API Gateway aapke system ka "Single Entry Point" hota hai jo client aur backend 
+microservices ke darmiyan ek gatekeeper ka kaam karta hai. 
+
+Request ka safar aam tor par kuch is tarah hota hai:
+API Gateway (First Stop): Client (web ya mobile app) se aane wali har request pehly Gateway par land karti hai. Gateway decide karta hai ke request ko kis service (e.g., Order 
+service, Product service) ki taraf bhejna hai.
+Authentication/Identity Check: Gateway khud hi request ko validate karta hai. Agar authentication zaroori ho, to Gateway background mein Identity API (Identity Provider) se rabta 
+karke token verify karta hai. Baaz dafa Gateway khud hi token validation kar leta hai bina har bar Identity API ko hit kiye.
+Routing to Microservice: Jab request verify ho jati hai, tab Gateway usay sahi backend microservice tak pohanchata hai.
+
+Microsoft.EntityFrameworkCore
+Microsoft.EntityFrameworkCore.SqlServer
+Microsoft.EntityFrameworkCore.Tools
+Microsoft.EntityFrameworkCore.Design
+Serilog.AspNetCore
+Serilog.Sinks.File
+Serilog.Settings.Configuration
+Serilog.Sinks.MSSqlServer
+Newtonsoft.json
+MailKit
+BCrypt.Net-Next
+
+Microsoft.AspNetCore.Authentication.JwtBearer -- for gateway
+System.IdentityModel.Tokens.Jwt -- for gateway
+Ocelot -- for gateway
+
+Developer Powershell
+-------------------------------
+docker-compose up -d sql-server
+
+Developer Powershell
+-------------------------------
+dotnet tool install --global dotnet-ef
+
+Note : Microsoft.EntityFrameworkCore.Design -- this package must be installed in each Api respective project
+
+dotnet clean
+dotnet restore
+
+dotnet add package Microsoft.CodeAnalysis.Workspaces --version 4.5.0
+
+dotnet nuget locals all --clear
+
+cd HR.Identity.API
+dotnet add package Microsoft.EntityFrameworkCore.Design --version 8.0.10
+
+Startup Project ka masla
+Microservices mein aksar terminal confuse ho jata hai ke migrations kahan save karni hain. 
+Identity API ke folder ke andar kharay ho kar ye command try karein:
+
+dotnet ef migrations add InitialIdentityDb --project . --startup-project .
+dotnet ef migrations add InitialIdentityDb
+dotnet ef database update
+
+cd ..
+cd HR.Employee.API
+dotnet ef migrations add InitialEmployeeDb --project . --startup-project .
+dotnet ef migrations add InitialEmployeeDb
+dotnet ef database update
+
+cd ..
+cd HR.Payroll.API
+dotnet ef migrations add InitialPayrollDb
+dotnet ef database update
+
+-- in case of any change
+dotnet ef migrations add UpdateEmployeeModel
+dotnet ef database update
+
+Server=sql-server,1433
+Visual Studio mein docker-compose project par right-click kar ke usay "Set as StartUp Project" karein.
+
+Ocelot is a popular API Gateway for .NET microservices.
+DownstreamHostAndPorts uses Docker service names for internal communication within the container network.
+AuthenticationOptions in Ocelot allows the gateway to validate JWT tokens before forwarding requests to downstream services.
+
+Testing Phase
+==================================================================
+1. Postman se Register Hit Karein
+Postman kholien aur ye request bhejien:
+Method: POST
+URL: http://localhost:5000/identity/register
+Headers: Content-Type: application/json
+Body (raw JSON):
+json
+{
+  "username": "HabibiDeveloper",
+  "email": "habibi@test.com",
+  "password": "Password123!"
+}
+
+2. Login API (Token lene ke liye - Register ke baad)
+Method: POST
+URL: http://localhost:5000/identity/login
+
+Go to your project root directory and move your docker-compose.yml file here
+C:\Users\Shirjeel-Abid\source\repos\LearningCoreWebApi
+
+right click and run the cmd window here and run the 2 commands one after the other
+docker-compose down
+docker-compose up --build
+
+C:\Users\Shirjeel-Abid\source\repos\LearningCoreWebApi\HR.Identity.API> docker-compose down
+C:\Users\Shirjeel-Abid\source\repos\LearningCoreWebApi\HR.Identity.API> docker-compose up --build
+
+Aap Debugging karna chahte hain taake error aate hi Visual Studio aapko bata de ke kis line par masla hai. Iske liye do tareeqe hain:
+Option 1: Docker ke andar Debugging (Best way)
+Aapko project "Run" karne ki zaroorat nahi, sirf Attach karna hai:
+Docker mein project ko chalta rehne dein (docker-compose up).
+Visual Studio mein jayein.
+Top menu mein Debug > Attach to Process par click karein.
+Connection Type mein "Docker (Linux Container)" select karein.
+Apni hr-identity wali service select karein aur dotnet process se attach ho jayein.
+Ab jab aap Postman se hit karenge, toh Visual Studio wahi line pakar lega jahan error hai.
+
+Kubernetes/K8s
+=================================
+Download Lens Desktop for Windows
+https://lenshq.io/download/lens-k8s-ide → click on Windows x64 (.exe)
+click on docker desktop → kubernetes → Apply 
+
+Agla kya hoga?
+Loading khatam hote hi ye shayad aap se Login maange. 
+Aap "Lens ID" bana sakte hain ya "Skip" (agar option ho) kar ke Lens Personal (Free) mode mein ja sakte hain.
+Uske baad ye aap se Kubeconfig ka poochega. 
+Aap ne kuch nahi karna, ye khud hi Docker Desktop wala rasta dhoond lega.
+
+Is splash screen ke baad jab main dashboard aayega, to left side par "Catalog" dekhiye ga. 
+Wahan aapko apna docker-desktop cluster nazar aayega. Us par click kar ke "Connect" kar dena.
+
+after download and install just open it .. and select New to lens and click on started
+
+kubectl get nodes
+================================
+how to resolve this issue of docker i.e. DNS server, sometimes we get 
+this error when we run docker-compose --build when we have any change in any file
+
+target hr-frontend: failed to solve: node:22-alpine: failed to resolve source metadata for docker.io/library/node:22-alpine: failed to do request: 
+Head "https://registry-1.docker.io/v2/library/node/manifests/22-alpine": dialing registry-1.docker.io:443 container via direct connection because 
+static system has no HTTPS proxy: connecting to registry-1.docker.io:443: dial tcp: lookup registry-1.docker.io: no such host
+
+Control Panel mein jayein > Network and Sharing Center.
+Change adapter settings par click karein.
+Apne active Wi-Fi ya Ethernet par right-click karke Properties mein jayein.
+List mein se "Internet Protocol Version 4 (TCP/IPv4)" ko select karke Properties dabayein.
+Neeche "Use the following DNS server addresses" select karein aur ye type karein:
+Preferred DNS server: 8.8.8.8
+Alternate DNS server: 8.8.4.4
+Ok karke sab band karein aur Docker Desktop ko restart karein
+
+Note : Pehle aapka computer apne local internet provider (ISP) ka phonebook use kar raha tha, 
+jo shayad Docker ke address ko nahi pehchan raha tha ya block kar raha tha.
+Jab aapne 8.8.8.8 (Google) set kiya, toh aapne computer ko aik behtreen aur update shuda phonebook de di.
+Google ne foran Docker ka sahi address bata diya aur downloading shuru ho gayi!
+Computer networking mein aksar "Internet na chalne" ka masla sirf aik sahi "Address Book" na milna hi hota hai.
+
+docker-compose --build -- It builds the images specified in your docker-compose.yml file
+
+Specific Build: Agar sirf frontend mein change hai, to docker-compose up -d --build hr-frontend use karein.
+Efficiency: Yeh command poore solution ke bajaye sirf us ek container ko rebuild kar ke restart karegi.
+Detached Mode: -d lagane se container peeche chalta rahega aur aapka terminal dusre kamo ke liye free ho jayega.
+Auto-Update: Docker sirf un files ko pick karta hai jin mein change ho, baqi cheezon ke liye cache use karta hai.
+No Interruption: Is tariqe se aapke baqi containers (backend ya DB) disturb nahi honge aur chalti rahengi.
+
+Note : if we donot have volumes keyword in docker-compose.yml file in sql section, then it means whenever we run this command i.e.
+docker-compose --build our data from sql will be removed
+
+==============================
+Docker Spacing/Slow issue
+==============================
+Bhai, aapka laptop kafi taqatwar hai (12 CPUs aur 7.4GB allocated RAM), is liye abhi toh aapka system sukoon mein hai. Lekin agar aapki hr-app zyada 
+space (RAM ya CPU) consume karne lagay, toh ye 3 cheezein ho sakti hain:
+1. Application "Lag" ya Slow ho jayegi
+Agar RAM full hone ke qareeb pohnchi, toh aapka Angular frontend load hone mein time lega aur backend requests "Time out" hona shuru ho jayengi. User 
+ko lagega ke app hang ho gayi hai.
+2. OOM Kill (Out of Memory)
+Docker boht sakht "Security Guard" hai. Agar koi container (maslan hr-payroll) itni zyada RAM khane lagay ke laptop ke liye khatra ban jaye, toh 
+Docker us container ko foran kill (band) kar dega.
+Aapko Docker Desktop mein wo container Red nazar aayega aur error likha hoga: "Exited with code 137".
+3. System Hang (Laptop Heat-up)
+Kyunke aapke paas 12 CPUs hain, CPU ka masla itni jaldi nahi aayega. Lekin agar CPU usage 90% se upar gayi, toh laptop ka fan tez chalne lagega aur 
+poora Windows slow ho jayega.
+Is se bachne ka "Pro" tareeqa (Docker Limits):
+Aap apni docker-compose.yml mein har service ke liye limit set kar sakte hain taake koi ek service poore laptop ka sukoon tabah na kare:
+
+services:
+  hr-payroll:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'     # Sirf aadha CPU use kar sakay
+          memory: 512M     # 512MB se zyada RAM na lay
+
+======================================
+.NET Aspire Orchestrator Support
+======================================
+Docker vs .NET Aspire (Farq Kya Hai?)
+Docker Desktop: Sirf containers ko chalata hai. Yeh "infrastructure" level ki cheez hai.
+NET Aspire: Aapko code ke andar se in containers ko manage karne ki taqat deta hai.
+
+Aspire Kyun "Cool" Hai? (HR Project ke liye)
+Automated Orchestration: Aapko manually har project ki Dockerfile ya complex Compose file nahi likhni parti. C# code mein hi bata dete hain ke 
+"Project A" ko "Project B" se baat karni hai.
+Built-in Telemetry: Aapki image mein itne saare services hain. Aspire aapko ek Developer Dashboard deta hai jahan aap dekh sakte hain ke Gateway se 
+request Payroll tak gayi to kitni der lagi (Tracing).
+Local Development: Jab aap Visual Studio mein "F5" dabayenge, to Aspire saare containers ko sahi sequence mein khud start kar dega.
+
+.NET Aspire Orchestrator Kaise Add Karein?
+Aap apne mojooda HR project mein niche diye gaye asaan steps se Aspire add kar sakte hain:
+Workload Install Karein: Sabse pehle apne terminal mein ye command chalayein:
+dotnet workload install aspire
+Orchestration Support Add Karein:
+Visual Studio mein apne main API project (e.g., hr-gateway ya hr-employee) par Right-Click karein.
+Add > .NET Aspire Orchestrator Support par click karein. 
+
+Naye Projects: Ye step aapke solution mein do naye projects add kar dega:
+AppHost: Ye aapka asli "Orchestrator" hai jo saari services ko jorta hai.
+ServiceDefaults: Is mein shared configurations (logins, health checks) hoti hain. 
+
+Projects Ko Register Karein: AppHost ke Program.cs mein apne baqi microservices ko is tarah add karein:
+var builder = DistributedApplication.CreateBuilder(args);
+var payroll = builder.AddProject<Projects.hr_payroll>("payroll");
+builder.AddProject<Projects.hr_gateway>("gateway").WithReference(payroll);
+builder.Build().Run();
+
+AppHost Project: Ye aapka "Master" project ban jayega. Jab aap isay run karenge, to HR-Identity, HR-Payroll, SQL Server, wagera sab ek saath dashboard 
+par nazar ayenge.
+ServiceDefaults Project: Ye aapki har microservice ko automatic OpenTelemetry (logging/tracing) aur Health Checks ki power de dega.
+Tip: Agar aapko .NET Aspire Orchestrator Support ka option nazar nahi aa raha, to pehle terminal mein dotnet workload install aspire zaroor chala 
+lijiyega.
+
+Docker Ke Sath Parallel Mein Kaise Chalay ga?
+Haan, ye parallel chalta rahay ga kyunke:
+Smart Orchestration: Jab aap Aspire run karte hain, to ye khud se un containers ko Docker Desktop mein start kar deta hai jo aapne define kiye hon 
+(jaise SQL Server ya Redis). 
+
+No Conflict: Agar aapka purana Docker Compose setup chal raha hai, to bas ports ka khayal rakhna hoga taake clash na ho. Aspire actually local dev ke 
+liye Docker Compose ka ek modern alternative hai jo C# mein likha jata hai. 
+
+Production vs Dev: Aap development ke liye Aspire use karein (kyunke iska dashboard kamaal hai) aur production deployment ke liye wahi Docker images 
+use karte rahen jo aap pehle bana rahe thay. 
+
+Aspire Dashboard par aapko har service ke live metrics aur logs nazar ayenge, jo aapke setup ko waqai "next level" bana dega.
+
+implementation:
+
+🛠️ Fix 1: Project References Add Karein (Zaroori)
+Aspire tabhi Projects.HR_Identity_API wagera ko pehchanega jab wo uske sath "Add" honge.
+Solution Explorer mein LearningCoreWebApi.AppHost par Right-Click karein.
+Add > Project Reference par jayein.
+Wahan list mein HR.Employee.API, HR.Identity.API, HR.Payroll.API, aur HR.Gateway ko select kar ke OK kar dein.
+🛠️ Fix 2: Using Statement
+Agar references add karne ke baad bhi red line (error) na jaye, to Program.cs ki sabse top line par ye add karein:
+using Projects;
+
+Jab aap references add karte hain, to Visual Studio background mein ek Projects namespace generate karta hai. Phir aapka code automatically samajh 
+jayega ke Projects.HR_Identity_API ka matlab aapka folder/project hai.
+Tip: Agar projects ke naam mein dots (.) hain, to Aspire unhein aksar underscores (_) mein convert kar deta hai (e.g., HR_Employee_API). Jaise hi aap 
+AddProject< likh kar Projects. type karenge, IntelliSense aapko sahi naam khud dikha dega.
+
+builder.AddServiceDefaults(); -- is line ko foran isky baad add kry i.e. var builder = WebApplication.CreateBuilder(args);
+app.MapDefaultEndpoints(); -- isko app.run sy phly likhna ha iska purpose ha Default endpoints map karna (Health checks wagaira ke liye)
+
+AddServiceDefaults: Yeh aapki API mein automatic logging, tracing (OpenTelemetry), aur health checks enable kar deta hai taake Aspire Dashboard ko 
+data mil sakay.
+MapDefaultEndpoints: Yeh wo "rasta" (endpoint) banata hai jis ke zariye Aspire Dashboard aapki app ki sehat (health) check karta hai.
+
+ye changes aapko saari microservice APIs (Identity, Payroll, Employee, Gateway) ke Program.cs mein karni hain. Lekin aapke screenshot mein ek chota 
+sa error hai jisay fix karna zaroori hai.Aapko HR.Employee.API (aur baqi saari APIs) mein ServiceDefaults ka reference dena hoga, 
+warna wo in commands ko nahi pehchanega.
+Apne API project (e.g., HR.Employee.API) par Right-Click karein.
+Add > Project Reference par jayein.
+List mein se LearningCoreWebApi.ServiceDefaults ko select kar ke OK kar dein
+
+ServiceDefaults k project me hmny Extension.cs class me Open Telemetry kyu add kiya ha or ye kya ha?
+
+OpenTelemetry (OTel) aik open-source standard hai jo aapki application se Logs, Metrics, aur Traces (inhein "Signals" kehte hain) nikalne (collect 
+karne) ke liye use hota hai.
+Asaan alfaz mein, ye aapki app ke andar aik aisi "khufia machine" hai jo batati hai ke andar kya chal raha hai.
+Humne ise kyun add kiya hai? (Asli Maqsad)
+Iske 3 baray faide hain jo aapne interviewer ko batane hain:
+
+Distributed Tracing (Sabse Imp): Microservices mein masla ye hota hai ke jab request Gateway se Payroll API aur phir Database tak jati hai, to beech 
+mein kahan rukawat (bottleneck) aayi, ye pata nahi chalta. OpenTelemetry poori request ka aik "X-ray" nikal kar dikhati hai ke kis step ne kitne 
+millisecond liye.
+
+No Vendor Lock-in: Kal ko agar aap Aspire se shift ho kar Azure Monitor, Jaeger, ya Prometheus par jana chahen, to aapko code change nahi karna 
+parega. OTel sab ke sath "baat" kar sakta hai.
+
+Automatic Observability: Aapko har function mein Log.Information likhne ki zaroorat nahi. OTel khud hi HTTP requests, Database queries, aur Exception 
+handling ko track kar leta hai.
+
+Agar koi poochay ke "Aapne APIs Docker se kyu hatayin?", to kehna:
+"Mene Hybrid Development approach use ki hai. Databases aur Frontend containers mein hain, lekin Microservices ko mene .NET Aspire ke zariye 
+orchesrate kiya hai taake mujhe Real-time Tracing aur Debugging ka maza milay jo Docker mein thora mushkil hota hai."
+
+Note : whenever we made any changes in angular app we have to run these commands one by one
+docker-compose build hr-frontend -- Ye command aapke naye code ko utha kar dobara "Image" banati hai.
+docker-compose up -d hr-frontend -- Ye command purane container ko stop karke naye built code wala container chala deti hai.
+
+-- change code in .yml file, i.e. remove all .net api projects, just sql/angular front end will remain
+docker-compose up -d --remove-orphans (--remove-orphans un purani APIs ke containers ko khud hi dhoond 
+kar delete kar dega jo ab is file ka hissa nahi hain).
+
+Agar koi poochay ke aap ne ye structure kyun banaya, to aap keh sakte hain:
+"Mene Hybrid Orchestration use ki hai. Infrastructure (SQL Server) aur Frontend (Angular) ko mene Docker Compose mein rakha hai kyunke wo stable hain. 
+Lekin APIs ko mene .NET Aspire mein rakha hai taake development ke waqt mujhe Real-time Tracing, Monitoring, aur Debugging ki behtreen sahulat mil 
+sakay."
+
+.NET Aspire UI (The Map): Aspire Dashboard se har service ka URL aur Port check karna hai. Agar wahan https hai, to Ocelot ki DownstreamScheme bhi 
+https honi chahiye.
+
+Ocelot Sync: Jo ports Aspire ne APIs ko di hain, wahi exact ports ocelot.json ke DownstreamHostAndPorts mein update karni hain.
+Localhost vs Project Name: Chunke APIs ab Windows par chal rahi hain (Process mode), isliye appsettings.json mein server ka naam sql-server (Docker 
+name) se badal kar localhost karna hai.
+
+Port 1435 (The Bridge): SQL Server ki port 1433 ko 1435 karna hai, kyunke humne Docker Compose mein host port 1435 rakhi hai taake Windows se Docker 
+ke andar call ja sakay.
+======================================
+Akv (Azure Key Vault)
+======================================
+Pay-As-You-Go ka Swag aur Faida:
+No Expiry: Free Trial 30 din mein khatam ho jata hai, lekin Pay-As-You-Go tab tak chalta hai jab tak aap services use karte hain.
+Always Free Services: Is subscription mein bhi kaafi services (jaise 1 million Azure Functions requests) hamesha ke liye free rehti hain.
+Pay for What You Use: Agar aap ne Azure Key Vault mein sirf 2-3 secrets rakhe hain aur mahine mein 100 dafa access kiya, toh shayad aapka bill 10-20 PKR bhi na aaye.
+
+Aik Zaroori Ehtiyat (Risk Management):
+Kyunke is mein koi $200 ka "parda" nahi hai, toh ye 3 kaam lazmi karna:
+Create Budget: Azure mein ja kar aik $5 (1400 PKR) ka budget limit set kar dena. Agar bill is se upar jane lagega, toh Azure aapko email bhej dega.
+Delete Resources: Jab aapka Service Bus ya Logic Apps ka kaam khatam ho jaye, toh unhein foran Delete kar dena.
+Avoid Premium Tiers: Hamesha "Basic" ya "Standard" tier select karna. "Premium" tiers ka bill hazaron mein ja sakta hai.
+
+Setup Kaise Karein?
+Abhi "Pay as you go" par click karein. Wo aage aap se:
+Aapka Mobile Number verify karega.
+Aapki UBL Mastercard ki details mangega.
+Bhai, agar aapne resources ko achy se handle kiya toh ye subscription aapko boht sasti paregi.
+
+click on pay as you go button on this link
+https://azure.microsoft.com/en-us/pricing/purchase-options/azure-account?icid=portal
+
+NuGet Packages Install kar len: 
+Apni .NET microservices mein ye packages abhi se add kar len:
+Azure.Security.KeyVault.Secrets
+Azure.Identity
+Environment Variables: Apne computer par aik environment variable set kar len (jaise ASPNETCORE_ENVIRONMENT = Development).
+Code Structure: Ek choti si KeyVaultService ki class bana len jo secrets fetch karne ka logic handle karegi.
+
+(.NET Aspire + AKV):
+Ab jab aap Azure Key Vault integrate karenge, toh Aspire mein ye kaam mazeed asan ho jata hai. 
+Aspire ke paas apna Azure Key Vault component hai.Bas AppHost ki Program.cs mein aapko sirf ye likhna hoga:
+
+var secrets = builder.AddAzureKeyVault("secrets");
+builder.AddProject("identity-api")
+       .WithReference(secrets);
+	   
+Aur bas! Identity service ko khud hi pata chal jayega ke secrets kahan se uthane hain.	   
+
+
+Distributed Transaction: Jab kaam 3 databases mein hona ho aur ek fail ho jaye, toh baaki 2 ko "undo" kaise karein?
+Compensating Transaction: Ye "Rollback" ka naya naam hai. Agar Step 3 fail hua, toh Step 2 aur Step 1 ko "Reverse" karne wala code chalana.
+State Machine: Ek central manager jo yaad rakhta hai ke: "Employee table mein entry ho gayi? Done. Payroll mein ho gayi? Fail! Ab pehle wali entry 
+delete karo."
