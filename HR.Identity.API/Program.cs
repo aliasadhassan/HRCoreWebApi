@@ -13,6 +13,9 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 
+// Key Vault integration
+builder.Services.AddHRKeyVault(builder.Configuration);
+
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddCors(options =>

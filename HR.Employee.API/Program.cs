@@ -1,9 +1,13 @@
 using HR.Employee.API;
+using HR.Shared.Library.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+
+// Key Vault integration
+builder.Services.AddHRKeyVault(builder.Configuration);
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

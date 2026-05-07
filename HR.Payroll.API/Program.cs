@@ -1,8 +1,12 @@
 using HR.Payroll.API.Models;
+using HR.Shared.Library.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults(); // isse hum apne microservice ke liye kuch default configurations set kar sakte hain (jaise ki CORS, logging, etc.)
+
+// Key Vault integration
+builder.Services.AddHRKeyVault(builder.Configuration);
 
 // Add services to the container.
 builder.Services.AddControllers();
