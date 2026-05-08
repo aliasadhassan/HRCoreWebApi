@@ -5,7 +5,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
+          "Host": "localhost", // Port ki zaroorat nahi, Aspire handle karega
           "Port": 7085
         }
       ],

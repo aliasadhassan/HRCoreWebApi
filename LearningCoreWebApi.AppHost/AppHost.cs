@@ -20,7 +20,8 @@ var payroll = builder.AddProject<HR_Payroll_API>("hr-payroll")
 builder.AddProject<HR_Gateway>("hr-gateway")
        .WithReference(identity)
        .WithReference(employee)
-       .WithReference(payroll);
+       .WithReference(payroll)
+       .WithEnvironment("VaultUri", vaultUri); // YEH LINE ZAROORI HAI
 
 builder.Build().Run();
 

@@ -16,6 +16,20 @@ builder.AddServiceDefaults();
 // Key Vault integration
 builder.Services.AddHRKeyVault(builder.Configuration);
 
+// 1. Pehle KeyVaultHelper ka instance banayein (Ya DI se nikaalein)
+var vaultUri = builder.Configuration["VaultUri"];
+var kvHelper = new KeyVaultHelper(vaultUri!);
+
+// 2. Startup ke waqt hi Connection String fetch karein
+var connectionString = await kvHelper.GetSecretValueAsync("IdentityDbConn");
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(connectionString,
+    sqlServerOptionsAction: sqlOptions =>
+    {
+        sqlOptions.EnableRetryOnFailure();
+    }));
+
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddCors(options =>
@@ -61,16 +75,17 @@ builder.Host.UseSerilog((context, services, configuration) =>
 );
 #endregion
 
-#region JWT Authentication Configuration
+#region JWT Authentication Configuration (Powered by Azure Key Vault)
 
-var jwtKey = builder.Configuration["Jwt:Key"];
+// 1. Key Vault se JWT Secret fetch karein
+var jwtKeyFromVault = await kvHelper.GetSecretValueAsync("JwtKey");
 
-if (string.IsNullOrEmpty(jwtKey))
+if (string.IsNullOrEmpty(jwtKeyFromVault))
 {
-    throw new Exception("JWT Key is missing in appsettings.json");
+    throw new Exception("JWT Key 'JwtKey' not found in Azure Key Vault.");
 }
 
-// adding JWT Authentication
+// 2. JWT Authentication setup
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -81,11 +96,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
 
+            // Issuer aur Audience abhi bhi appsettings se aa sakte hain (kyunke ye sensitive nahi hain)
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
 
+            // Ab hum Key Vault wali key use kar rahe hain
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)
+                Encoding.UTF8.GetBytes(jwtKeyFromVault)
             ),
 
             ClockSkew = TimeSpan.Zero
@@ -93,16 +110,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddScoped<JwtTokenHelper>();
+
 #endregion
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")
-    ));
+
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails(); // Default error structure ke liye

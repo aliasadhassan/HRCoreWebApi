@@ -1,9 +1,14 @@
+using HR.Shared.Library.Helpers;
 using Microsoft.IdentityModel.Tokens; // Ye top par hona chahiye
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var vaultUri = builder.Configuration["VaultUri"];
+var kvHelper = new KeyVaultHelper(vaultUri!);
+var jwtKey = await kvHelper.GetSecretValueAsync("JwtKey");
 
 builder.AddServiceDefaults();
 
@@ -26,16 +31,17 @@ builder.Services.AddSwaggerGen();
 
 // 1. JWT Authentication Setup (Ocelot ko batana ke token kaise check karna hai)
 builder.Services.AddAuthentication()
-    .AddJwtBearer("ApiGatewayKey", options => {
+    .AddJwtBearer("ApiGatewayKey", options => // "ApiGatewayKey" ocelot.json se match karna chahiye
+    {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"], // File se uthayega
-            ValidAudience = builder.Configuration["Jwt:Audience"], // File se uthayega
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)) // File se uthayega
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ValidateIssuer = true,
+            ValidIssuer = "HR.Identity.API", // Wahi jo Identity API mein hai
+            ValidateAudience = true,
+            ValidAudience = "HR.Microservices",
+            ValidateLifetime = true
         };
     });
 
@@ -47,6 +53,7 @@ builder.Services.AddAuthorization(options => {
 
 builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
 builder.Services.AddOcelot(builder.Configuration);
+builder.Services.AddHttpClient("Ocelot").AddServiceDiscovery();
 
 var app = builder.Build();
 
