@@ -8,6 +8,8 @@ builder.AddServiceDefaults(); // isse hum apne microservice ke liye kuch default
 // Key Vault integration
 builder.Services.AddHRKeyVault(builder.Configuration);
 
+builder.AddRedisClient("redis");
+
 // Add services to the container.
 builder.Services.AddControllers();
 

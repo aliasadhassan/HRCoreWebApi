@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Key Vault integration
 builder.Services.AddHRKeyVault(builder.Configuration);
 
+builder.AddRedisClient("redis");
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
