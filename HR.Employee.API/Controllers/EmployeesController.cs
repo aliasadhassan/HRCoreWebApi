@@ -39,33 +39,63 @@ namespace HR.Employee.API.Controllers
             return Ok(new { Message = value.ToString() });
         }
 
-    [HttpGet("all-employees")]
-    public async Task<IActionResult> GetAllEmployees([FromServices] AppDbContext context)
-    {
-        var db = redis.GetDatabase();
-        string cacheKey = "employee_list";
-
-        // 1. Pehle Redis se data mangwayein
-        var cachedData = await db.StringGetAsync(cacheKey);
-
-        if (!cachedData.IsNullOrEmpty)
+        [HttpGet("all-employees")]
+        public async Task<IActionResult> GetAllEmployees([FromServices] AppDbContext context,[FromQuery] int pageNumber = 1,[FromQuery] int pageSize = 10)
         {
-            // Agar cache mein mil gaya toh SQL tak jane ki zaroorat hi nahi!
-            var employeesFromCache = JsonSerializer.Deserialize<List<Models.Employees>>(cachedData!);
-            return Ok(new { Source = "Redis Cache", Data = employeesFromCache });
+            var db = redis.GetDatabase();
+
+            // Cache Key mein page info shamil ki taake har page alag save ho
+            string cacheKey = $"employee_list_p{pageNumber}_s{pageSize}";
+
+            // CamelCase ke liye options
+            var jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                PropertyNameCaseInsensitive = true, // Yeh line Redis se wapis aate waqt mapping sahi rakhti hai
+                WriteIndented = true
+            };
+
+            try
+            {
+                // 1. Redis se data mangwayein
+                var cachedData = await db.StringGetAsync(cacheKey);
+
+                if (!cachedData.IsNull)
+                {
+                    var employeesFromCache = JsonSerializer.Deserialize<List<Models.Employees>>(cachedData!, jsonOptions);
+                    return Ok(new
+                    {
+                        Source = "Redis Cache",
+                        Page = pageNumber,
+                        Data = employeesFromCache
+                    });
+                }
+
+                // 2. SQL se Paged data lein
+                // Skip: Pichle pages ka data chhorne ke liye
+                // Take: Sirf utna data jitna manga gaya hai
+                var employeesFromDb = await context.Employees
+                    .OrderBy(e => e.Id) // Sorting zaroori hai pagination ke liye
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                // 3. Redis mein save karein
+                var serializedData = JsonSerializer.Serialize(employeesFromDb, jsonOptions);
+                await db.StringSetAsync(cacheKey, serializedData, TimeSpan.FromMinutes(10));
+
+                return Ok(new
+                {
+                    Source = "SQL Database",
+                    Page = pageNumber,
+                    PageSize = pageSize,
+                    Data = employeesFromDb
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
-
-        // 2. Agar Redis mein nahi hai (Cache Miss), toh SQL se lein
-        var employeesFromDb = await context.Employees.ToListAsync();
-
-        // 3. SQL se milne wala data Redis mein save karein (taake agli baar fast ho)
-        // Hum isay 5 minute ke liye cache kar rahe hain
-        var serializedData = JsonSerializer.Serialize(employeesFromDb);
-        await db.StringSetAsync(cacheKey, serializedData, TimeSpan.FromMinutes(5));
-
-        return Ok(new { Source = "SQL Database", Data = employeesFromDb });
     }
-
-}
-
 }
