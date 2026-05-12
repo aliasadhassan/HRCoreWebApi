@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using StackExchange.Redis;
 using System.Text.Json;
 
@@ -40,62 +41,77 @@ namespace HR.Employee.API.Controllers
         }
 
         [HttpGet("all-employees")]
-        public async Task<IActionResult> GetAllEmployees([FromServices] AppDbContext context,[FromQuery] int pageNumber = 1,[FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetAllEmployees(
+                                        [FromServices] AppDbContext context,
+                                        [FromServices] IMemoryCache memoryCache, // L1 Cache injection
+                                        [FromQuery] int pageNumber = 1,
+                                        [FromQuery] int pageSize = 10)
         {
             var db = redis.GetDatabase();
-
-            // Cache Key mein page info shamil ki taake har page alag save ho
             string cacheKey = $"employee_list_p{pageNumber}_s{pageSize}";
 
-            // CamelCase ke liye options
             var jsonOptions = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                PropertyNameCaseInsensitive = true, // Yeh line Redis se wapis aate waqt mapping sahi rakhti hai
-                WriteIndented = true
+                PropertyNameCaseInsensitive = true
             };
 
             try
             {
-                // 1. Redis se data mangwayein
+                // --- LEVEL 1: Check Local RAM (L1) ---
+                if (memoryCache.TryGetValue(cacheKey, out List<Models.Employees>? l1Data))
+                {
+                    return Ok(new { Source = "L1 Cache (RAM)", Page = pageNumber, Data = l1Data });
+                }
+
+                // --- LEVEL 2: Check Redis (L2) ---
                 var cachedData = await db.StringGetAsync(cacheKey);
 
                 if (!cachedData.IsNull)
                 {
-                    var employeesFromCache = JsonSerializer.Deserialize<List<Models.Employees>>(cachedData!, jsonOptions);
-                    return Ok(new
-                    {
-                        Source = "Redis Cache",
-                        Page = pageNumber,
-                        Data = employeesFromCache
-                    });
+                    var l2Data = JsonSerializer.Deserialize<List<Models.Employees>>(cachedData!, jsonOptions);
+
+                    // L2 se mila, toh isay L1 (RAM) mein bhi save kar dein 1 min ke liye
+                    memoryCache.Set(cacheKey, l2Data, TimeSpan.FromMinutes(1));
+
+                    return Ok(new { Source = "L2 Cache (Redis)", Page = pageNumber, Data = l2Data });
                 }
 
-                // 2. SQL se Paged data lein
-                // Skip: Pichle pages ka data chhorne ke liye
-                // Take: Sirf utna data jitna manga gaya hai
+                // --- LEVEL 3: Check SQL Database ---
                 var employeesFromDb = await context.Employees
-                    .OrderBy(e => e.Id) // Sorting zaroori hai pagination ke liye
+                    .OrderBy(e => e.Id)
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync();
 
-                // 3. Redis mein save karein
+                // Save in L2 (Redis) - 10 mins
                 var serializedData = JsonSerializer.Serialize(employeesFromDb, jsonOptions);
                 await db.StringSetAsync(cacheKey, serializedData, TimeSpan.FromMinutes(10));
 
-                return Ok(new
-                {
-                    Source = "SQL Database",
-                    Page = pageNumber,
-                    PageSize = pageSize,
-                    Data = employeesFromDb
-                });
+                // Save in L1 (RAM) - 1 min (Short TTL for safety)
+                memoryCache.Set(cacheKey, employeesFromDb, TimeSpan.FromMinutes(1));
+
+                return Ok(new { Source = "SQL Database", Page = pageNumber, Data = employeesFromDb });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, $"Error: {ex.Message}");
             }
         }
+        private async Task ClearEmployeeCache(IMemoryCache memoryCache, int pageNumber, int pageSize)
+        {
+            string cacheKey = $"employee_list_p{pageNumber}_s{pageSize}";
+
+            // 1. L1 (RAM) se delete karein
+            memoryCache.Remove(cacheKey);
+
+            // 2. L2 (Redis) se delete karein (Pattern wala logic jo pehle likha tha)
+            var endpoints = redis.GetEndPoints();
+            var server = redis.GetServer(endpoints[0]);
+            var db = redis.GetDatabase();
+            var keys = server.Keys(pattern: "employee_list_*").ToArray();
+            if (keys.Length > 0) await db.KeyDeleteAsync(keys);
+        }
+
     }
 }

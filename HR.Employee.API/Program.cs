@@ -6,6 +6,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
+builder.Services.AddMemoryCache(); // add memory cache redis k liye isko use krna xruri ha i.e. L1 cache
+
 // Key Vault integration
 builder.Services.AddHRKeyVault(builder.Configuration);
 
