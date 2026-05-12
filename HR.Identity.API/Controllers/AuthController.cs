@@ -1,9 +1,11 @@
 ﻿using Azure.Core;
 using HR.Identity.API.Configuration;
 using HR.Identity.API.Data;
-using HR.Shared.Library.Helpers;
 using HR.Identity.API.Models;
 using HR.Identity.API.Services;
+using HR.Shared.Library.Events;
+using HR.Shared.Library.Helpers;
+using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
@@ -28,6 +30,7 @@ namespace HR.Identity.API.Controllers
         IEmailService emailService,
         EmailTemplatesHelper emailTemplatesHelper,
         IOptions<AuthSettings> authSettingsConfig,
+        IPublishEndpoint publishEndpoint,
         ILogger<AuthController> logger) : ControllerBase
     {
 
@@ -40,18 +43,18 @@ namespace HR.Identity.API.Controllers
 
         [AllowAnonymous]
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] Models.RegisterRequest request)
+        public async Task<IActionResult> Register([FromBody] Models.RegisterRequest model)
         {
-            if (request == null || string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
+            if (model == null || string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.Password))
             {
                 return BadRequest(new { message = "Email and Password are required." });
             }
 
-            logger.LogInformation("Registration attempt for email: {Email}", request.Email);
+            logger.LogInformation("Registration attempt for email: {Email}", model.Email);
 
             try
             {
-                var normalizedEmail = request.Email.Trim().ToLower();
+                var normalizedEmail = model.Email.Trim().ToLower();
 
                 var exists = await context.Users.AnyAsync(x => x.Email == normalizedEmail);
                 if (exists)
@@ -62,14 +65,17 @@ namespace HR.Identity.API.Controllers
 
                 var user = new User
                 {
-                    Username = request.Username,
+                    Username = model.Username,
                     Email = normalizedEmail,
-                    PasswordHash = PasswordHelper.Hash(request.Password),
+                    PasswordHash = PasswordHelper.Hash(model.Password),
                     CreatedDate = DateTime.UtcNow
                 };
 
                 context.Users.Add(user);
                 await context.SaveChangesAsync();
+
+                // RabbitMQ ko message phenkein
+                await publishEndpoint.Publish(new UserCreatedEvent(user.Id, user.Username, user.Email));
 
                 logger.LogInformation("User {Email} registered successfully with ID: {UserId}", user.Email, user.Id);
 
@@ -77,20 +83,20 @@ namespace HR.Identity.API.Controllers
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "An error occurred while registering user: {Email}", request.Email);
+                logger.LogError(ex, "An error occurred while registering user: {Email}", model.Email);
                 return StatusCode(500, new { message = "Internal server error" });
             }
         }
 
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        public async Task<IActionResult> Login([FromBody] LoginRequest model)
         {
             try
             {
-                var user = await context.Users.FirstOrDefaultAsync(x => x.Email == request.Email);
+                var user = await context.Users.FirstOrDefaultAsync(x => x.Email == model.Email);
 
-                if (user == null || !PasswordHelper.Verify(request.Password, user.PasswordHash))
+                if (user == null || !PasswordHelper.Verify(model.Password, user.PasswordHash))
                 {
                     return Unauthorized(new { message = "Invalid Email or Password" });
                 }

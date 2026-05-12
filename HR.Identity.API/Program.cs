@@ -9,9 +9,34 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text;
+using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
+
+builder.Services.AddMassTransit(x =>
+{
+    // Program.cs mein MassTransit configuration update karen
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        // Aspire se connection string uthane ke liye ye best tareeqa hai
+        var configuration = context.GetRequiredService<IConfiguration>();
+        var connectionString = configuration.GetConnectionString("messaging");
+
+        if (!string.IsNullOrEmpty(connectionString))
+        {
+            cfg.Host(connectionString);
+        }
+        else
+        {
+            // Fallback agar Aspire ke bahar chala rahe hon
+            cfg.Host("localhost", "/");
+        }
+
+        cfg.ConfigureEndpoints(context);
+    });
+});
+
 
 // Key Vault integration
 builder.Services.AddHRKeyVault(builder.Configuration);
