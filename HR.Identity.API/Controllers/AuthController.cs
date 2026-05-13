@@ -40,6 +40,19 @@ namespace HR.Identity.API.Controllers
             var userName = User.Identity?.Name;
             return Ok($"JWT working for {userName}");
         }
+        // 🛠️ Helper Method: HttpOnly Cookie set karne ke liye
+        private void SetRefreshTokenCookie(string refreshToken, DateTime expires)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,                          // Hacker ka JavaScript isko read nahi kar sakega
+                Secure = true,                            // Sirf HTTPS par chalega
+                SameSite = SameSiteMode.Strict,           // CSRF attack se bachayega
+                Expires = expires,                        // Cookie ki expiry date (7 days)
+                IsEssential = true
+            };
+            Response.Cookies.Append("X-Refresh-Token", refreshToken, cookieOptions);
+        }
 
         [AllowAnonymous]
         [HttpPost("register")]
@@ -121,8 +134,11 @@ namespace HR.Identity.API.Controllers
 
                 await context.SaveChangesAsync();
 
-                // *** CHANGE 1: Return Refresh Token in the response body (not cookie) ***
-                return Ok(new { accessToken, refreshToken = refreshTokenObj.RefreshToken });
+                // ✅ FIX 1: Refresh Token ko secure HttpOnly Cookie me daal diya
+                SetRefreshTokenCookie(refreshTokenObj.RefreshToken, refreshTokenObj.RefreshTokenExpiryDate);
+
+                // ✅ FIX 2: Response body se refresh token permanent hata diya, ab sirf access token jayega
+                return Ok(new { accessToken });
             }
             catch (Exception ex)
             {
@@ -137,14 +153,13 @@ namespace HR.Identity.API.Controllers
         {
             try
             {
-                // *** CHANGE 2: Read Refresh Token from Header, not Cookie ***
-                if (!Request.Headers.TryGetValue("X-Refresh-Token", out var refreshTokenHeaderValue))
+                // 1. Refresh Token Headers ki bajaye Cookie se read hoga
+                if (!Request.Cookies.TryGetValue("X-Refresh-Token", out var refreshToken))
                 {
-                    return StatusCode(403, new { message = "Refresh token header missing." });
+                    return StatusCode(400, new { message = "Refresh token cookie missing." });
                 }
-                var refreshToken = refreshTokenHeaderValue.FirstOrDefault();
 
-                // 2. DB mein us token ko dhoondein aur revoke/delete karein
+                // 2. DB mein us token ko dhoondein aur remove karein
                 var storedToken = await context.RefreshTokenConfiguration
                     .FirstOrDefaultAsync(x => x.RefreshToken == refreshToken);
 
@@ -154,14 +169,24 @@ namespace HR.Identity.API.Controllers
                     await context.SaveChangesAsync();
                 }
 
-                logger.LogInformation("User logged out and refresh token revoked.");
+                // 3. Strict Cookie Options ke sath browser se cookie delete karein (Safari/Chrome fully compatible)
+                var cookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    IsEssential = true
+                };
+                Response.Cookies.Delete("X-Refresh-Token", cookieOptions);
+
+                logger.LogInformation("User logged out and refresh token cookie cleared safely.");
 
                 return Ok(new { message = "Logged out successfully" });
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error during logout");
-                return StatusCode(500, "Internal server error");
+                logger.LogError(ex, "Error during logout execution");
+                return StatusCode(500, new { message = "Internal server error during logout" });
             }
         }
 
@@ -169,57 +194,60 @@ namespace HR.Identity.API.Controllers
         [HttpPost("refreshToken")]
         public async Task<IActionResult> RefreshToken()
         {
-            // 1. Headers se tokens nikalna
             if (!Request.Headers.TryGetValue("Authorization", out var authHeader))
                 return StatusCode(403, new { message = "Authorization header missing." });
 
-            // *** CHANGE 3: Read Refresh Token from Header, not Cookie/mixed logic ***
-            if (!Request.Headers.TryGetValue("X-Refresh-Token", out var existingRefreshTokenHeaderValue))
-                return StatusCode(403, new { message = "Refresh token header missing." });
+            if (!Request.Cookies.TryGetValue("X-Refresh-Token", out var existingRefreshToken))
+                return StatusCode(403, new { message = "Refresh token cookie missing." });
 
             string accessToken = authHeader.ToString().Replace("Bearer", "", StringComparison.OrdinalIgnoreCase).Trim();
 
             try
             {
-                // 2. Expired Access Token se User ki details nikalna
                 var principal = jwt.GetPrincipalFromExpiredToken(accessToken);
                 var email = principal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
 
                 if (string.IsNullOrEmpty(email))
                     return Unauthorized("Invalid Token Claims");
 
-                // 3. DB se Refresh Token verify karna
                 var storedToken = await context.RefreshTokenConfiguration
                     .Include(u => u.User)
-                    .FirstOrDefaultAsync(x => x.RefreshToken == existingRefreshTokenHeaderValue.ToString()
-                                         && x.User.Email == email);
+                    .FirstOrDefaultAsync(x => x.RefreshToken == existingRefreshToken && x.User.Email == email);
 
                 if (storedToken == null || storedToken.IsRevoked || storedToken.RefreshTokenExpiryDate < DateTime.UtcNow)
                     return StatusCode(403, new { message = "Invalid or expired refresh token." });
 
-                // 4. Purane tokens ko revoke ya delete karein (Multiple devices ke liye sirf isko revoke karein)
                 storedToken.IsRevoked = true;
                 context.Update(storedToken);
 
-                // 5. Token Rotation (Generate new access and refresh tokens)
                 var newAccessToken = jwt.GenerateToken(email);
                 var newRefreshTokenObj = jwt.GenerateRefreshToken();
 
-                // 6. Database mein Naya Token Record Add Karein
                 context.RefreshTokenConfiguration.Add(new RefreshTokenConfiguration
                 {
-                    UserId = storedToken.UserId, // Purane user ki ID use karein
+                    UserId = storedToken.UserId,
                     AccessToken = newAccessToken,
                     RefreshToken = newRefreshTokenObj.RefreshToken,
                     RefreshTokenExpiryDate = newRefreshTokenObj.RefreshTokenExpiryDate,
                     RefreshTokenCreatedDate = DateTime.UtcNow,
-                    IsRevoked = false // Naya token revoke nahi hai
+                    IsRevoked = false
                 });
 
                 await context.SaveChangesAsync();
 
-                // *** CHANGE 4: Return new Access and Refresh tokens in the body ***
-                return Ok(new { accessToken = newAccessToken, refreshToken = newRefreshTokenObj.RefreshToken });
+                // 🟢 FIX HERE: Naya rotated token browser ki cookie me overwrite karein
+                var cookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = newRefreshTokenObj.RefreshTokenExpiryDate,
+                    IsEssential = true
+                };
+                Response.Cookies.Append("X-Refresh-Token", newRefreshTokenObj.RefreshToken, cookieOptions);
+
+                // 🟢 FIX HERE: Body me ab refresh token bilkul nahi bhejna, sirf access token jayega
+                return Ok(new { accessToken = newAccessToken });
             }
             catch (Exception ex)
             {
