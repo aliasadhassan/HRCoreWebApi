@@ -12,22 +12,27 @@ var builder = WebApplication.CreateBuilder(args);
 // Employee API Program.cs
 builder.Services.AddMassTransit(x =>
 {
-    x.AddConsumer<UserCreatedConsumer>(); // Consumer ko register rakhen
+    // Consumer ko register karein
+    x.AddConsumer<UserCreatedConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {
         var configuration = context.GetRequiredService<IConfiguration>();
         var connectionString = configuration.GetConnectionString("messaging");
 
-        cfg.Host(connectionString); // Aspire ki port yahan use hogi
-
-        // Queue configuration
-        cfg.ReceiveEndpoint("user-created-queue", e =>
+        if (!string.IsNullOrWhiteSpace(connectionString))
         {
-            e.ConfigureConsumer<UserCreatedConsumer>(context);
-        });
+            cfg.Host(new Uri(connectionString));
+        }
+        else
+        {
+            cfg.Host("localhost", "/");
+        }
+
+        cfg.ConfigureEndpoints(context);
     });
 });
+
 
 #endregion
 

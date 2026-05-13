@@ -1,4 +1,5 @@
-﻿using HR.Shared.Library.Events;
+﻿using HR.Employee.API.Models;
+using HR.Shared.Library.Events;
 using MassTransit;
 
 namespace HR.Employee.API.Consumers
@@ -16,12 +17,11 @@ namespace HR.Employee.API.Consumers
         {
             var data = context.Message;
 
-            // Yahan hum Employee DB mein naya record dal rahe hain
-            var newEmployee = new Models.Employees
+            // Sahi class name instantiation
+            var newEmployee = new Employees
             {
                 Username = data.Username,
                 Email = data.Email,
-                // Baqi fields default ya empty rakh saktay hain filhal
                 Cnic = "PENDING",
                 Country = "Pakistan",
                 City = "TBD",
@@ -33,7 +33,6 @@ namespace HR.Employee.API.Consumers
             _context.Employees.Add(newEmployee);
             await _context.SaveChangesAsync();
 
-            // Console par print karein taake confirm ho jaye
             Console.WriteLine($"[RabbitMQ] User Created Event Received: {data.Username}");
         }
     }

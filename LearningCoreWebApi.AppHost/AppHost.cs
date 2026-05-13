@@ -1,3 +1,4 @@
+using Aspire.Hosting;
 using Projects;
 
 var builder = DistributedApplication.CreateBuilder(args);
@@ -6,11 +7,13 @@ var builder = DistributedApplication.CreateBuilder(args);
 // RabbitMQ ka "3" version download karo.Management Plugin: Wo wala version lao jisme "management" ka lafz ho.
 // Is version mein RabbitMQ ka dashboard (UI) pehle se enable hota hai.
 
-var messaging = builder.AddRabbitMQ("messaging")
+// 1. Pehle string password ko aik Aspire Parameter banayein
+var rabbitPassword = builder.AddParameter("rabbitmq-password", "guest");
+
+// 2. Phir us parameter ko 'password:' argument me pass karein
+var messaging = builder.AddRabbitMQ("messaging", password: rabbitPassword)
                        .WithImageTag("3-management")
-                       .WithEndpoint(targetPort: 15672, scheme: "http", name: "management")
-                       .WithEnvironment("RABBITMQ_DEFAULT_USER", "guest")
-                       .WithEnvironment("RABBITMQ_DEFAULT_PASS", "guest");
+                       .WithEndpoint(targetPort: 15672, scheme: "http", name: "management");
 
 // kv-hr-project-ali-hassan is the name of the Key Vault that I have created in Azure for this project.
 // You should create your own Key Vault in Azure and use its name here.
