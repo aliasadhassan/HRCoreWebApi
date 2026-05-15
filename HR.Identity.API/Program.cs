@@ -60,8 +60,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins("http://localhost:4200") // Yahan apna Angular project ka URL likhein
               .AllowAnyHeader()
-              .AllowAnyMethod();
-        //.AllowCredentials(); // Yeh sab se zaroori hai cookies (credentials) ke liye
+              .AllowAnyMethod()
+              .AllowCredentials(); // ye cookies k liye xruri ha cross domain travel k liye
     });
 });
 
@@ -159,12 +159,28 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
-app.UseRouting();                   // 1. Routing sab se pehle
-app.UseCors("AllowSpecificOrigin"); // 2. CORS Routing ke baad
-app.UseAuthentication();            // 3. Pehle Authentication (Identity check karna)
-app.UseAuthorization();             // 4. Phir Authorization (Policies/Roles check karna, [AllowAnonymous] ko handle karta hai)
-app.UseJwtHeaderMiddleware();       // 5. Custom Middleware ko Authorization ke BAAD rakhein,Taa ke woh standard auth checks ke baad chale aur [AllowAnonymous] routes ko disturb na kare.
-app.UseSerilogRequestLogging();     // 6. Logging middleware (position theek hai)
-app.MapControllers();               // 7. Endpoints map karna
-app.MapDefaultEndpoints();          // 8. Default endpoints map karna (Health checks wagaira ke liye)
+
+// 1. CORS ko sab se upar rakhein taake Preflight OPTIONS requests foran handle hon aur cookies bypass na hon
+app.UseCors("AllowSpecificOrigin");
+
+// 2. Logging ko yahan rakhein taake CORS ke baad baqi saari requests record hon
+app.UseSerilogRequestLogging();
+
+// 3. Routing ko Controller mapping se pehle chalna hota hai
+app.UseRouting();
+
+// 4. Pehle Identity check karein ke Token valid hai ya nahi
+app.UseAuthentication();
+
+// 5. Phir check karein ke user ko is route ki ijazat (Authorization) hai ya nahi
+app.UseAuthorization();
+
+// 6. Custom Middleware ko hamesha Authorization ke BAAD rakhein taake [AllowAnonymous] routes disturb na hon
+app.UseJwtHeaderMiddleware();
+
+// 7. Endpoints map karein
+app.MapControllers();
+app.MapDefaultEndpoints();
+
 app.Run();
+
