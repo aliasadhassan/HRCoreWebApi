@@ -160,22 +160,22 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-// 1. CORS ko sab se upar rakhein taake Preflight OPTIONS requests foran handle hon aur cookies bypass na hon
-app.UseCors("AllowSpecificOrigin");
-
-// 2. Logging ko yahan rakhein taake CORS ke baad baqi saari requests record hon
+// 1. Logging ko upar rakh sakte hain taake saari requests track hon
 app.UseSerilogRequestLogging();
 
-// 3. Routing ko Controller mapping se pehle chalna hota hai
+// 2. Routing hamesha CORS se PEHLE aani chahiye
 app.UseRouting();
 
-// 4. Pehle Identity check karein ke Token valid hai ya nahi
+// 3. CORS ko Routing ke BAAD aur Authentication se PEHLE lagayein
+app.UseCors("AllowSpecificOrigin");
+
+// 4. Pehle Identity check karein ke Token ya Cookie valid hai ya nahi
 app.UseAuthentication();
 
-// 5. Phir check karein ke user ko is route ki ijazat (Authorization) hai ya nahi
+// 5. Phir check karein ke user ko permission hai ya nahi
 app.UseAuthorization();
 
-// 6. Custom Middleware ko hamesha Authorization ke BAAD rakhein taake [AllowAnonymous] routes disturb na hon
+// 6. Custom Middleware authorization ke baad
 app.UseJwtHeaderMiddleware();
 
 // 7. Endpoints map karein
@@ -183,4 +183,5 @@ app.MapControllers();
 app.MapDefaultEndpoints();
 
 app.Run();
+
 
