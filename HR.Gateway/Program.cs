@@ -2,6 +2,8 @@ using HR.Shared.Library.Helpers;
 using Microsoft.IdentityModel.Tokens; // Ye top par hona chahiye
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
+using Ocelot.Provider.Polly;
+using Ocelot.QualityOfService;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -51,15 +53,22 @@ builder.Services.AddAuthorization(options => {
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
 });
 
-builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
-builder.Services.AddOcelot(builder.Configuration);
-builder.Services.AddHttpClient("Ocelot").AddServiceDiscovery();
+// 1. Ocelot Configuration standard tarike se load karein
+// Environment ke mutabiq ocelot file load karein
+builder.Configuration
+       .AddJsonFile("ocelot.json", optional: false, reloadOnChange: true)
+       .AddJsonFile($"ocelot.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
+
+
+// 2. Ocelot ko Polly aur dynamic service discovery features ke sath register karein
+builder.Services.AddOcelot(builder.Configuration)
+                .AddPolly(); // Yeh provider integration dependencies register karega or internal handler ports ko runtime par khud manage karega
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
-{v
+{
     app.UseSwagger();
     app.UseSwaggerUI();
 }

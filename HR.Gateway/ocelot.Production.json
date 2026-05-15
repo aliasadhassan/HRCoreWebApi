@@ -2,11 +2,11 @@
   "Routes": [
     {
       "DownstreamPathTemplate": "/api/auth/{everything}",
-      "DownstreamScheme": "https",
+      "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 7085
+          "Host": "hr-identity",
+          "Port": 80
         }
       ],
       "UpstreamPathTemplate": "/identity/{everything}",
@@ -14,11 +14,11 @@
     },
     {
       "DownstreamPathTemplate": "/api/employees/{everything}",
-      "DownstreamScheme": "https",
+      "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 7259
+          "Host": "hr-employee",
+          "Port": 80
         }
       ],
       "UpstreamPathTemplate": "/employees/{everything}",
@@ -30,11 +30,11 @@
     },
     {
       "DownstreamPathTemplate": "/api/payroll/{everything}",
-      "DownstreamScheme": "https",
+      "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 7251
+          "Host": "hr-payroll",
+          "Port": 80
         }
       ],
       "UpstreamPathTemplate": "/payroll/{everything}",
@@ -46,6 +46,7 @@
     }
   ],
   "GlobalConfiguration": {
-    "BaseUrl": "https://localhost:7164"
+    "BaseUrl": "https://localhost:7164",
+    "_Note": "Production environment configuration. Hosts are set to service container names and ports are set to internal HTTP standard port 80."
   }
 }
