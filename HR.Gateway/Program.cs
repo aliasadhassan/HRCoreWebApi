@@ -21,8 +21,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins("http://localhost:4200") // Yahan apna Angular project ka URL likhein
               .AllowAnyHeader()
-              .AllowAnyMethod();
-        //.AllowCredentials(); // Yeh sab se zaroori hai cookies (credentials) ke liye
+              .AllowAnyMethod()
+              .AllowCredentials(); // Yeh sab se zaroori hai cookies (credentials) ke liye
     });
 });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -59,7 +59,7 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
-{
+{v
     app.UseSwagger();
     app.UseSwaggerUI();
 }

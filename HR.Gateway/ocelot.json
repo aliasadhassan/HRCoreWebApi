@@ -10,7 +10,7 @@
         }
       ],
       "UpstreamPathTemplate": "/identity/{everything}",
-      "UpstreamHttpMethod": [ "Post", "Get" ]
+      "UpstreamHttpMethod": [ "Post", "Get", "Options" ]
     },
     {
       "DownstreamPathTemplate": "/api/employees/{everything}",
@@ -22,7 +22,7 @@
         }
       ],
       "UpstreamPathTemplate": "/employees/{everything}",
-      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete" ],
+      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete", "Options" ],
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "ApiGatewayKey",
         "AllowedScopes": []
@@ -38,7 +38,7 @@
         }
       ],
       "UpstreamPathTemplate": "/payroll/{everything}",
-      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete" ],
+      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete", "Options" ],
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "ApiGatewayKey",
         "AllowedScopes": []
