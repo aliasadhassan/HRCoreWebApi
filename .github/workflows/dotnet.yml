@@ -53,13 +53,18 @@ jobs:
 
     - name: Build & Push Employee API Image
       run: |
-        docker build -t ghcr.io/${{ github.repository_owner }}/hr-employee-api:latest -f HR.Employee_API/Dockerfile .
+        docker build -t ghcr.io/${{ github.repository_owner }}/hr-employee-api:latest -f HR.Employee.API/Dockerfile .
         docker push ghcr.io/${{ github.repository_owner }}/hr-employee-api:latest
 
     - name: Build & Push Identity API Image
       run: |
         docker build -t ghcr.io/${{ github.repository_owner }}/hr-identity-api:latest -f HR.Identity.API/Dockerfile .
         docker push ghcr.io/${{ github.repository_owner }}/hr-identity-api:latest
+
+    - name: Build & Push Payroll API Image
+      run: |
+        docker build -t ghcr.io/${{ github.repository_owner }}/hr-payroll-api:latest -f HR.Payroll.API/Dockerfile .
+        docker push ghcr.io/${{ github.repository_owner }}/hr-payroll-api:latest
 
     - name: Build & Push Gateway Image
       run: |
