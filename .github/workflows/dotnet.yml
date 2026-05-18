@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ "master" ]
 
+# YEH VAALEE LINES ADD KAREIN
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   # STEP 1: Continuous Integration (CI) - Code checking, building and testing
   ci-build:
