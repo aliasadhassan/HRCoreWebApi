@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  # 1. SQL Server - Database (Required for all APIs)
+  sql-server:
+    image: ://microsoft.com
+    container_name: sql-server
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Dev@12345!"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433" # Standard internal container port mapped to server
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - hr-network       
+      
+  # 2. Frontend (Angular) - Pre-built image from Registry
+  hr-frontend:
+    image: ghcr.io/aliasadhassan/hr-frontend:latest
+    container_name: hr-frontend
+    ports:
+      - "80:80" # Standard HTTP Web Port for users
+    networks:
+      - hr-network 
+
+  # 3. .NET Aspire / Ocelot Gateway
+  hr-gateway:
+    image: ghcr.io/aliasadhassan/hr-gateway:latest
+    container_name: hr-gateway
+    ports:
+      - "7164:8080" # Gateway port that Angular UI calls
+    networks:
+      - hr-network
+
+  # 4. Employee Microservice
+  hr-employee-api:
+    image: ghcr.io/aliasadhassan/hr-employee-api:latest
+    container_name: hr-employee-api
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sql-server;Database=HREmployeeDB;User Id=sa;Password=Dev@12345!;TrustServerCertificate=True;
+    networks:
+      - hr-network
+
+  # 5. Identity Microservice (ADDED)
+  hr-identity-api:
+    image: ghcr.io/aliasadhassan/hr-identity-api:latest
+    container_name: hr-identity-api
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sql-server;Database=HRIdentityDB;User Id=sa;Password=Dev@12345!;TrustServerCertificate=True;
+    networks:
+      - hr-network
+
+  # 6. Payroll Microservice (ADDED)
+  hr-payroll-api:
+    image: ghcr.io/aliasadhassan/hr-payroll-api:latest
+    container_name: hr-payroll-api
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sql-server;Database=HRPayrollDB;User Id=sa;Password=Dev@12345!;TrustServerCertificate=True;
+    networks:
+      - hr-network
+
+networks:
+  hr-network:
+    driver: bridge
+
+volumes:
+  sqlserver_data:
