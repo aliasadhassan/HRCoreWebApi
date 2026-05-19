@@ -1,0 +1,77 @@
+name: .NET Microservices CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+# YEH VAALEE LINES ADD KAREIN
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  # STEP 1: Continuous Integration (CI) - Code checking, building and testing
+  ci-build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore LearningCoreWebApi.sln
+
+    - name: Build Solution
+      run: dotnet build LearningCoreWebApi.sln --no-restore --configuration Release
+
+  # STEP 2: Continuous Deployment (CD) - Creating and Pushing Docker Images
+  cd-docker:
+    needs: ci-build # Yeh job tabhi chalegi jab upar wali build pass hogi
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    # --- CHOOSE ONE LOGIN METHOD BELOW ---
+
+    # METHOD 1: Login to Docker Hub (If using Docker Hub)
+    # - name: Login to Docker Hub
+    #   uses: docker/login-action@v3
+    #   with:
+    #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+    #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    # METHOD 2: Login to GitHub Container Registry (If using GHCR - Highly Recommended)
+    - name: Login to GitHub Container Registry (GHCR)
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    # --- BUILD AND PUSH MICROSERVICES ---
+    # Note: Har microservice ke folder mein ek "Dockerfile" ka hona lazmi hai.
+
+    - name: Build & Push Employee API Image
+      run: |
+        docker build -t ghcr.io/${{ github.repository_owner }}/hr-employee-api:latest -f HR.Employee.API/Dockerfile .
+        docker push ghcr.io/${{ github.repository_owner }}/hr-employee-api:latest
+
+    - name: Build & Push Identity API Image
+      run: |
+        docker build -t ghcr.io/${{ github.repository_owner }}/hr-identity-api:latest -f HR.Identity.API/Dockerfile .
+        docker push ghcr.io/${{ github.repository_owner }}/hr-identity-api:latest
+
+    - name: Build & Push Payroll API Image
+      run: |
+        docker build -t ghcr.io/${{ github.repository_owner }}/hr-payroll-api:latest -f HR.Payroll.API/Dockerfile .
+        docker push ghcr.io/${{ github.repository_owner }}/hr-payroll-api:latest
+
+    - name: Build & Push Gateway Image
+      run: |
+        docker build -t ghcr.io/${{ github.repository_owner }}/hr-gateway:latest -f HR.Gateway/Dockerfile .
+        docker push ghcr.io/${{ github.repository_owner }}/hr-gateway:latest
