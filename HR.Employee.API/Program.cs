@@ -4,7 +4,17 @@ using Microsoft.EntityFrameworkCore;
 using MassTransit;
 using HR.Employee.API.Consumers;
 
+using HR.Employee.API.Domain.Interfaces;
+using HR.Employee.API.Infrastructure.Persistence;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// 1. Domain Interfaces aur Infrastructure Persistence ki registration
+builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// 2. MediatR Registration (.NET 8 standard approach)
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
 // Add services to the container.
 
