@@ -1,7 +1,8 @@
 ﻿using EmployeeEntity = HR.Employee.API.Domain.Entities.Employee;
 using HR.Employee.API.Domain.Interfaces;
 using MediatR;
-using MassTransit; // RabbitMQ publish karne ke liye
+using MassTransit;
+using HR.Employee.API.Domain.Common;
 
 namespace HR.Employee.API.Infrastructure.Persistence;
 
@@ -19,40 +20,34 @@ public sealed class UnitOfWork : IUnitOfWork
     }
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        // 1. Database mein real data save karna
+        // 1. Un sab Entities ko dhoondna jin mein Domain Events majood hain
+        var domainEntities = _context.ChangeTracker
+            .Entries<IHasDomainEvents>()
+            .Where(x => x.Entity.DomainEvents.Any())
+            .ToList();
+
+        // 2. Extract all accumulated events into a flat list
+        var domainEvents = domainEntities
+            .SelectMany(x => x.Entity.DomainEvents)
+            .ToList();
+
+        // 3. Clear events immediately to guarantee idempotency and prevent infinite loops
+        foreach (var entry in domainEntities)
+        {
+            entry.Entity.ClearDomainEvents();
+        }
+
+        // 4. Pehle Data DB mein commit karein
         var result = await _context.SaveChangesAsync(cancellationToken);
 
-        // 2. Un sab Entities ko dhoondna jin mein Domain Events majood hain
-        var domainEntities = _context.ChangeTracker
-            .Entries()
-            .Where(x => x.Entity.GetType() == typeof(EmployeeEntity))
-            .ToList();
-
-        var domainEvents = domainEntities
-            .Select(x => (EmployeeEntity)x.Entity)
-            .Where(e => e.DomainEvents != null && e.DomainEvents.Any())
-            .SelectMany(e => e.DomainEvents)
-            .ToList();
-
-        // 3. Events ko iterate kar ke internal aur external broadcast karna
+        // 5. Database save success hone ke BAAD events publish karein
         foreach (var domainEvent in domainEvents)
         {
-            // Internal application handlers ko notify karna
             await _publisher.Publish(domainEvent, cancellationToken);
-
-            // External Microservices (RabbitMQ) par push karna taake Payroll microservice ko mil sakay
             await _publishEndpoint.Publish(domainEvent, cancellationToken);
         }
 
-        // 4. Events ko clear karna taake dubara duplicate trigger na hon
-        foreach (var entry in domainEntities)
-        {
-            if (entry.Entity is EmployeeEntity employee)
-            {
-                employee.ClearDomainEvents();
-            }
-        }
-
+        // 6. Total affected rows return karein
         return result;
     }
 }

@@ -1,20 +1,49 @@
 using HR.Employee.API;
-using HR.Shared.Library.Helpers;
-using Microsoft.EntityFrameworkCore;
-using MassTransit;
+using FluentValidation;
+using HR.Employee.API.Application.Common.Behaviors;
 using HR.Employee.API.Consumers;
-
 using HR.Employee.API.Domain.Interfaces;
+using HR.Employee.API.Infrastructure.Logging;
 using HR.Employee.API.Infrastructure.Persistence;
+using HR.Employee.API.Presentation.Filters;
+using HR.Shared.Library.Helpers;
+using MassTransit;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Domain Interfaces aur Infrastructure Persistence ki registration
+// 1. Register Global Exception Filter inside MVC Controllers routing pipeline
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<GlobalExceptionFilter>();
+});
+
+// 2. Register the modern Core .NET 8 Exception Handler
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails(); // Generates metadata templates automatically
+
+// 3. Domain Interfaces aur Infrastructure Persistence ki registration
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-// 2. MediatR Registration (.NET 8 standard approach)
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+// Define reference assembly where your Handlers, Behaviors, and Validators live.
+// If they are in the same project as Program, keep 'typeof(Program).Assembly'.
+// If they are in an 'Application' class library, use 'typeof(CreateEmployeeCommand).Assembly'.
+var applicationAssembly = typeof(Program).Assembly;
+
+// 4. MediatR Registration with Automated Open Behavior Pipeline
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(applicationAssembly);
+
+    // This hooks up your automated validation interceptor to the pipeline globally!
+    cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+});
+
+// 5. Automated FluentValidation Assembly Scanning
+// This automatically finds all classes inheriting from AbstractValidator<T>
+builder.Services.AddValidatorsFromAssembly(applicationAssembly);
+
 
 // Add services to the container.
 
@@ -67,7 +96,7 @@ var kvHelper = new KeyVaultHelper(vaultUri!);
 // 2. Startup ke waqt hi Connection String fetch karein
 var connectionString = await kvHelper.GetSecretValueAsync("EmployeeDbConn");
 
-builder.Services.AddDbContext<AppDbContext>(options =>
+builder.Services.AddDbContext<HR.Employee.API.Infrastructure.Persistence.AppDbContext>(options =>
     options.UseSqlServer(connectionString,
     sqlServerOptionsAction: sqlOptions =>
     {
@@ -90,7 +119,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
-
+app.UseExceptionHandler();
 app.MapControllers();
 
 // 2. Phir ye (app ke sath)

@@ -1,9 +1,10 @@
-﻿using HR.Employee.API.Domain.Events;
+﻿using HR.Employee.API.Domain.Common;
+using HR.Employee.API.Domain.Events;
 using MediatR;
 
 namespace HR.Employee.API.Domain.Entities
 {
-    public sealed class Employee
+    public sealed class Employee : IHasDomainEvents
     {
         // Properties ke setters 'private' ya 'init' honge taake bahar se koi direct change na kar sake
         public Guid Id { get; private set; }
