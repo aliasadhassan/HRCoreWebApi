@@ -9,6 +9,7 @@ using HR.Employee.API.Presentation.Filters;
 using HR.Shared.Library.Helpers;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +55,12 @@ builder.Services.AddMassTransit(x =>
     // Consumer ko register karein
     x.AddConsumer<UserCreatedConsumer>();
 
+    x.AddEntityFrameworkOutbox<AppDbContext>(o =>
+    {
+        o.UseSqlServer();
+        o.UseBusOutbox();
+    });
+
     x.UsingRabbitMq((context, cfg) =>
     {
         var configuration = context.GetRequiredService<IConfiguration>();
@@ -91,12 +98,22 @@ builder.Services.AddSwaggerGen();
 #region Azure Key Vault (AKV)
 // 1. Pehle KeyVaultHelper ka instance banayein (Ya DI se nikaalein)
 var vaultUri = builder.Configuration["VaultUri"];
-var kvHelper = new KeyVaultHelper(vaultUri!);
 
-// 2. Startup ke waqt hi Connection String fetch karein
-var connectionString = await kvHelper.GetSecretValueAsync("EmployeeDbConn");
+string connectionString;
 
-builder.Services.AddDbContext<HR.Employee.API.Infrastructure.Persistence.AppDbContext>(options =>
+// Agar VaultUri configured ha to AKV sy secret uthao
+if (!string.IsNullOrWhiteSpace(vaultUri))
+{
+    var kvHelper = new KeyVaultHelper(vaultUri);
+    connectionString = await kvHelper.GetSecretValueAsync("EmployeeDbConn");
+}
+else
+{
+    // Local development fallback
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
+}
+
+builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString,
     sqlServerOptionsAction: sqlOptions =>
     {

@@ -1,4 +1,5 @@
-﻿using HR.Employee.API.Models;
+﻿using HR.Employee.API.Infrastructure.Persistence;
+using HR.Employee.API.Models;
 using HR.Shared.Library.Events;
 using MassTransit;
 

@@ -20,34 +20,36 @@ public sealed class UnitOfWork : IUnitOfWork
     }
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        // 1. Un sab Entities ko dhoondna jin mein Domain Events majood hain
-        var domainEntities = _context.ChangeTracker
-            .Entries<IHasDomainEvents>()
-            .Where(x => x.Entity.DomainEvents.Any())
-            .ToList();
-
-        // 2. Extract all accumulated events into a flat list
-        var domainEvents = domainEntities
-            .SelectMany(x => x.Entity.DomainEvents)
-            .ToList();
-
-        // 3. Clear events immediately to guarantee idempotency and prevent infinite loops
-        foreach (var entry in domainEntities)
+        // 1. Transaction shuru karein
+        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        try
         {
-            entry.Entity.ClearDomainEvents();
+            var domainEntities = _context.ChangeTracker
+                .Entries<IHasDomainEvents>()
+                .Where(x => x.Entity.DomainEvents.Any()).ToList();
+
+            var domainEvents = domainEntities.SelectMany(x => x.Entity.DomainEvents).ToList();
+
+            foreach (var entry in domainEntities) entry.Entity.ClearDomainEvents();
+
+            // 2. Pehle DB mein save karein (abhi save nahi hua, pipeline mein hai)
+            var result = await _context.SaveChangesAsync(cancellationToken);
+
+            // 3. MediatR events chalayein (In-Memory)
+            foreach (var domainEvent in domainEvents)
+            {
+                await _publisher.Publish(domainEvent, cancellationToken);
+            }
+
+            // 4. Agar sab theek raha to database aur events dono ko ek sath commit karein
+            await transaction.CommitAsync(cancellationToken);
+
+            return result;
         }
-
-        // 4. Pehle Data DB mein commit karein
-        var result = await _context.SaveChangesAsync(cancellationToken);
-
-        // 5. Database save success hone ke BAAD events publish karein
-        foreach (var domainEvent in domainEvents)
+        catch
         {
-            await _publisher.Publish(domainEvent, cancellationToken);
-            await _publishEndpoint.Publish(domainEvent, cancellationToken);
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
         }
-
-        // 6. Total affected rows return karein
-        return result;
     }
 }
