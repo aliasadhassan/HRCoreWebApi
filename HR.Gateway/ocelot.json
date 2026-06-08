@@ -19,6 +19,10 @@
         {
           "Host": "localhost",
           "Port": 7259
+        },
+        {
+          "Host": "localhost",
+          "Port": 7260
         }
       ],
       "UpstreamPathTemplate": "/employees/{everything}",
@@ -26,6 +30,9 @@
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "ApiGatewayKey",
         "AllowedScopes": []
+      },
+      "LoadBalancerOptions": {
+        "Type": "RoundRobin"
       }
     },
     {
@@ -35,6 +42,10 @@
         {
           "Host": "localhost",
           "Port": 7251
+        },
+        {
+          "Host": "localhost",
+          "Port": 7252
         }
       ],
       "UpstreamPathTemplate": "/payroll/{everything}",
@@ -42,6 +53,9 @@
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "ApiGatewayKey",
         "AllowedScopes": []
+      },
+      "LoadBalancerOptions": {
+        "Type": "RoundRobin"
       }
     }
   ],
