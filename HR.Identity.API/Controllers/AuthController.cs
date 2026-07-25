@@ -31,6 +31,7 @@ namespace HR.Identity.API.Controllers
         EmailTemplatesHelper emailTemplatesHelper,
         IOptions<AuthSettings> authSettingsConfig,
         IPublishEndpoint publishEndpoint,
+        MicrosoftGraphService _graphService,
         ILogger<AuthController> logger) : ControllerBase
     {
 
@@ -98,6 +99,72 @@ namespace HR.Identity.API.Controllers
             {
                 logger.LogError(ex, "An error occurred while registering user: {Email}", model.Email);
                 return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("sso/callback")]
+        public async Task<IActionResult> SsoCallback([FromBody] SsoLoginRequest request)
+        {
+            try
+            {
+                var msUser = await _graphService.GetUserFromTokenAsync(request.AccessToken);
+                if (msUser == null)
+                {
+                    return Unauthorized(new { message = "Invalid Microsoft token" });
+                }
+
+                var normalizedEmail = msUser.Email.Trim().ToLower();
+                var user = await context.Users.FirstOrDefaultAsync(x => x.Email == normalizedEmail);
+
+                if (user == null)
+                {
+                    user = new User
+                    {
+                        Username = msUser.DisplayName,
+                        Email = normalizedEmail,
+                        // SSO users password se login nahi karte, is liye random unusable hash
+                        PasswordHash = PasswordHelper.Hash(Guid.NewGuid().ToString()),
+                        CreatedDate = DateTime.UtcNow
+                    };
+
+                    context.Users.Add(user);
+                    await context.SaveChangesAsync();
+
+                    await publishEndpoint.Publish(new UserCreatedEvent(user.Id, user.Username, user.Email));
+
+                    logger.LogInformation("New user auto-provisioned via SSO: {Email}", user.Email);
+                }
+
+                var accessToken = jwt.GenerateToken(user.Email);
+                var refreshTokenObj = jwt.GenerateRefreshToken();
+
+                var expiredTokens = context.RefreshTokenConfiguration
+                    .Where(t => t.UserId == user.Id && t.RefreshTokenExpiryDate < DateTime.UtcNow);
+                context.RefreshTokenConfiguration.RemoveRange(expiredTokens);
+
+                context.RefreshTokenConfiguration.Add(new RefreshTokenConfiguration
+                {
+                    UserId = user.Id,
+                    AccessToken = accessToken,
+                    RefreshToken = refreshTokenObj.RefreshToken,
+                    RefreshTokenExpiryDate = refreshTokenObj.RefreshTokenExpiryDate,
+                    RefreshTokenCreatedDate = DateTime.UtcNow,
+                    IsRevoked = false
+                });
+
+                await context.SaveChangesAsync();
+
+                SetRefreshTokenCookie(refreshTokenObj.RefreshToken, refreshTokenObj.RefreshTokenExpiryDate);
+
+                logger.LogInformation("SSO login successful for {Email}", user.Email);
+
+                return Ok(new { accessToken });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "SSO login error occurred");
+                return StatusCode(500, new { message = "An internal error occurred during SSO login" });
             }
         }
 
