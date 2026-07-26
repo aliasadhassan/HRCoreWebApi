@@ -6,21 +6,28 @@
         {
             return app.UseWhen(
                 context =>
-                    !AnonymousEndpoints.Any(path =>
+                {
+                    // 🔍 TEMPORARY DEBUG LOG — isse pata chalega actual incoming path kya hai
+                    Console.WriteLine($"[JwtMiddleware Check] Incoming Path: {context.Request.Path}");
+
+                    return !AnonymousEndpoints.Any(path =>
                         context.Request.Path.StartsWithSegments(
                             path,
-                            StringComparison.OrdinalIgnoreCase)),
+                            StringComparison.OrdinalIgnoreCase));
+                },
                 appBuilder =>
                 {
                     appBuilder.UseMiddleware<JwtHeaderMiddleware>();
                 });
         }
+
         private static readonly string[] AnonymousEndpoints =
         {
             "/api/auth/login",
             "/api/auth/register",
             "/api/auth/forgot-password",
-            "/api/auth/reset-password"
+            "/api/auth/reset-password",
+            "/api/auth/sso/callback"
         };
     }
 }

@@ -432,3 +432,5 @@ Matlab:
 Ye actually sahi/expected behavior hai real-world SSO systems mein — jo user Microsoft se sign in karta hai, wo hamesha Microsoft se hi sign in karega, alag se password set nahi karta (jab tak explicitly "set a password" wala feature na ho).
 
 Agar tum chahte ho ke ye user password se bhi login kar sake (dono tareeqe available hon), to ek extra feature banana parega: "Set password" option jab user pehli baar SSO se login kare, jahan wo apna khud ka password choose kar sake — us case mein backend mein ek chota sa update endpoint banana hoga jo authenticated user ke PasswordHash ko replace kare.
+
+Lawo773143
