@@ -48,7 +48,7 @@ namespace HR.Identity.API.Controllers
             {
                 HttpOnly = true,                          // Hacker ka JavaScript isko read nahi kar sakega
                 Secure = true,                            // Sirf HTTPS par chalega
-                SameSite = SameSiteMode.Strict,           // CSRF attack se bachayega
+                SameSite = SameSiteMode.None,             // for dev None, For prod Strict i.e. CSRF attack se bachayega
                 Expires = expires,                        // Cookie ki expiry date (7 days)
                 IsEssential = true
             };
@@ -241,7 +241,7 @@ namespace HR.Identity.API.Controllers
                 {
                     HttpOnly = true,
                     Secure = true,
-                    SameSite = SameSiteMode.Strict,
+                    SameSite = SameSiteMode.None,
                     IsEssential = true
                 };
                 Response.Cookies.Delete("X-Refresh-Token", cookieOptions);
@@ -307,7 +307,7 @@ namespace HR.Identity.API.Controllers
                 {
                     HttpOnly = true,
                     Secure = true,
-                    SameSite = SameSiteMode.Strict,
+                    SameSite = SameSiteMode.None,
                     Expires = newRefreshTokenObj.RefreshTokenExpiryDate,
                     IsEssential = true
                 };

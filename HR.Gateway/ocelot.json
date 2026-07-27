@@ -10,7 +10,10 @@
         }
       ],
       "UpstreamPathTemplate": "/identity/{everything}",
-      "UpstreamHttpMethod": [ "Post", "Get", "Options" ]
+      "UpstreamHttpMethod": [ "Post", "Get", "Options" ],
+      "HttpHandlerOptions": {
+        "UseCookieContainer": false
+      }
     },
     {
       "DownstreamPathTemplate": "/api/employees/{everything}",
