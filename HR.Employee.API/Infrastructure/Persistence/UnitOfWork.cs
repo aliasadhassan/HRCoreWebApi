@@ -1,7 +1,5 @@
-﻿using EmployeeEntity = HR.Employee.API.Domain.Entities.Employee;
-using HR.Employee.API.Domain.Interfaces;
+﻿using HR.Employee.API.Domain.Interfaces;
 using MediatR;
-using MassTransit;
 using HR.Employee.API.Domain.Common;
 
 namespace HR.Employee.API.Infrastructure.Persistence;
@@ -10,18 +8,16 @@ public sealed class UnitOfWork : IUnitOfWork
 {
     private readonly AppDbContext _context;
     private readonly IPublisher _publisher; // MediatR publisher internal notify ke liye
-    private readonly IPublishEndpoint _publishEndpoint; // MassTransit RabbitMQ integration
 
-    public UnitOfWork(AppDbContext context, IPublisher publisher, IPublishEndpoint publishEndpoint)
+    public UnitOfWork(AppDbContext context, IPublisher publisher)
     {
         _context = context;
         _publisher = publisher;
-        _publishEndpoint = publishEndpoint;
     }
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        // 1. Transaction shuru karein
-        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        // 1. Database se transaction async tareeqe se banao, aur jo transaction object mile usko bhi async tareeqe se dispose karna
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
         try
         {
             var domainEntities = _context.ChangeTracker
@@ -41,7 +37,7 @@ public sealed class UnitOfWork : IUnitOfWork
                 await _publisher.Publish(domainEvent, cancellationToken);
             }
 
-            // 4. Agar sab theek raha to database aur events dono ko ek sath commit karein
+            // 4. Transaction commit karein
             await transaction.CommitAsync(cancellationToken);
 
             return result;

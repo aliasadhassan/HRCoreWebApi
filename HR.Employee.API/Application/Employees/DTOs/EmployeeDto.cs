@@ -1,11 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace HR.Employee.API.Models
+namespace HR.Employee.API.Application.Employees.DTOs
 {
-    public class Employees
+    public class EmployeeDto
     {
-        [Key]
-        public int Id { get; set; }
+        public Guid Id { get; set; }
 
         [Required]
         [MaxLength(100)]

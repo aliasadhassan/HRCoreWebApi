@@ -35,8 +35,21 @@
         "AllowedScopes": []
       },
       "LoadBalancerOptions": {
-        "Type": "RoundRobin"
+        "Type": "LeastConnection"
       }
+    },
+    {
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "127.0.0.1",
+          "Port": 7259
+        }
+      ],
+      "DownstreamPathTemplate": "/api/Employees/test-asb",
+      "DownstreamScheme": "https",
+      "UpstreamHttpMethod": [ "Post", "Options" ],
+      "UpstreamPathTemplate": "/api/test-asb",
+      "Priority": 1
     },
     {
       "DownstreamPathTemplate": "/api/payroll/{everything}",
@@ -58,7 +71,7 @@
         "AllowedScopes": []
       },
       "LoadBalancerOptions": {
-        "Type": "RoundRobin"
+        "Type": "LeastConnection"
       }
     }
   ],

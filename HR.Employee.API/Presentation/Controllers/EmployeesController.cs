@@ -1,5 +1,8 @@
-﻿using HR.Employee.API.Application.Employees.Commands;
+﻿using Azure.Messaging.ServiceBus;
+using HR.Employee.API.Application.Employees.Commands;
+using HR.Employee.API.Application.Employees.DTOs;
 using HR.Employee.API.Application.Employees.Queries;
+using HR.Employee.API.Infrastructure.Persistence;
 using HR.Shared.Library.Helpers;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +10,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using StackExchange.Redis;
 using System.Text.Json;
-using HR.Employee.API.Infrastructure.Persistence;
 
 namespace HR.Employee.API.Presentation.Controllers;
 
@@ -17,24 +19,38 @@ public class EmployeesController : ControllerBase
 {
     private readonly ISender _mediator; // MediatR ki lightweight interface standard separation ke liye
     private readonly IConnectionMultiplexer _redis;
+    private readonly IConfiguration _configuration;
     public EmployeesController(
         ISender mediator,
-        IConnectionMultiplexer redis)
+        IConnectionMultiplexer redis,
+        IConfiguration configuration)
     {
         _mediator = mediator;
         _redis = redis;
+        _configuration = configuration;
+    }
+    [HttpPost]
+    public async Task<IActionResult> CreateEmployee([FromBody] CreateEmployeeCommand command,CancellationToken cancellationToken)
+    {
+        var employeeId = await _mediator.Send(command,cancellationToken);
+        return Ok(employeeId);
     }
 
-    [HttpPost]
-    public async Task<IActionResult> CreateEmployee(
-        [FromBody] CreateEmployeeCommand command,
-        CancellationToken cancellationToken)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateEmployee(Guid id,[FromBody] UpdateEmployeeCommand command,CancellationToken cancellationToken)
     {
-        // Request direct MediatR handler tak jaye gi aur automatic handle hogi
-        var employeeId = await _mediator.Send(command, cancellationToken);
+        if (id != command.Id)
+            return BadRequest("Employee ID mismatch.");
 
-        // Standard REST API convention ke mutabiq ID return karna 200 OK ke sath
-        return Ok(employeeId);
+        await _mediator.Send(command,cancellationToken);
+        return NoContent();
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteEmployee(Guid id,CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new DeleteEmployeeCommand(id),cancellationToken);
+        return NoContent();
     }
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetEmployeeById(Guid id, CancellationToken cancellationToken)
@@ -96,7 +112,7 @@ public class EmployeesController : ControllerBase
         try
         {
             // --- LEVEL 1: Check Local RAM (L1) ---
-            if (memoryCache.TryGetValue(cacheKey, out List<Models.Employees>? l1Data))
+            if (memoryCache.TryGetValue(cacheKey, out List<EmployeeDto>? l1Data))
             {
                 return Ok(new { Source = "L1 Cache (RAM)", Page = pageNumber, Data = l1Data });
             }
@@ -106,7 +122,7 @@ public class EmployeesController : ControllerBase
 
             if (!cachedData.IsNull)
             {
-                var l2Data = JsonSerializer.Deserialize<List<Models.Employees>>(cachedData!, jsonOptions);
+                var l2Data = JsonSerializer.Deserialize<List<EmployeeDto>>(cachedData!, jsonOptions);
 
                 // L2 se mila, toh isay L1 (RAM) mein bhi save kar dein 1 min ke liye
                 memoryCache.Set(cacheKey, l2Data, TimeSpan.FromMinutes(1));

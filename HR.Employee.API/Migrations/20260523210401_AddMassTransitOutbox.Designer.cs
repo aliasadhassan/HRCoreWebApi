@@ -25,7 +25,7 @@ namespace HR.Employee.API.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("HR.Employee.API.Models.Employees", b =>
+            modelBuilder.Entity("HR.Employee.API.Models.EmployeeDto", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -79,7 +79,7 @@ namespace HR.Employee.API.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Employees");
+                    b.ToTable("EmployeeDto");
                 });
 
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.InboxState", b =>

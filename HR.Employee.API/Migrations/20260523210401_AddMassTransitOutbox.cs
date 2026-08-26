@@ -12,7 +12,7 @@ namespace HR.Employee.API.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             //migrationBuilder.CreateTable(
-            //    name: "Employees",
+            //    name: "EmployeeDto",
             //    columns: table => new
             //    {
             //        Id = table.Column<int>(type: "int", nullable: false)
@@ -114,13 +114,13 @@ namespace HR.Employee.API.Migrations
 
             //migrationBuilder.CreateIndex(
             //    name: "IX_Employees_Cnic",
-            //    table: "Employees",
+            //    table: "EmployeeDto",
             //    column: "Cnic",
             //    unique: true);
 
             //migrationBuilder.CreateIndex(
             //    name: "IX_Employees_Email",
-            //    table: "Employees",
+            //    table: "EmployeeDto",
             //    column: "Email",
             //    unique: true);
 
@@ -163,7 +163,7 @@ namespace HR.Employee.API.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             //migrationBuilder.DropTable(
-            //    name: "Employees");
+            //    name: "EmployeeDto");
 
             migrationBuilder.DropTable(
                 name: "OutboxMessage");

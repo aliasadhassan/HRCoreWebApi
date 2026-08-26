@@ -1,5 +1,5 @@
-﻿using HR.Employee.API.Domain.Common;
-using HR.Employee.API.Models;
+﻿using HR.Employee.API.Application.Employees.DTOs;
+using HR.Employee.API.Domain.Common;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,18 +11,18 @@ namespace HR.Employee.API.Infrastructure.Persistence
         {
         }
 
-        public DbSet<Employees> Employees => Set<Employees>();
+        public DbSet<EmployeeDto> Employees => Set<EmployeeDto>();
         
         // Configure unique constraints and relationships
         // For example, ensure that the Email field in User is unique
         // This is where E.F Core decides the database schema
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Employees>()
+            modelBuilder.Entity<EmployeeDto>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
 
-            modelBuilder.Entity<Employees>()
+            modelBuilder.Entity<EmployeeDto>()
                 .HasIndex(u => u.Cnic)
                 .IsUnique();
 

@@ -1,5 +1,5 @@
 ﻿using HR.Employee.API.Infrastructure.Persistence;
-using HR.Employee.API.Models;
+using HR.Employee.API.Application.Employees.DTOs;
 using HR.Shared.Library.Events;
 using MassTransit;
 
@@ -19,7 +19,7 @@ namespace HR.Employee.API.Consumers
             var data = context.Message;
 
             // Sahi class name instantiation
-            var newEmployee = new Employees
+            var newEmployee = new EmployeeDto
             {
                 Username = data.Username,
                 Email = data.Email,

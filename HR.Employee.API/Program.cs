@@ -1,15 +1,16 @@
-using HR.Employee.API;
+using Azure.Messaging.ServiceBus;
 using FluentValidation;
+using HR.Employee.API;
 using HR.Employee.API.Application.Common.Behaviors;
 using HR.Employee.API.Consumers;
 using HR.Employee.API.Domain.Interfaces;
 using HR.Employee.API.Infrastructure.Logging;
+using HR.Employee.API.Infrastructure.Messaging;
 using HR.Employee.API.Infrastructure.Persistence;
 using HR.Employee.API.Presentation.Filters;
 using HR.Shared.Library.Helpers;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +18,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<GlobalExceptionFilter>();
+});
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins("http://localhost:4200") // Angular URL
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
 });
 
 // 2. Register the modern Core .NET 8 Exception Handler
@@ -83,14 +93,29 @@ builder.Services.AddMassTransit(x =>
 #endregion
 
 #region redis
-builder.Services.AddMemoryCache(); // add memory cache redis k liye isko use krna xruri ha i.e. L1 cache
+builder.Services.AddMemoryCache(); // // L1 in-memory cache
 #endregion
 
 // Key Vault integration
 builder.Services.AddHRKeyVault(builder.Configuration);
 
-builder.AddRedisClient("redis");
-builder.Services.AddControllers();
+// Azure Service Bus Client registration
+builder.Services.AddSingleton<ServiceBusClient>(sp =>
+{
+    var configuration = sp.GetRequiredService<IConfiguration>();
+
+    var connectionString =
+        configuration.GetConnectionString("ServiceBus")
+        ?? throw new InvalidOperationException(
+            "ServiceBus connection string is missing.");
+
+    return new ServiceBusClient(connectionString);
+});
+
+builder.Services.AddScoped<IMessagePublisher, AzureServiceBusPublisher>();
+
+builder.AddRedisClient("redis"); // redis L2 cache registration
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -132,6 +157,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseCors(); // CORS middleware ko enable karein
 
 app.UseHttpsRedirection();
 

@@ -54,6 +54,23 @@ namespace HR.Employee.API.Domain.Entities
 
             return employee;
         }
+        public void UpdateDetails(string firstName,string lastName,string email,string department,decimal salary)
+        {
+            if (string.IsNullOrWhiteSpace(firstName))
+                throw new ArgumentException("First name cannot be empty.");
+
+            if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
+                throw new ArgumentException("Invalid email address.");
+
+            if (salary < 0)
+                throw new ArgumentException("Salary cannot be negative.");
+
+            FirstName = firstName;
+            LastName = lastName;
+            Email = email;
+            Department = department;
+            Salary = salary;
+        }
 
         // Business Logic Method: Agar salary barhani ho, to sirf ye method call hoga
         public void UpdateSalary(decimal newSalary)
