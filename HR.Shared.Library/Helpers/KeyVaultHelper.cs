@@ -20,7 +20,10 @@ namespace HR.Shared.Library.Helpers
         {
             // DefaultAzureCredential local development (VS/CLI) 
             // aur Azure (Managed Identity) dono ke liye kaam karta hai.
-            _client = new SecretClient(new Uri(vaultUri), new DefaultAzureCredential());
+            //_client = new SecretClient(new Uri(vaultUri), new DefaultAzureCredential());
+
+            // Ab hum AzureCredentialFactory ka use kar rahe hain, jo environment ke hisaab se credential choose karega.
+            _client = new SecretClient(new Uri(vaultUri), AzureCredentialFactory.Create());
         }
 
         public async Task<string> GetSecretValueAsync(string secretName)

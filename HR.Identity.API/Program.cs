@@ -1,15 +1,16 @@
 using HR.Identity.API.Configuration;
 using HR.Identity.API.Data;
-using HR.Shared.Library.Helpers;
+using HR.Identity.API.Data.Seed;
 using HR.Identity.API.Middleware;
 using HR.Identity.API.Services;
+using HR.Shared.Library.Helpers;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text;
-using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -138,7 +139,7 @@ builder.Services.AddHttpClient<MicrosoftGraphService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
+builder.Services.AddScoped<RefreshTokenService>();
 
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -181,6 +182,9 @@ app.UseJwtHeaderMiddleware();
 // 7. Endpoints map karein
 app.MapControllers();
 app.MapDefaultEndpoints();
+
+// 8. Seed the database with initial data
+await IdentitySeeder.SeedAsync(app.Services);
 
 app.Run();
 

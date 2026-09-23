@@ -1,32 +1,27 @@
-﻿using System.ComponentModel.DataAnnotations;
+using HR.Identity.API.Models.Common;
 
-namespace HR.Identity.API.Models
+namespace HR.Identity.API.Models;
+
+public class User : AuditableEntity
 {
-    public class User
-    {
-        [Key]
-        public int Id { get; set; }
+    public Guid TenantId { get; set; }
+    public string Email { get; set; } = default!;
+    public string NormalizedEmail { get; set; } = default!;
+    public string? PasswordHash { get; set; }             // null = SSO-only user
+    public string DisplayName { get; set; } = default!;
+    public string? AvatarUrl { get; set; }
+    public Guid? EmployeeId { get; set; }                 // logical link to Employee_Db
+    public bool EmailConfirmed { get; set; }
+    public bool IsActive { get; set; } = true;
+    public bool MustChangePassword { get; set; }
+    public byte AccessFailedCount { get; set; }
+    public DateTime? LockoutEnd { get; set; }
+    public DateTime? LastLoginAt { get; set; }
+    public Guid SecurityStamp { get; set; } = Guid.NewGuid();
 
-        [Required]
-        [MaxLength(50)]
-        public string Username { get; set; } = string.Empty;
-
-        [Required]
-        [EmailAddress]
-        [MaxLength(150)]
-        public string Email { get; set; } = string.Empty;
-
-        [Required]
-        [MaxLength(255)] // Hash thora lamba hota hai isliye zyada space di hai
-        public string PasswordHash { get; set; } = string.Empty;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
-
-        // Password reset functionality
-        [MaxLength(100)]
-        public string? PasswordResetToken { get; set; }
-        public DateTime? ResetTokenExpires { get; set; }
-
-        // Relationship
-        public ICollection<RefreshTokenConfiguration> RefreshTokens { get; set; } = new List<RefreshTokenConfiguration>();
-    }
+    public Tenant Tenant { get; set; } = default!;
+    public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+    public ICollection<UserExternalLogin> ExternalLogins { get; set; } = new List<UserExternalLogin>();
+    public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+    public ICollection<UserToken> Tokens { get; set; } = new List<UserToken>();
 }

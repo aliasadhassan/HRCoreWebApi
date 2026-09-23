@@ -21,7 +21,7 @@ namespace HR.Employee.API.Consumers
             // Sahi class name instantiation
             var newEmployee = new EmployeeDto
             {
-                Username = data.Username,
+                Username = data.DisplayName,
                 Email = data.Email,
                 Cnic = "PENDING",
                 Country = "Pakistan",
@@ -34,7 +34,7 @@ namespace HR.Employee.API.Consumers
             _context.Employees.Add(newEmployee);
             await _context.SaveChangesAsync();
 
-            Console.WriteLine($"[RabbitMQ] User Created Event Received: {data.Username}");
+            Console.WriteLine($"[RabbitMQ] User Created Event Received: {data.DisplayName}");
         }
     }
 }

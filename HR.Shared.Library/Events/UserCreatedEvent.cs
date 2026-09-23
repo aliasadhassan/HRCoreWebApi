@@ -6,6 +6,6 @@ using System.Threading.Tasks;
 
 namespace HR.Shared.Library.Events
 {
-    public record UserCreatedEvent(int UserId, string Username, string Email);
+    public record UserCreatedEvent(Guid UserId, Guid TenantId, string DisplayName, string Email);
 
 }
