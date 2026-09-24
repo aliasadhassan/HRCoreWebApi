@@ -114,19 +114,19 @@ namespace HR.Identity.API.Controllers
                 if (user is null)
                 {
                     await AuditFailureAsync(null, model.Email, LoginMethod.Password, "UserNotFound");
-                    return Unauthorized(new { message = GenericLoginError });
+                    return Unauthorized(new { code = "INVALID_CREDENTIALS", message = GenericLoginError });
                 }
 
                 if (user.LockoutEnd > DateTime.UtcNow)
                 {
                     await AuditFailureAsync(user, model.Email, LoginMethod.Password, "LockedOut");
-                    return Unauthorized(new { message = "Account is temporarily locked. Please try again later." });
+                    return LockedOut(user.LockoutEnd.Value);
                 }
 
                 if (user.PasswordHash is null)
                 {
                     await AuditFailureAsync(user, model.Email, LoginMethod.Password, "SsoOnlyAccount");
-                    return Unauthorized(new { message = "This account uses Microsoft sign-in." });
+                    return Unauthorized(new { code = "SSO_ONLY", message = "This account uses Microsoft sign-in." });
                 }
 
                 if (!PasswordHelper.Verify(model.Password, user.PasswordHash))
@@ -134,17 +134,20 @@ namespace HR.Identity.API.Controllers
                     user.AccessFailedCount++;
                     if (user.AccessFailedCount >= MaxFailedAttempts)
                     {
+                        // Isi attempt pe lock — user ko foran bata do, agli koshish ka intezar nahi
                         user.LockoutEnd = DateTime.UtcNow.Add(LockoutDuration);
                         user.AccessFailedCount = 0;
+                        await AuditFailureAsync(user, model.Email, LoginMethod.Password, "LockedOut");
+                        return LockedOut(user.LockoutEnd.Value);
                     }
                     await AuditFailureAsync(user, model.Email, LoginMethod.Password, "InvalidPassword");
-                    return Unauthorized(new { message = GenericLoginError });
+                    return Unauthorized(new { code = "INVALID_CREDENTIALS", message = GenericLoginError });
                 }
 
                 if (!user.IsActive || user.Tenant.Status != TenantStatus.Active)
                 {
                     await AuditFailureAsync(user, model.Email, LoginMethod.Password, "Inactive");
-                    return StatusCode(403, new { message = "Your account is disabled. Contact your administrator." });
+                    return StatusCode(403, new { code = "ACCOUNT_DISABLED", message = "Your account is disabled. Contact your administrator." });
                 }
 
                 return await SignInAsync(user, LoginMethod.Password);
@@ -395,6 +398,18 @@ namespace HR.Identity.API.Controllers
             logger.LogInformation("{Method} login successful for {Email}", method, user.Email);
 
             return Ok(new { accessToken });
+        }
+
+        // Seconds bhejte hain, DateTime nahi — timezone ka jhanjhat hi khatam
+        private IActionResult LockedOut(DateTime lockoutEndUtc)
+        {
+            var retryAfterSeconds = Math.Max(1, (int)Math.Ceiling((lockoutEndUtc - DateTime.UtcNow).TotalSeconds));
+            return Unauthorized(new
+            {
+                code = "LOCKED_OUT",
+                message = "Too many failed attempts. Your account is temporarily locked.",
+                retryAfterSeconds
+            });
         }
 
         private Task<Tenant?> GetDefaultTenantAsync() =>

@@ -79,13 +79,6 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 // 4. Settings ko read karein
 var authSettings = builder.Configuration.GetSection("AuthSettings").Get<AuthSettings>()!;
 
-// 5. Identity ki token lifespan configure karein
-builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
-{
-    // Yahan hum aapki class se hours le kar TimeSpan mein convert kar rahe hain
-    options.TokenLifespan = TimeSpan.FromHours(authSettings.ResetPasswordTokenLifespanHours);
-});
-
 builder.Services.AddTransient<EmailTemplatesHelper>();
 #endregion
 
@@ -102,11 +95,9 @@ builder.Host.UseSerilog((context, services, configuration) =>
 
 // 1. Key Vault se JWT Secret fetch karein
 var jwtKeyFromVault = await kvHelper.GetSecretValueAsync("JwtKey");
-
 if (string.IsNullOrEmpty(jwtKeyFromVault))
-{
     throw new Exception("JWT Key 'JwtKey' not found in Azure Key Vault.");
-}
+builder.Configuration["Jwt:Key"] = jwtKeyFromVault;   // signing bhi isi key se hogi
 
 // 2. JWT Authentication setup
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -176,14 +167,11 @@ app.UseAuthentication();
 // 5. Phir check karein ke user ko permission hai ya nahi
 app.UseAuthorization();
 
-// 6. Custom Middleware authorization ke baad
-app.UseJwtHeaderMiddleware();
-
-// 7. Endpoints map karein
+// 6. Endpoints map karein
 app.MapControllers();
 app.MapDefaultEndpoints();
 
-// 8. Seed the database with initial data
+// 7. Seed the database with initial data
 await IdentitySeeder.SeedAsync(app.Services);
 
 app.Run();
