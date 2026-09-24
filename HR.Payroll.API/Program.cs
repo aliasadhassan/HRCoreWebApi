@@ -21,6 +21,11 @@ builder.Services.AddSwaggerGen();
 var vaultUri = builder.Configuration["VaultUri"];
 var kvHelper = new KeyVaultHelper(vaultUri!);
 
+var jwtKeyFromVault = await kvHelper.GetSecretValueAsync("JwtKey");
+if (string.IsNullOrEmpty(jwtKeyFromVault))
+    throw new Exception("JWT Key 'JwtKey' not found in Azure Key Vault.");
+builder.Configuration["Jwt:Key"] = jwtKeyFromVault;
+
 // 2. Startup ke waqt hi Connection String fetch karein
 var connectionString = await kvHelper.GetSecretValueAsync("PayrollDbConn");
 

@@ -55,6 +55,13 @@ builder.Services.AddMediatR(cfg =>
 // This automatically finds all classes inheriting from AbstractValidator<T>
 builder.Services.AddValidatorsFromAssembly(applicationAssembly);
 
+var vaultUri = builder.Configuration["VaultUri"];
+var kvHelper = new KeyVaultHelper(vaultUri!);
+
+var jwtKeyFromVault = await kvHelper.GetSecretValueAsync("JwtKey");
+if (string.IsNullOrEmpty(jwtKeyFromVault))
+    throw new Exception("JWT Key 'JwtKey' not found in Azure Key Vault.");
+builder.Configuration["Jwt:Key"] = jwtKeyFromVault;
 
 // Add services to the container.
 
@@ -121,22 +128,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 #region Azure Key Vault (AKV)
-// 1. Pehle KeyVaultHelper ka instance banayein (Ya DI se nikaalein)
-var vaultUri = builder.Configuration["VaultUri"];
-
-string connectionString;
-
-// Agar VaultUri configured ha to AKV sy secret uthao
-if (!string.IsNullOrWhiteSpace(vaultUri))
-{
-    var kvHelper = new KeyVaultHelper(vaultUri);
-    connectionString = await kvHelper.GetSecretValueAsync("EmployeeDbConn");
-}
-else
-{
-    // Local development fallback
-    connectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
-}
+// kvHelper upar JWT wale section mein pehle se bana hua hai
+var connectionString = await kvHelper.GetSecretValueAsync("EmployeeDbConn");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString,
@@ -151,6 +144,8 @@ builder.AddServiceDefaults();
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -162,7 +157,6 @@ app.UseCors(); // CORS middleware ko enable karein
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
-app.UseExceptionHandler();
 app.MapControllers();
 
 // 2. Phir ye (app ke sath)

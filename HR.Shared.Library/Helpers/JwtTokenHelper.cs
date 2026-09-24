@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace HR.Shared.Library.Helpers
@@ -49,40 +50,12 @@ namespace HR.Shared.Library.Helpers
         {
             return new RefreshTokenConfiguration
             {
-                RefreshToken = Convert.ToBase64String(Guid.NewGuid().ToByteArray()),
+                RefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
                 // Changed AddDays to AddMinutes
                 RefreshTokenExpiryDate = DateTime.UtcNow.AddDays(
                     Convert.ToDouble(_config["Jwt:RefreshTokenExpireDays"])
                 )
             };
-        }
-
-
-        // *** New function add here ***
-        public ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
-        {
-            var tokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateAudience = false, // Refresh ke waqt audience check zaroori nahi hota
-                ValidateIssuer = false,
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!)),
-                ValidateLifetime = false // <--- Sab se zaroori point: Expired token ko reject na kare
-            };
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-
-            // Token ko parse karke claims nikalna
-            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
-
-            // Algorithum check karna taake koi attacker weak hashing use na kare
-            if (securityToken is not JwtSecurityToken jwtSecurityToken ||
-                !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
-            {
-                throw new SecurityTokenException("Invalid token");
-            }
-
-            return principal;
         }
     }
 }

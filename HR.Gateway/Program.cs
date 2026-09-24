@@ -10,7 +10,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 var vaultUri = builder.Configuration["VaultUri"];
 var kvHelper = new KeyVaultHelper(vaultUri!);
-var jwtKey = await kvHelper.GetSecretValueAsync("JwtKey");
+
+var jwtKeyFromVault = await kvHelper.GetSecretValueAsync("JwtKey");
+if (string.IsNullOrEmpty(jwtKeyFromVault))
+    throw new Exception("JWT Key 'JwtKey' not found in Azure Key Vault.");
+builder.Configuration["Jwt:Key"] = jwtKeyFromVault;
 
 builder.AddServiceDefaults();
 
@@ -38,12 +42,13 @@ builder.Services.AddAuthentication()
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKeyFromVault)),
             ValidateIssuer = true,
             ValidIssuer = "HR.Identity.API", // Wahi jo Identity API mein hai
             ValidateAudience = true,
             ValidAudience = "HR.Microservices",
-            ValidateLifetime = true
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromSeconds(30)
         };
     });
 
