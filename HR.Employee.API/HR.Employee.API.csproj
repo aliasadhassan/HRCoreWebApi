@@ -9,13 +9,31 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Data\**" />
+    <Compile Remove="Domain\ValueObjects\**" />
+    <Compile Remove="Migrations\AppDb\**" />
+    <Compile Remove="Models\**" />
+    <Content Remove="Data\**" />
+    <Content Remove="Domain\ValueObjects\**" />
+    <Content Remove="Migrations\AppDb\**" />
+    <Content Remove="Models\**" />
+    <EmbeddedResource Remove="Data\**" />
+    <EmbeddedResource Remove="Domain\ValueObjects\**" />
+    <EmbeddedResource Remove="Migrations\AppDb\**" />
+    <EmbeddedResource Remove="Models\**" />
+    <None Remove="Data\**" />
+    <None Remove="Domain\ValueObjects\**" />
+    <None Remove="Migrations\AppDb\**" />
+    <None Remove="Models\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Aspire.StackExchange.Redis" Version="13.3.0" />
-    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.2" />
     <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageReference Include="MassTransit.EntityFrameworkCore" Version="8.4.1" />
     <PackageReference Include="MassTransit.RabbitMQ" Version="8.4.1" />
-    <PackageReference Include="MediatR" Version="14.1.0" />
+    <PackageReference Include="MediatR" Version="12.5.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.26" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.26">
       <PrivateAssets>all</PrivateAssets>
@@ -36,13 +54,6 @@
   <ItemGroup>
     <ProjectReference Include="..\HR.Shared.Library\HR.Shared.Library.csproj" />
     <ProjectReference Include="..\LearningCoreWebApi.ServiceDefaults\LearningCoreWebApi.ServiceDefaults.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Data\" />
-    <Folder Include="Domain\ValueObjects\" />
-    <Folder Include="Migrations\AppDb\" />
-    <Folder Include="Models\" />
   </ItemGroup>
 
 </Project>

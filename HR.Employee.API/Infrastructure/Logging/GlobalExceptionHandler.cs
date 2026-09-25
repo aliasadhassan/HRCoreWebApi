@@ -1,73 +1,61 @@
-﻿using FluentValidation;
-using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
-using System.Net;
-
 namespace HR.Employee.API.Infrastructure.Logging;
 
-public sealed class GlobalExceptionHandler : IExceptionHandler
+using FluentValidation;
+using HR.Employee.API.Application.Common.Exceptions;
+using HR.Employee.API.Domain.Common;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+
+/// <summary>Ek hi jagah saare exceptions → ProblemDetails. (GlobalExceptionFilter hata diya — woh isay chalne hi nahi deta tha.)</summary>
+public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IHostEnvironment environment) : IExceptionHandler
 {
-    private readonly ILogger<GlobalExceptionHandler> _logger;
-
-    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
+    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
-        _logger = logger;
-    }
-
-    public async ValueTask<bool> TryHandleAsync(
-        HttpContext httpContext,
-        Exception exception,
-        CancellationToken cancellationToken)
-    {
-        _logger.LogError(exception, "An exception occurred: {Message}", exception.Message);
-
-        // 1. Detect if the exception is an automated validation failure
-        if (exception is ValidationException validationException)
+        if (exception is ValidationException validation)
         {
-            httpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-            httpContext.Response.ContentType = "application/problem+json";
-
-            // Group validation errors by the property name
-            var errors = validationException.Errors
+            var errors = validation.Errors
                 .GroupBy(e => e.PropertyName)
-                .ToDictionary(
-                    failureGroup => failureGroup.Key,
-                    failureGroup => failureGroup.Select(f => f.ErrorMessage).ToArray()
-                );
+                .ToDictionary(g => g.Key, g => g.Select(f => f.ErrorMessage).ToArray());
 
-            // Construct an industry-standard validation problem details schema
-            var validationProblemDetails = new ValidationProblemDetails(errors)
+            httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await httpContext.Response.WriteAsJsonAsync(new ValidationProblemDetails(errors)
             {
-                Status = (int)HttpStatusCode.BadRequest,
+                Status = StatusCodes.Status400BadRequest,
                 Title = "Validation Error",
-                Detail = "One or more request validation rules failed.",
                 Instance = httpContext.Request.Path
-            };
-
-            await httpContext.Response.WriteAsJsonAsync(validationProblemDetails, cancellationToken);
+            }, cancellationToken);
             return true;
         }
 
-        // 2. Fallback handling for other system/domain errors
-        var statusCode = exception switch
+        var (status, title, detail) = exception switch
         {
-            ArgumentException => (int)HttpStatusCode.BadRequest,
-            KeyNotFoundException => (int)HttpStatusCode.NotFound,
-            _ => (int)HttpStatusCode.InternalServerError
+            DomainException => (StatusCodes.Status422UnprocessableEntity, "Business rule violation", exception.Message),
+            NotFoundException => (StatusCodes.Status404NotFound, "Not found", exception.Message),
+            ConflictException => (StatusCodes.Status409Conflict, "Conflict", exception.Message),
+            DbUpdateConcurrencyException => (StatusCodes.Status409Conflict, "Concurrency conflict",
+                "This record was changed by someone else. Reload and try again."),
+            DbUpdateException { InnerException: SqlException { Number: 2601 or 2627 } } => (StatusCodes.Status409Conflict,
+                "Duplicate", "A record with the same unique value already exists."),
+            UnauthorizedAccessException => (StatusCodes.Status403Forbidden, "Forbidden", exception.Message),
+            _ => (StatusCodes.Status500InternalServerError, "Internal Server Error",
+                environment.IsDevelopment() ? exception.Message : "An unexpected error occurred.")
         };
 
-        var problemDetails = new ProblemDetails
+        if (status >= 500)
+            logger.LogError(exception, "Unhandled exception on {Path}", httpContext.Request.Path);
+        else
+            logger.LogWarning("{Title} on {Path}: {Message}", title, httpContext.Request.Path, exception.Message);
+
+        httpContext.Response.StatusCode = status;
+        await httpContext.Response.WriteAsJsonAsync(new ProblemDetails
         {
-            Status = statusCode,
-            Title = statusCode == 500 ? "Internal Server Error" : "Domain Error",
-            Detail = exception.Message,
+            Status = status,
+            Title = title,
+            Detail = detail,
             Instance = httpContext.Request.Path
-        };
-
-        httpContext.Response.StatusCode = statusCode;
-        httpContext.Response.ContentType = "application/problem+json";
-
-        await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
+        }, cancellationToken);
         return true;
     }
 }

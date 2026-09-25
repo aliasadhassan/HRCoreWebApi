@@ -259,7 +259,7 @@ namespace HR.Identity.API.Controllers
                 {
                     case RefreshStatus.Success:
                         SetRefreshTokenCookie(result.Token!, result.ExpiresAt);
-                        return Ok(new { accessToken = jwt.GenerateToken(result.User!.Email) });
+                        return Ok(new { accessToken = jwt.GenerateToken(result.User!.Email, result.User.Id, result.User.TenantId) });
 
                     case RefreshStatus.Superseded:
                         // Doosri parallel request ne abhi rotate kiya — browser mein nayi cookie aa chuki, retry karo
@@ -391,7 +391,7 @@ namespace HR.Identity.API.Controllers
             user.LockoutEnd = null;
             AddAudit(user, user.Email, method, succeeded: true);
 
-            var accessToken = jwt.GenerateToken(user.Email);
+            var accessToken = jwt.GenerateToken(user.Email, user.Id, user.TenantId);
             var (refreshToken, expiresAt) = await refreshTokens.IssueAsync(user.Id, ClientIp, UserAgent); // saves all
 
             SetRefreshTokenCookie(refreshToken, expiresAt);

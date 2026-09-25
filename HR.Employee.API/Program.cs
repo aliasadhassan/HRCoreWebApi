@@ -1,165 +1,132 @@
-using Azure.Messaging.ServiceBus;
+using System.Text;
+using System.Text.Json.Serialization;
 using FluentValidation;
-using HR.Employee.API;
 using HR.Employee.API.Application.Common.Behaviors;
+using HR.Employee.API.Application.Common.Interfaces;
 using HR.Employee.API.Consumers;
-using HR.Employee.API.Domain.Interfaces;
+using HR.Employee.API.Infrastructure.Identity;
 using HR.Employee.API.Infrastructure.Logging;
-using HR.Employee.API.Infrastructure.Messaging;
 using HR.Employee.API.Infrastructure.Persistence;
-using HR.Employee.API.Presentation.Filters;
 using HR.Shared.Library.Helpers;
 using MassTransit;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddServiceDefaults();
 
-// 1. Register Global Exception Filter inside MVC Controllers routing pipeline
-builder.Services.AddControllers(options =>
-{
-    options.Filters.Add<GlobalExceptionFilter>();
-});
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-    {
-        policy.WithOrigins("http://localhost:4200") // Angular URL
-              .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
-});
+#region Azure Key Vault
+var kvHelper = new KeyVaultHelper(builder.Configuration["VaultUri"]!);
+builder.Services.AddHRKeyVault(builder.Configuration);
 
-// 2. Register the modern Core .NET 8 Exception Handler
+var jwtKey = await kvHelper.GetSecretValueAsync("JwtKey");
+if (string.IsNullOrEmpty(jwtKey))
+    throw new Exception("JWT Key 'JwtKey' not found in Azure Key Vault.");
+
+var connectionString = await kvHelper.GetSecretValueAsync("EmployeeDbConn");
+#endregion
+
+#region API + exception handling
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));   // Angular ko "Active", 1 nahi
+
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-builder.Services.AddProblemDetails(); // Generates metadata templates automatically
+builder.Services.AddProblemDetails();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+#endregion
 
-// 3. Domain Interfaces aur Infrastructure Persistence ki registration
-builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+#region Current user + persistence
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 
-// Define reference assembly where your Handlers, Behaviors, and Validators live.
-// If they are in the same project as Program, keep 'typeof(Program).Assembly'.
-// If they are in an 'Application' class library, use 'typeof(CreateEmployeeCommand).Assembly'.
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure()));
+builder.Services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+#endregion
+
+#region MediatR + FluentValidation
 var applicationAssembly = typeof(Program).Assembly;
-
-// 4. MediatR Registration with Automated Open Behavior Pipeline
 builder.Services.AddMediatR(cfg =>
 {
     cfg.RegisterServicesFromAssembly(applicationAssembly);
-
-    // This hooks up your automated validation interceptor to the pipeline globally!
     cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
 });
-
-// 5. Automated FluentValidation Assembly Scanning
-// This automatically finds all classes inheriting from AbstractValidator<T>
 builder.Services.AddValidatorsFromAssembly(applicationAssembly);
+#endregion
 
-var vaultUri = builder.Configuration["VaultUri"];
-var kvHelper = new KeyVaultHelper(vaultUri!);
-
-var jwtKeyFromVault = await kvHelper.GetSecretValueAsync("JwtKey");
-if (string.IsNullOrEmpty(jwtKeyFromVault))
-    throw new Exception("JWT Key 'JwtKey' not found in Azure Key Vault.");
-builder.Configuration["Jwt:Key"] = jwtKeyFromVault;
-
-// Add services to the container.
-
-#region RabbitMQ
-// Employee API Program.cs
+#region RabbitMQ (MassTransit + EF Outbox/Inbox)
 builder.Services.AddMassTransit(x =>
 {
-    // Consumer ko register karein
     x.AddConsumer<UserCreatedConsumer>();
 
+    // Outbox: publish DB ke saath ek hi transaction mein (dual-write khatam)
     x.AddEntityFrameworkOutbox<AppDbContext>(o =>
     {
         o.UseSqlServer();
         o.UseBusOutbox();
     });
 
+    // Inbox: same message dobara aaye to consumer dobara nahi chalega
+    x.AddConfigureEndpointsCallback((context, _, cfg) => cfg.UseEntityFrameworkOutbox<AppDbContext>(context));
+
     x.UsingRabbitMq((context, cfg) =>
     {
-        var configuration = context.GetRequiredService<IConfiguration>();
-        var connectionString = configuration.GetConnectionString("messaging");
-
-        if (!string.IsNullOrWhiteSpace(connectionString))
-        {
-            cfg.Host(new Uri(connectionString));
-        }
+        var messaging = context.GetRequiredService<IConfiguration>().GetConnectionString("messaging");
+        if (!string.IsNullOrWhiteSpace(messaging))
+            cfg.Host(new Uri(messaging));
         else
-        {
             cfg.Host("localhost", "/");
-        }
 
         cfg.ConfigureEndpoints(context);
     });
 });
-
-
 #endregion
 
-#region redis
-builder.Services.AddMemoryCache(); // // L1 in-memory cache
+#region Redis (reference-data cache ke liye aage use hoga — tenant-prefixed keys)
+builder.AddRedisClient("redis");
 #endregion
 
-// Key Vault integration
-builder.Services.AddHRKeyVault(builder.Configuration);
-
-// Azure Service Bus Client registration
-builder.Services.AddSingleton<ServiceBusClient>(sp =>
-{
-    var configuration = sp.GetRequiredService<IConfiguration>();
-
-    var connectionString =
-        configuration.GetConnectionString("ServiceBus")
-        ?? throw new InvalidOperationException(
-            "ServiceBus connection string is missing.");
-
-    return new ServiceBusClient(connectionString);
-});
-
-builder.Services.AddScoped<IMessagePublisher, AzureServiceBusPublisher>();
-
-builder.AddRedisClient("redis"); // redis L2 cache registration
-
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-#region Azure Key Vault (AKV)
-// kvHelper upar JWT wale section mein pehle se bana hua hai
-var connectionString = await kvHelper.GetSecretValueAsync("EmployeeDbConn");
-
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString,
-    sqlServerOptionsAction: sqlOptions =>
+#region JWT (defense in depth: Gateway ke baad service bhi token check kare)
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
-        sqlOptions.EnableRetryOnFailure();
-    }));
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ClockSkew = TimeSpan.FromSeconds(30)
+        };
+    });
+builder.Services.AddAuthorization();
 #endregion
-
-// 1. Pehle ye (builder ke sath)
-builder.AddServiceDefaults();
 
 var app = builder.Build();
 
 app.UseExceptionHandler();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    // Dev: pending migrations khud apply
+    using var scope = app.Services.CreateScope();
+    await scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.MigrateAsync();
 }
-app.UseCors(); // CORS middleware ko enable karein
 
 app.UseHttpsRedirection();
-
+app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
 
-// 2. Phir ye (app ke sath)
+app.MapControllers();
 app.MapDefaultEndpoints();
 
 app.Run();
