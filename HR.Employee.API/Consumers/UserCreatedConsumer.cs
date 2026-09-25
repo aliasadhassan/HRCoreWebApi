@@ -1,40 +1,40 @@
-﻿using HR.Employee.API.Infrastructure.Persistence;
-using HR.Employee.API.Application.Employees.DTOs;
+namespace HR.Employee.API.Consumers;
+
+using HR.Employee.API.Infrastructure.Persistence;
 using HR.Shared.Library.Events;
 using MassTransit;
+using Microsoft.EntityFrameworkCore;
 
-namespace HR.Employee.API.Consumers
+/// <summary>
+/// Flow: HR employee banata hai → invite → user register/SSO → UserCreatedEvent.
+/// Yahan naya employee NAHI banta (fake data ke saath) — existing employee ko user se LINK karte hain.
+/// EF Inbox (Program.cs) duplicate message ko dobara process nahi hone deta.
+/// </summary>
+public sealed class UserCreatedConsumer(AppDbContext db, ILogger<UserCreatedConsumer> logger) : IConsumer<UserCreatedEvent>
 {
-    public class UserCreatedConsumer : IConsumer<UserCreatedEvent>
+    public async Task Consume(ConsumeContext<UserCreatedEvent> context)
     {
-        private readonly AppDbContext _context;
+        var message = context.Message;
+        var email = message.Email.Trim();
 
-        public UserCreatedConsumer(AppDbContext context)
+        // Background consumer mein HTTP user/tenant nahi hota → filter bypass, tenant khud check
+        var employee = await db.Employees
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(e => e.TenantId == message.TenantId && !e.IsDeleted && e.WorkEmail == email,
+                                 context.CancellationToken);
+
+        if (employee is null)
         {
-            _context = context;
+            logger.LogInformation("No employee record for {Email} in tenant {TenantId}; HR can link later.", email, message.TenantId);
+            return;
         }
 
-        public async Task Consume(ConsumeContext<UserCreatedEvent> context)
-        {
-            var data = context.Message;
+        if (employee.UserId == message.UserId)
+            return;   // already linked
 
-            // Sahi class name instantiation
-            var newEmployee = new EmployeeDto
-            {
-                Username = data.DisplayName,
-                Email = data.Email,
-                Cnic = "PENDING",
-                Country = "Pakistan",
-                City = "TBD",
-                Address = "TBD",
-                ContactNo = "000",
-                CreatedDate = DateTime.UtcNow
-            };
+        employee.LinkUser(message.UserId);
+        await db.SaveChangesAsync(context.CancellationToken);
 
-            _context.Employees.Add(newEmployee);
-            await _context.SaveChangesAsync();
-
-            Console.WriteLine($"[RabbitMQ] User Created Event Received: {data.DisplayName}");
-        }
+        logger.LogInformation("Employee {EmployeeCode} linked to user {UserId}.", employee.EmployeeCode, message.UserId);
     }
 }

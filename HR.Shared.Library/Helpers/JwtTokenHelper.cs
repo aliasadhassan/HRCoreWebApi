@@ -11,19 +11,20 @@ namespace HR.Shared.Library.Helpers
     public class JwtTokenHelper
     {
         private readonly IConfiguration _config;
-
+        public const string TenantClaim = "tenant_id";
         public JwtTokenHelper(IConfiguration config)
         {
             _config = config;
         }
 
-        public string GenerateToken(string email)
+        public string GenerateToken(string email, Guid userId, Guid tenantId)
         {
             var claims = new List<Claim>
             {
-                // Note: ClaimTypes.Email use karne se principal.Identity.Name ko email milta hai
+                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
                 new Claim(ClaimTypes.Name, email),
                 new Claim(ClaimTypes.Email, email),
+                new Claim(TenantClaim, tenantId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
@@ -51,7 +52,6 @@ namespace HR.Shared.Library.Helpers
             return new RefreshTokenConfiguration
             {
                 RefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
-                // Changed AddDays to AddMinutes
                 RefreshTokenExpiryDate = DateTime.UtcNow.AddDays(
                     Convert.ToDouble(_config["Jwt:RefreshTokenExpireDays"])
                 )
