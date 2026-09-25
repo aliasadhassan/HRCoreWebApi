@@ -11,8 +11,23 @@
       ],
       "UpstreamPathTemplate": "/identity/{everything}",
       "UpstreamHttpMethod": [ "Post", "Get", "Options" ],
-      "HttpHandlerOptions": {
-        "UseCookieContainer": false
+      "HttpHandlerOptions": { "UseCookieContainer": false }
+    },
+
+    {
+      "DownstreamPathTemplate": "/api/employees",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "127.0.0.1",
+          "Port": 7259
+        }
+      ],
+      "UpstreamPathTemplate": "/employees",
+      "UpstreamHttpMethod": [ "Get", "Post", "Options" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "ApiGatewayKey",
+        "AllowedScopes": []
       }
     },
     {
@@ -22,10 +37,6 @@
         {
           "Host": "127.0.0.1",
           "Port": 7259
-        },
-        {
-          "Host": "127.0.0.1",
-          "Port": 7260
         }
       ],
       "UpstreamPathTemplate": "/employees/{everything}",
@@ -33,24 +44,42 @@
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "ApiGatewayKey",
         "AllowedScopes": []
-      },
-      "LoadBalancerOptions": {
-        "Type": "LeastConnection"
       }
     },
+
     {
+      "DownstreamPathTemplate": "/api/{resource}",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "127.0.0.1",
           "Port": 7259
         }
       ],
-      "DownstreamPathTemplate": "/api/Employees/test-asb",
-      "DownstreamScheme": "https",
-      "UpstreamHttpMethod": [ "Post", "Options" ],
-      "UpstreamPathTemplate": "/api/test-asb",
-      "Priority": 1
+      "UpstreamPathTemplate": "/org/{resource}",
+      "UpstreamHttpMethod": [ "Get", "Post", "Options" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "ApiGatewayKey",
+        "AllowedScopes": []
+      }
     },
+    {
+      "DownstreamPathTemplate": "/api/{resource}/{id}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "127.0.0.1",
+          "Port": 7259
+        }
+      ],
+      "UpstreamPathTemplate": "/org/{resource}/{id}",
+      "UpstreamHttpMethod": [ "Get", "Put", "Delete", "Options" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "ApiGatewayKey",
+        "AllowedScopes": []
+      }
+    },
+
     {
       "DownstreamPathTemplate": "/api/payroll/{everything}",
       "DownstreamScheme": "https",
@@ -70,9 +99,7 @@
         "AuthenticationProviderKey": "ApiGatewayKey",
         "AllowedScopes": []
       },
-      "LoadBalancerOptions": {
-        "Type": "LeastConnection"
-      }
+      "LoadBalancerOptions": { "Type": "LeastConnection" }
     }
   ],
   "GlobalConfiguration": {
