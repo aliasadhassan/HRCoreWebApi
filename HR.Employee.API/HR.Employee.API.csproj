@@ -7,6 +7,12 @@
     <UserSecretsId>b732d686-2128-4185-9c00-6b162b358054</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <Compile Update="Migrations\**\*.cs">
+      <SonarQubeExclude>true</SonarQubeExclude>
+    </Compile>
+  </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="Data\**" />
