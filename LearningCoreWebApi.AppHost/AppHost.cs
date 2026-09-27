@@ -34,7 +34,9 @@ var employee = builder.AddProject<HR_Employee_API>("hr-employee")
                       .WithReference(messaging);
 var payroll = builder.AddProject<HR_Payroll_API>("hr-payroll")
                       .WithEnvironment("VaultUri", vaultUri)
-                      .WithReference(redis);
+                      .WithReference(redis)
+                      .WithReference(messaging)
+                      .WaitFor(messaging);
 
 // 2. Gateway ko batayein ke wo in teeno se baat kar sakta hai
 builder.AddProject<HR_Gateway>("hr-gateway")
