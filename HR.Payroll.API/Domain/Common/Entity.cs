@@ -1,0 +1,47 @@
+namespace HR.Payroll.API.Domain.Common;
+
+using MediatR;
+
+public interface IDomainEvent : INotification
+{
+}
+
+public abstract class Entity
+{
+    private readonly List<IDomainEvent> _domainEvents = new();
+
+    public Guid Id { get; protected set; }
+
+    public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+
+    protected void Raise(IDomainEvent domainEvent) => _domainEvents.Add(domainEvent);
+
+    public void ClearDomainEvents() => _domainEvents.Clear();
+}
+
+/// <summary>Audit + soft delete + concurrency. AppDbContext khud set karta hai.</summary>
+public abstract class AuditableBase : Entity
+{
+    public DateTime CreatedAt { get; internal set; }
+    public Guid? CreatedBy { get; internal set; }
+    public DateTime? UpdatedAt { get; internal set; }
+    public Guid? UpdatedBy { get; internal set; }
+    public bool IsDeleted { get; internal set; }
+    public byte[] RowVersion { get; private set; } = default!;
+}
+
+/// <summary>Sirf ek tenant ka data.</summary>
+public abstract class AuditableEntity : AuditableBase
+{
+    public Guid TenantId { get; internal set; }
+}
+
+/// <summary>
+/// TenantId NULL = platform ka data (tax regimes, contribution rules) jo sab tenants dekhte hain.
+/// Tenant apna custom version bhi bana sakta hai.
+/// </summary>
+public abstract class SharedAuditableEntity : AuditableBase
+{
+    public Guid? TenantId { get; internal set; }
+    public bool IsPlatformDefined => TenantId is null;
+}
