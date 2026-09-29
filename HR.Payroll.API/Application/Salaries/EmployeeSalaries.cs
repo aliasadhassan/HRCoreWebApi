@@ -54,7 +54,9 @@ public sealed class SetSalaryOverrideValidator : AbstractValidator<SetSalaryOver
     public SetSalaryOverrideValidator()
     {
         RuleFor(x => x.PayComponentId).NotEmpty();
-        RuleFor(x => x.CalcType).IsInEnum().NotEqual(CalcType.Variable);
+        RuleFor(x => x.CalcType).IsInEnum()
+            .NotEqual(CalcType.Variable).WithMessage("Variable components come from payroll inputs, not salary overrides.")
+            .NotEqual(CalcType.Remainder).WithMessage("The remainder component is set on the salary template, not per employee.");
     }
 }
 

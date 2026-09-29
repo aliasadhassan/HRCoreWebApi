@@ -1,48 +1,43 @@
-using Aspire.Hosting;
 using Projects;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-// WithImageTag("3-management") Aspire ko ye kehta hai:Specific Version:
-// RabbitMQ ka "3" version download karo.Management Plugin: Wo wala version lao jisme "management" ka lafz ho.
-// Is version mein RabbitMQ ka dashboard (UI) pehle se enable hota hai.
-
-// 1. Pehle string password ko aik Aspire Parameter banayein
-var rabbitPassword = builder.AddParameter("rabbitmq-password", "guest");
-
-// 2. Phir us parameter ko 'password:' argument me pass karein
-var messaging = builder.AddRabbitMQ("messaging", password: rabbitPassword)
-                       .WithImageTag("3-management")
-                       .WithEndpoint(targetPort: 15672, scheme: "http", name: "management");
-
-// kv-hr-project-ali-hassan is the name of the Key Vault that I have created in Azure for this project.
-// You should create your own Key Vault in Azure and use its name here.
-// Make sure to replace it with the actual name of your Key Vault in Azure.
-// The URL should be in the format "https://{your-key-vault-name}.vault.azure.net/".
 var vaultUri = "https://kv-hr-project-ali-hassan.vault.azure.net/";
 
-// Redis container register karein
+var rabbitUser = builder.AddParameter("rabbit-user");
+var rabbitPass = builder.AddParameter("rabbit-password", secret: true);
+
+var messaging = builder.AddRabbitMQ("messaging", userName: rabbitUser, password: rabbitPass)
+                       .WithManagementPlugin(port: 15672);
+
 var redis = builder.AddRedis("redis");
 
-// 1. Teeno Base Microservices ko register karein
 var identity = builder.AddProject<HR_Identity_API>("hr-identity")
                       .WithEnvironment("VaultUri", vaultUri)
-                      .WithReference(messaging);
+                      .WithReference(messaging)
+                      .WaitFor(messaging);
+
 var employee = builder.AddProject<HR_Employee_API>("hr-employee")
                       .WithEnvironment("VaultUri", vaultUri)
                       .WithReference(redis)
-                      .WithReference(messaging);
-var payroll = builder.AddProject<HR_Payroll_API>("hr-payroll")
-                      .WithEnvironment("VaultUri", vaultUri)
-                      .WithReference(redis)
-                      .WithReference(messaging);
+                      .WithReference(messaging)
+                      .WaitFor(redis)
+                      .WaitFor(messaging);
 
-// 2. Gateway ko batayein ke wo in teeno se baat kar sakta hai
+var payroll = builder.AddProject<HR_Payroll_API>("hr-payroll")
+                     .WithEnvironment("VaultUri", vaultUri)
+                     .WithReference(redis)
+                     .WithReference(messaging)
+                     .WaitFor(redis)
+                     .WaitFor(messaging);
+
 builder.AddProject<HR_Gateway>("hr-gateway")
+       .WithEnvironment("VaultUri", vaultUri)
        .WithReference(identity)
        .WithReference(employee)
        .WithReference(payroll)
-       .WithEnvironment("VaultUri", vaultUri); // YEH LINE ZAROORI HAI
+       .WaitFor(identity)
+       .WaitFor(employee)
+       .WaitFor(payroll);
 
 builder.Build().Run();
-

@@ -58,6 +58,9 @@ public sealed class EmployeeSalary : AuditableEntity
 
     public void SetOverride(Guid payComponentId, CalcType calcType, decimal? amount, decimal? percentage, Guid? baseComponentId)
     {
+        if (calcType == CalcType.Remainder)
+            throw new DomainException("The remainder component is defined on the salary template, not per employee.");
+
         var formula = ComponentFormula.Create(payComponentId, calcType, amount, percentage, baseComponentId);
         FindOrAdd(payComponentId).Apply(formula);
     }
