@@ -79,7 +79,6 @@
         "AllowedScopes": []
       }
     },
-
     {
       "DownstreamPathTemplate": "/api/payroll/{everything}",
       "DownstreamScheme": "https",
@@ -87,19 +86,14 @@
         {
           "Host": "127.0.0.1",
           "Port": 7251
-        },
-        {
-          "Host": "127.0.0.1",
-          "Port": 7252
         }
       ],
       "UpstreamPathTemplate": "/payroll/{everything}",
-      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete", "Options" ],
+      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Patch", "Delete", "Options" ],
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "ApiGatewayKey",
         "AllowedScopes": []
-      },
-      "LoadBalancerOptions": { "Type": "LeastConnection" }
+      }
     }
   ],
   "GlobalConfiguration": {
