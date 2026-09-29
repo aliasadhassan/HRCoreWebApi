@@ -55,6 +55,7 @@ builder.Services.AddMediatR(cfg =>
     cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
 });
 builder.Services.AddValidatorsFromAssembly(assembly);
+builder.Services.AddScoped<HR.Payroll.API.Application.Runs.PayrollRunCalculator>();
 #endregion
 
 #region RabbitMQ (MassTransit + EF Outbox/Inbox)

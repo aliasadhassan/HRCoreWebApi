@@ -4,8 +4,10 @@ using HR.Payroll.API.Domain.Common;
 
 /// <summary>
 /// Domain service: "Annualized" method (PK jaisa).
-///   Saal ki expected income = (ab tak ki income + opening) + (is period ki income × bache hue periods)
+///   Saal ki expected income = (ab tak ki income + opening) + is period ki income + (poori period salary × baqi periods)
 ///   Saal ka tax − ab tak kata hua tax = bache hue periods mein barabar baanto
+/// Mid-month joiner ki is period ki income kam hoti hai, lekin agle mahine poori salary aayegi —
+/// is liye projection "fullPeriodTaxable" se hota hai, prorated amount se nahi.
 /// Increment ya bonus aaye to agle periods khud adjust ho jate hain.
 /// </summary>
 public static class AnnualizedTax
@@ -14,7 +16,8 @@ public static class AnnualizedTax
         TaxRegime regime,
         decimal ytdTaxableIncome,        // is tax saal ki pichhli payslips + opening balance
         decimal ytdTaxPaid,
-        decimal currentPeriodTaxable,
+        decimal currentPeriodTaxable,    // is period ki asal taxable income (proration ke baad)
+        decimal fullPeriodTaxable,       // poori period ki taxable salary (bina proration, bina one-time inputs)
         int remainingPeriodsIncludingCurrent,
         int decimals = 2)
     {
@@ -26,7 +29,10 @@ public static class AnnualizedTax
         if (regime.CalcMethod == TaxCalcMethod.PerPeriodFlat)
             return regime.CalculateAnnualTax(currentPeriodTaxable, decimals);
 
-        var projectedAnnual = ytdTaxableIncome + currentPeriodTaxable * remainingPeriodsIncludingCurrent;
+        var projectedAnnual = ytdTaxableIncome
+                            + currentPeriodTaxable
+                            + fullPeriodTaxable * (remainingPeriodsIncludingCurrent - 1);
+
         var annualTax = regime.CalculateAnnualTax(projectedAnnual, decimals);
         var remainingTax = Math.Max(0m, annualTax - ytdTaxPaid);
 

@@ -22,6 +22,10 @@ public sealed record ComponentFormula(CalcType CalcType, decimal? Amount, decima
             case CalcType.PercentOfGross:
                 return new(calcType, null, Guard.Percentage(percentage ?? throw new DomainException("Percentage is required."), "Percentage"), null);
 
+            case CalcType.Remainder:
+                // Gross ka jo hissa baqi components ke baad bache (e.g. Special Allowance)
+                return new(calcType, null, null, null);
+
             case CalcType.Variable:
                 throw new DomainException("Variable components come from payroll inputs, not from a salary structure.");
 

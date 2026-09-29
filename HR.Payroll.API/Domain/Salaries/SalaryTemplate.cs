@@ -42,6 +42,7 @@ public sealed class SalaryTemplate : AuditableEntity
         line.Apply(formula);
 
         EnsureNoCircularReference();
+        EnsureSingleRemainder();
         return line;
     }
 
@@ -67,6 +68,7 @@ public sealed class SalaryTemplate : AuditableEntity
             throw new DomainException("A percentage line must be based on another component in the same template.");
 
         EnsureNoCircularReference();
+        EnsureSingleRemainder();
     }
 
     public void RemoveLine(Guid payComponentId)
@@ -82,6 +84,13 @@ public sealed class SalaryTemplate : AuditableEntity
 
     public void Activate() => IsActive = true;
     public void Deactivate() => IsActive = false;
+
+    /// <summary>Gross ka "baqi hissa" sirf ek component le sakta hai.</summary>
+    private void EnsureSingleRemainder()
+    {
+        if (_lines.Count(l => l.CalcType == CalcType.Remainder) > 1)
+            throw new DomainException("Only one component can take the remainder of the gross.");
+    }
 
     /// <summary>HRA = % of BASIC, BASIC = % of HRA → infinite loop. Save hone se pehle pakdo.</summary>
     private void EnsureNoCircularReference()

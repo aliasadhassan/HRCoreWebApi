@@ -6,7 +6,7 @@ public enum ProrationMethod : byte { CalendarDays = 1, WorkingDays = 2, Fixed30 
 
 public enum ComponentType : byte { Earning = 1, Deduction = 2, EmployerContribution = 3, Informational = 4 }
 
-public enum CalcType : byte { Fixed = 1, PercentOfComponent = 2, PercentOfGross = 3, Variable = 4 }
+public enum CalcType : byte { Fixed = 1, PercentOfComponent = 2, PercentOfGross = 3, Variable = 4, Remainder = 5 }
 
 public enum SalaryBasis : byte { Annual = 1, Monthly = 2, Hourly = 3 }
 
