@@ -3,6 +3,7 @@ using HR.Identity.API.Data;
 using HR.Identity.API.Data.Seed;
 using HR.Identity.API.Middleware;
 using HR.Identity.API.Services;
+using HR.Shared.Library.Authorization;
 using HR.Shared.Library.Helpers;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -54,7 +55,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     }));
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    // Enums JSON mein naam se ("Active"), number se nahi — Angular isi pe chalta hai
+    .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin", policy => // Policy ka naam change kiya hai
@@ -124,6 +127,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddScoped<JwtTokenHelper>();
+builder.Services.AddScoped<AccessTokenFactory>();
+builder.Services.AddPermissionAuthorization();   // [HasPermission(...)] ke liye
 builder.Services.AddHttpClient<MicrosoftGraphService>();
 #endregion
 
