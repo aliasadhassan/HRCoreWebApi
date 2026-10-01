@@ -21,7 +21,7 @@ namespace HR.Identity.API.Controllers
     [ApiController]
     public class AuthController(
         AppDbContext context,
-        JwtTokenHelper jwt,
+        AccessTokenFactory accessTokens,
         RefreshTokenService refreshTokens,
         IEmailService emailService,
         EmailTemplatesHelper emailTemplatesHelper,
@@ -108,7 +108,7 @@ namespace HR.Identity.API.Controllers
             try
             {
                 var user = await context.Users
-                    .Include(u => u.Tenant)
+                    .Include(u => u.Tenant).ThenInclude(t => t.Settings)
                     .FirstOrDefaultAsync(x => x.NormalizedEmail == normalizedEmail);
 
                 if (user is null)
@@ -132,7 +132,9 @@ namespace HR.Identity.API.Controllers
                 if (!PasswordHelper.Verify(model.Password, user.PasswordHash))
                 {
                     user.AccessFailedCount++;
-                    if (user.AccessFailedCount >= MaxFailedAttempts)
+                    // Company settings se (Settings > Security), warna default
+                    var maxFailed = user.Tenant.Settings?.MaxFailedLoginAttempts ?? MaxFailedAttempts;
+                    if (user.AccessFailedCount >= maxFailed)
                     {
                         // Isi attempt pe lock — user ko foran bata do, agli koshish ka intezar nahi
                         user.LockoutEnd = DateTime.UtcNow.Add(LockoutDuration);
@@ -259,7 +261,8 @@ namespace HR.Identity.API.Controllers
                 {
                     case RefreshStatus.Success:
                         SetRefreshTokenCookie(result.Token!, result.ExpiresAt);
-                        return Ok(new { accessToken = jwt.GenerateToken(result.User!.Email, result.User.Id, result.User.TenantId) });
+                        // Har refresh pe taaza roles/permissions — role badla to yahan asar
+                        return Ok(new { accessToken = await accessTokens.CreateAsync(result.User!) });
 
                     case RefreshStatus.Superseded:
                         // Doosri parallel request ne abhi rotate kiya — browser mein nayi cookie aa chuki, retry karo
@@ -358,9 +361,9 @@ namespace HR.Identity.API.Controllers
             var hash = TokenHasher.Hash(model.Token);
 
             var resetToken = await context.UserTokens
-                .Include(t => t.User)
+                .Include(t => t.User).ThenInclude(u => u.Tenant).ThenInclude(t => t.Settings)
                 .FirstOrDefaultAsync(t => t.TokenHash == hash
-                                       && t.Purpose == TokenPurpose.PasswordReset
+                                       && (t.Purpose == TokenPurpose.PasswordReset || t.Purpose == TokenPurpose.Invite)
                                        && t.UsedAt == null
                                        && t.ExpiresAt > now
                                        && t.User.NormalizedEmail == normalizedEmail);
@@ -369,11 +372,18 @@ namespace HR.Identity.API.Controllers
                 return BadRequest(new { message = "Invalid or expired token." });
 
             var user = resetToken.User;
+
+            // Company ki password policy (Settings > Security)
+            var minLength = user.Tenant.Settings?.PasswordMinLength ?? 8;
+            if (model.NewPassword.Length < minLength)
+                return BadRequest(new { message = $"Password must be at least {minLength} characters." });
+
             resetToken.UsedAt = now;                       // one-time use
             user.PasswordHash = PasswordHelper.Hash(model.NewPassword);
             user.SecurityStamp = Guid.NewGuid();
             user.AccessFailedCount = 0;
             user.LockoutEnd = null;
+            user.EmailConfirmed = true;                    // link email pe aaya tha — email sahi hai
 
             await context.SaveChangesAsync();
 
@@ -391,8 +401,9 @@ namespace HR.Identity.API.Controllers
             user.LockoutEnd = null;
             AddAudit(user, user.Email, method, succeeded: true);
 
-            var accessToken = jwt.GenerateToken(user.Email, user.Id, user.TenantId);
+            // Pehle save (IssueAsync) — naya SSO user bhi DB mein aa jaye, phir uske roles se token
             var (refreshToken, expiresAt) = await refreshTokens.IssueAsync(user.Id, ClientIp, UserAgent); // saves all
+            var accessToken = await accessTokens.CreateAsync(user);
 
             SetRefreshTokenCookie(refreshToken, expiresAt);
             logger.LogInformation("{Method} login successful for {Email}", method, user.Email);
