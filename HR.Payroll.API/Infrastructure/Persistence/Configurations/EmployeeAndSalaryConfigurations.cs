@@ -1,4 +1,4 @@
-namespace HR.Payroll.API.Infrastructure.Persistence.Configurations;
+﻿namespace HR.Payroll.API.Infrastructure.Persistence.Configurations;
 
 using HR.Payroll.API.Domain.Employees;
 using HR.Payroll.API.Domain.Salaries;
@@ -13,7 +13,7 @@ public sealed class PayrollEmployeeConfiguration : IEntityTypeConfiguration<Payr
         b.ToTable("PayrollEmployees");
         b.ConfigureAudit();
 
-        // Id = Employee API ka EmployeeId — hum generate nahi karte
+        // Id = Employee API ka EmployeeId â€” hum generate nahi karte
         b.Property(x => x.Id).HasColumnName("EmployeeId").ValueGeneratedNever();
 
         b.Property(x => x.EmployeeCode).HasMaxLength(20).IsRequired();
@@ -30,7 +30,7 @@ public sealed class PayrollEmployeeConfiguration : IEntityTypeConfiguration<Payr
 
         b.HasOne<PayGroup>().WithMany().HasForeignKey(x => x.PayGroupId).OnDelete(DeleteBehavior.Restrict);
 
-        b.HasIndex(x => new { x.TenantId, x.EmployeeCode }).IsUnique().HasFilter("[IsDeleted] = 0");
+        b.HasIndex(x => new { x.TenantId, x.EmployeeCode }).IsUnique().HasFilter("\"IsDeleted\" = false");
         b.HasIndex(x => new { x.TenantId, x.PayGroupId }).IncludeProperties(x => new { x.IsActive, x.JoiningDate, x.ExitDate });
     }
 }
@@ -44,7 +44,7 @@ public sealed class SalaryGradeConfiguration : IEntityTypeConfiguration<SalaryGr
         b.Property(x => x.Code).HasMaxLength(20).IsRequired();
         b.Property(x => x.Name).HasMaxLength(100).IsRequired();
         b.Property(x => x.CurrencyCode).AsCurrency().IsRequired();
-        b.HasIndex(x => new { x.TenantId, x.Code }).IsUnique().HasFilter("[IsDeleted] = 0");
+        b.HasIndex(x => new { x.TenantId, x.Code }).IsUnique().HasFilter("\"IsDeleted\" = false");
     }
 }
 
@@ -81,8 +81,8 @@ public sealed class EmployeeSalaryConfiguration : IEntityTypeConfiguration<Emplo
     {
         b.ToTable("EmployeeSalaries", t =>
         {
-            t.HasCheckConstraint("CK_EmpSalary_Amount", "[BasisAmount] > 0");
-            t.HasCheckConstraint("CK_EmpSalary_Dates", "[EffectiveTo] IS NULL OR [EffectiveTo] >= [EffectiveFrom]");
+            t.HasCheckConstraint("CK_EmpSalary_Amount", "\"BasisAmount\" > 0");
+            t.HasCheckConstraint("CK_EmpSalary_Dates", "\"EffectiveTo\" IS NULL OR \"EffectiveTo\" >= \"EffectiveFrom\"");
         });
         b.ConfigureAudit();
         b.Property(x => x.CurrencyCode).AsCurrency().IsRequired();
@@ -96,7 +96,7 @@ public sealed class EmployeeSalaryConfiguration : IEntityTypeConfiguration<Emplo
         b.Navigation(x => x.Overrides).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         // Ek employee ki ek hi CURRENT salary
-        b.HasIndex(x => x.EmployeeId).IsUnique().HasFilter("[EffectiveTo] IS NULL AND [IsDeleted] = 0")
+        b.HasIndex(x => x.EmployeeId).IsUnique().HasFilter("[EffectiveTo] IS NULL AND \"IsDeleted\" = false")
          .HasDatabaseName("UX_EmpSalary_Current");
         b.HasIndex(x => new { x.EmployeeId, x.EffectiveFrom }).IsDescending(false, true);
     }
@@ -114,3 +114,4 @@ public sealed class EmployeeSalaryComponentConfiguration : IEntityTypeConfigurat
         b.HasIndex(x => new { x.EmployeeSalaryId, x.PayComponentId }).IsUnique();
     }
 }
+

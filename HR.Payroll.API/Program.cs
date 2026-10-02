@@ -24,7 +24,7 @@ var jwtKey = await kvHelper.GetSecretValueAsync("JwtKey");
 if (string.IsNullOrEmpty(jwtKey))
     throw new Exception("JWT Key 'JwtKey' not found in Azure Key Vault.");
 
-var connectionString = await kvHelper.GetSecretValueAsync("PayrollDbConn");
+var connectionString = await kvHelper.GetSecretValueAsync("SupabaseConnectionString");
 #endregion
 
 #region API + exception handling
@@ -43,7 +43,11 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure()));
+    options.UseNpgsql(connectionString, sql =>
+    {
+        sql.MigrationsHistoryTable("__EFMigrationsHistory", "payroll");
+        sql.EnableRetryOnFailure();
+    }));
 builder.Services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 #endregion
 
@@ -122,8 +126,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 
-    using var scope = app.Services.CreateScope();
-    await scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.MigrateAsync();
+    //using var scope = app.Services.CreateScope();
+    //await scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.MigrateAsync();
 }
 
 app.UseHttpsRedirection();

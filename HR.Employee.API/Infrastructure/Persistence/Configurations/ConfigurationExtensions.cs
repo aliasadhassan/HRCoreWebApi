@@ -9,7 +9,7 @@ internal static class ConfigurationExtensions
     public static void ConfigureAuditable<T>(this EntityTypeBuilder<T> builder) where T : AuditableEntity
     {
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+        builder.Property(x => x.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         builder.Property(x => x.RowVersion).IsRowVersion();
     }
 

@@ -17,7 +17,7 @@ public sealed class HolidayConfiguration : IEntityTypeConfiguration<Holiday>
         b.Property(x => x.Name).HasMaxLength(150).IsRequired();
 
         b.HasOne<Location>().WithMany().HasForeignKey(x => x.LocationId).OnDelete(DeleteBehavior.Restrict);
-        b.HasIndex(x => new { x.TenantId, x.LocationId, x.Date }).IsUnique().HasFilter("[IsDeleted] = 0");
+        b.HasIndex(x => new { x.TenantId, x.LocationId, x.Date }).IsUnique().HasFilter("\"IsDeleted\" = false");
     }
 }
 
@@ -32,7 +32,7 @@ public sealed class LeaveTypeConfiguration : IEntityTypeConfiguration<LeaveType>
         b.Property(x => x.Code).HasMaxLength(20).IsRequired();
         b.Property(x => x.Color).HasMaxLength(7).IsFixedLength().IsUnicode(false);
 
-        b.HasIndex(x => new { x.TenantId, x.Code }).IsUnique().HasFilter("[IsDeleted] = 0");
+        b.HasIndex(x => new { x.TenantId, x.Code }).IsUnique().HasFilter("\"IsDeleted\" = false");
     }
 }
 
@@ -50,7 +50,7 @@ public sealed class LeavePolicyConfiguration : IEntityTypeConfiguration<LeavePol
         b.Navigation(x => x.Rules).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         // Har location (aur tenant default = NULL) ki sirf EK active policy
-        b.HasIndex(x => new { x.TenantId, x.LocationId }).IsUnique().HasFilter("[IsActive] = 1 AND [IsDeleted] = 0");
+        b.HasIndex(x => new { x.TenantId, x.LocationId }).IsUnique().HasFilter("\"IsActive\" = true AND \"IsDeleted\" = false");
     }
 }
 
@@ -59,7 +59,7 @@ public sealed class LeavePolicyRuleConfiguration : IEntityTypeConfiguration<Leav
     public void Configure(EntityTypeBuilder<LeavePolicyRule> b)
     {
         b.ToTable("LeavePolicyRules", t =>
-            t.HasCheckConstraint("CK_LPR_Entitlement", "[AnnualEntitlement] >= 0 AND [MaxCarryForward] >= 0"));
+            t.HasCheckConstraint("CK_LPR_Entitlement", "\"AnnualEntitlement\" >= 0 AND \"MaxCarryForward\" >= 0"));
         b.HasKey(x => x.Id);
 
         b.Property(x => x.AnnualEntitlement).HasPrecision(5, 2);
@@ -76,13 +76,13 @@ public sealed class LeaveApprovalSettingsConfiguration : IEntityTypeConfiguratio
     {
         b.ToTable("LeaveApprovalSettings", t =>
         {
-            t.HasCheckConstraint("CK_LAS_Levels", "[ApprovalLevels] IN (1, 2)");
+            t.HasCheckConstraint("CK_LAS_Levels", "\"ApprovalLevels\" IN (1, 2)");
             t.HasCheckConstraint("CK_LAS_L2",
-                "([ApprovalLevels] = 1 AND [Level2Approver] IS NULL) OR ([ApprovalLevels] = 2 AND [Level2Approver] IS NOT NULL)");
+                "(\"ApprovalLevels\" = 1 AND \"Level2Approver\" IS NULL) OR (\"ApprovalLevels\" = 2 AND \"Level2Approver\" IS NOT NULL)");
         });
         b.ConfigureAuditable();
 
-        b.HasIndex(x => x.TenantId).IsUnique().HasFilter("[IsDeleted] = 0");
+        b.HasIndex(x => x.TenantId).IsUnique().HasFilter("\"IsDeleted\" = false");
     }
 }
 
@@ -103,7 +103,7 @@ public sealed class LeaveBalanceConfiguration : IEntityTypeConfiguration<LeaveBa
         b.HasOne<Employee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<LeaveType>().WithMany().HasForeignKey(x => x.LeaveTypeId).OnDelete(DeleteBehavior.Restrict);
 
-        b.HasIndex(x => new { x.EmployeeId, x.LeaveTypeId, x.LeaveYear }).IsUnique().HasFilter("[IsDeleted] = 0");
+        b.HasIndex(x => new { x.EmployeeId, x.LeaveTypeId, x.LeaveYear }).IsUnique().HasFilter("\"IsDeleted\" = false");
     }
 }
 
@@ -113,9 +113,9 @@ public sealed class LeaveRequestConfiguration : IEntityTypeConfiguration<LeaveRe
     {
         b.ToTable("LeaveRequests", t =>
         {
-            t.HasCheckConstraint("CK_LR_Dates", "[EndDate] >= [StartDate]");
+            t.HasCheckConstraint("CK_LR_Dates", "\"EndDate\" >= \"StartDate\"");
             t.HasCheckConstraint("CK_LR_HalfDay",
-                "([IsHalfDay] = 0 AND [HalfDayPeriod] IS NULL) OR ([IsHalfDay] = 1 AND [HalfDayPeriod] IS NOT NULL AND [StartDate] = [EndDate])");
+                "(\"IsHalfDay\" = false AND \"HalfDayPeriod\" IS NULL) OR (\"IsHalfDay\" = true AND \"HalfDayPeriod\" IS NOT NULL AND \"StartDate\" = \"EndDate\")");
         });
         b.ConfigureAuditable();
 
@@ -132,7 +132,7 @@ public sealed class LeaveRequestConfiguration : IEntityTypeConfiguration<LeaveRe
         b.HasIndex(x => new { x.EmployeeId, x.StartDate }).IsDescending(false, true);
         b.HasIndex(x => new { x.TenantId, x.Status }).IncludeProperties(x => new { x.EmployeeId, x.StartDate, x.EndDate });
         // Calendar + "On Leave today" card
-        b.HasIndex(x => new { x.TenantId, x.StartDate, x.EndDate }).HasFilter("[Status] IN (1, 2) AND [IsDeleted] = 0");
+        b.HasIndex(x => new { x.TenantId, x.StartDate, x.EndDate }).HasFilter("\"Status\" IN (1, 2) AND \"IsDeleted\" = false");
     }
 }
 
@@ -150,3 +150,5 @@ public sealed class LeaveRequestApprovalConfiguration : IEntityTypeConfiguration
         b.HasIndex(x => x.AssignedApproverId).HasFilter("[Decision] = 0");
     }
 }
+
+

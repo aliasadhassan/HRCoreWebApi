@@ -17,7 +17,7 @@ public class RoleConfiguration : IEntityTypeConfiguration<Role>
         b.Property(x => x.Description).HasMaxLength(500);
 
         b.HasIndex(x => new { x.TenantId, x.NormalizedName }).IsUnique()
-         .HasFilter("[IsDeleted] = 0");
+         .HasFilter("\"IsDeleted\" = false");
 
         b.HasOne(x => x.Tenant).WithMany()
          .HasForeignKey(x => x.TenantId).IsRequired(false).OnDelete(DeleteBehavior.Restrict);

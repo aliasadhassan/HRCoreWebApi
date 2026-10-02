@@ -45,13 +45,13 @@ var vaultUri = builder.Configuration["VaultUri"];
 var kvHelper = new KeyVaultHelper(vaultUri!);
 
 // 2. Startup ke waqt hi Connection String fetch karein
-var connectionString = await kvHelper.GetSecretValueAsync("IdentityDbConn");
+var connectionString = await kvHelper.GetSecretValueAsync("SupabaseConnectionString");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString,
-    sqlServerOptionsAction: sqlOptions =>
+    options.UseNpgsql(connectionString, sql =>
     {
-        sqlOptions.EnableRetryOnFailure();
+        sql.MigrationsHistoryTable("__EFMigrationsHistory", "identity");
+        sql.EnableRetryOnFailure();
     }));
 
 // Add services to the container.
