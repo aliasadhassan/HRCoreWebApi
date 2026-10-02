@@ -12,7 +12,7 @@ public sealed class PayrollRunConfiguration : IEntityTypeConfiguration<PayrollRu
 {
     public void Configure(EntityTypeBuilder<PayrollRun> b)
     {
-        b.ToTable("PayrollRuns", t => t.HasCheckConstraint("CK_Runs_Status", "[Status] BETWEEN 1 AND 7"));
+        b.ToTable("PayrollRuns", t => t.HasCheckConstraint("CK_Runs_Status", "\"Status\" BETWEEN 1 AND 7"));
         b.ConfigureAudit();
         b.Property(x => x.CurrencyCode).AsCurrency().IsRequired();
         b.Property(x => x.FailureReason).HasMaxLength(1000);
@@ -20,9 +20,9 @@ public sealed class PayrollRunConfiguration : IEntityTypeConfiguration<PayrollRu
         b.HasOne<PayGroup>().WithMany().HasForeignKey(x => x.PayGroupId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<PayPeriod>().WithMany().HasForeignKey(x => x.PayPeriodId).OnDelete(DeleteBehavior.Restrict);
 
-        // ⭐ Ek period ka ek hi regular run (cancelled chhod kar) — "salary 2X" yahin rukti hai
+        // â­ Ek period ka ek hi regular run (cancelled chhod kar) â€” "salary 2X" yahin rukti hai
         b.HasIndex(x => x.PayPeriodId).IsUnique()
-         .HasFilter("[RunType] = 1 AND [Status] <> 6 AND [IsDeleted] = 0")
+         .HasFilter("[RunType] = 1 AND [Status] <> 6 AND \"IsDeleted\" = false")
          .HasDatabaseName("UX_Runs_RegularPerPeriod");
         b.HasIndex(x => new { x.TenantId, x.Status }).IncludeProperties(x => new { x.PayGroupId, x.PayPeriodId });
     }
@@ -32,7 +32,7 @@ public sealed class PayslipConfiguration : IEntityTypeConfiguration<Payslip>
 {
     public void Configure(EntityTypeBuilder<Payslip> b)
     {
-        b.ToTable("Payslips", t => t.HasCheckConstraint("CK_Payslips_Net", "[NetPay] = [GrossEarnings] - [TotalDeductions]"));
+        b.ToTable("Payslips", t => t.HasCheckConstraint("CK_Payslips_Net", "\"NetPay\" = \"GrossEarnings\" - \"TotalDeductions\""));
         b.ConfigureAudit();
 
         b.Property(x => x.PayslipNumber).HasMaxLength(30).IsRequired();
@@ -53,8 +53,8 @@ public sealed class PayslipConfiguration : IEntityTypeConfiguration<Payslip>
         b.HasMany(x => x.Lines).WithOne().HasForeignKey(l => l.PayslipId).OnDelete(DeleteBehavior.Cascade);
         b.Navigation(x => x.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
 
-        // ⭐ Ek run mein ek employee ki ek payslip
-        b.HasIndex(x => new { x.PayrollRunId, x.EmployeeId }).IsUnique().HasFilter("[IsDeleted] = 0");
+        // â­ Ek run mein ek employee ki ek payslip
+        b.HasIndex(x => new { x.PayrollRunId, x.EmployeeId }).IsUnique().HasFilter("\"IsDeleted\" = false");
         b.HasIndex(x => new { x.TenantId, x.PayslipNumber }).IsUnique();
         b.HasIndex(x => new { x.EmployeeId, x.PeriodStart }).IsDescending(false, true)
          .IncludeProperties(x => new { x.NetPay, x.Status });
@@ -79,13 +79,13 @@ public sealed class LoanRepaymentConfiguration : IEntityTypeConfiguration<LoanRe
 {
     public void Configure(EntityTypeBuilder<LoanRepayment> b)
     {
-        b.ToTable("LoanRepayments", t => t.HasCheckConstraint("CK_LoanRepayment", "[Amount] > 0"));
+        b.ToTable("LoanRepayments", t => t.HasCheckConstraint("CK_LoanRepayment", "\"Amount\" > 0"));
         b.ConfigureAudit();
         b.HasOne<EmployeeLoan>().WithMany().HasForeignKey(x => x.EmployeeLoanId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<Payslip>().WithMany().HasForeignKey(x => x.PayslipId).OnDelete(DeleteBehavior.Restrict);
 
-        // ⭐ Ek installment ek payslip se ek hi dafa
-        b.HasIndex(x => new { x.EmployeeLoanId, x.PayslipId }).IsUnique().HasFilter("[IsDeleted] = 0");
+        // â­ Ek installment ek payslip se ek hi dafa
+        b.HasIndex(x => new { x.EmployeeLoanId, x.PayslipId }).IsUnique().HasFilter("\"IsDeleted\" = false");
     }
 }
 
@@ -104,7 +104,7 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
 {
     public void Configure(EntityTypeBuilder<Payment> b)
     {
-        b.ToTable("Payments", t => t.HasCheckConstraint("CK_Payments_Amount", "[Amount] > 0"));
+        b.ToTable("Payments", t => t.HasCheckConstraint("CK_Payments_Amount", "\"Amount\" > 0"));
         b.ConfigureAudit();
         b.Property(x => x.CurrencyCode).AsCurrency().IsRequired();
         b.Property(x => x.Reference).HasMaxLength(100);
@@ -112,7 +112,9 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         b.HasOne<Payslip>().WithMany().HasForeignKey(x => x.PayslipId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<PaymentBatch>().WithMany().HasForeignKey(x => x.PaymentBatchId).OnDelete(DeleteBehavior.Restrict);
 
-        // ⭐ Ek payslip ka ek hi LIVE payment (Pending/Paid)
-        b.HasIndex(x => x.PayslipId).IsUnique().HasFilter("[Status] IN (1, 2) AND [IsDeleted] = 0");
+        // â­ Ek payslip ka ek hi LIVE payment (Pending/Paid)
+        b.HasIndex(x => x.PayslipId).IsUnique().HasFilter("\"Status\" IN (1, 2) AND \"IsDeleted\" = false");
     }
 }
+
+

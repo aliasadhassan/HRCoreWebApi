@@ -1,4 +1,4 @@
-using HR.Identity.API.Models;
+﻿using HR.Identity.API.Models;
 using HR.Identity.API.Models.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -10,7 +10,7 @@ public class TenantSettingsConfiguration : IEntityTypeConfiguration<TenantSettin
     public void Configure(EntityTypeBuilder<TenantSettings> b)
     {
         b.ToTable("TenantSettings", t =>
-            t.HasCheckConstraint("CK_TS_FYStart", "[FiscalYearStartMonth] BETWEEN 1 AND 12"));
+            t.HasCheckConstraint("CK_TS_FYStart", "\"FiscalYearStartMonth\" BETWEEN 1 AND 12"));
         b.HasKey(x => x.TenantId);
 
         b.Property(x => x.TimeZone).HasMaxLength(64).IsRequired();
@@ -20,3 +20,4 @@ public class TenantSettingsConfiguration : IEntityTypeConfiguration<TenantSettin
         b.Property(x => x.RowVersion).IsRowVersion();
     }
 }
+

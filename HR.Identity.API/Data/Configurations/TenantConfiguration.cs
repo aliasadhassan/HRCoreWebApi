@@ -20,7 +20,7 @@ public class TenantConfiguration : IEntityTypeConfiguration<Tenant>
         b.Property(x => x.Phone).HasMaxLength(50);
         b.Property(x => x.Plan).HasMaxLength(50).IsRequired();
 
-        b.HasIndex(x => x.Slug).IsUnique().HasFilter("[IsDeleted] = 0");
+        b.HasIndex(x => x.Slug).IsUnique().HasFilter("\"IsDeleted\" = false");
         b.HasIndex(x => x.EntraTenantId).IsUnique().HasFilter("[EntraTenantId] IS NOT NULL");
 
         b.HasOne(x => x.Settings).WithOne(s => s.Tenant)

@@ -73,6 +73,8 @@ public sealed class AppDbContext(
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.HasDefaultSchema("payroll");
+
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes().ToList())

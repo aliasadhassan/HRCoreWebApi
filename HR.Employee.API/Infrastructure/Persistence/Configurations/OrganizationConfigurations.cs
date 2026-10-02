@@ -19,7 +19,7 @@ public sealed class LocationConfiguration : IEntityTypeConfiguration<Location>
         b.Property(x => x.AddressLine).HasMaxLength(300);
         b.Property(x => x.TimeZone).HasMaxLength(64).IsRequired();
 
-        b.HasIndex(x => new { x.TenantId, x.Code }).IsUnique().HasFilter("[IsDeleted] = 0");
+        b.HasIndex(x => new { x.TenantId, x.Code }).IsUnique().HasFilter("\"IsDeleted\" = false");
     }
 }
 
@@ -37,7 +37,7 @@ public sealed class DepartmentConfiguration : IEntityTypeConfiguration<Departmen
         b.HasOne<Department>().WithMany().HasForeignKey(x => x.ParentDepartmentId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<Employee>().WithMany().HasForeignKey(x => x.HeadEmployeeId).OnDelete(DeleteBehavior.Restrict);
 
-        b.HasIndex(x => new { x.TenantId, x.Code }).IsUnique().HasFilter("[IsDeleted] = 0");
+        b.HasIndex(x => new { x.TenantId, x.Code }).IsUnique().HasFilter("\"IsDeleted\" = false");
     }
 }
 
@@ -51,6 +51,6 @@ public sealed class DesignationConfiguration : IEntityTypeConfiguration<Designat
         b.Property(x => x.Title).HasMaxLength(150).IsRequired();
         b.Property(x => x.Description).HasMaxLength(500);
 
-        b.HasIndex(x => new { x.TenantId, x.Title }).IsUnique().HasFilter("[IsDeleted] = 0");
+        b.HasIndex(x => new { x.TenantId, x.Title }).IsUnique().HasFilter("\"IsDeleted\" = false");
     }
 }

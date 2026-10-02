@@ -1,20 +1,5 @@
 ﻿services:
-  # 1. SQL Server - Database (Required for all APIs)
-  sql-server:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: sql-server
-    environment:
-      ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "Dev@12345!"
-      MSSQL_PID: "Developer"
-    ports:
-      - "1435:1433"
-    volumes:
-      - sqlserver_data:/var/opt/mssql
-    networks:
-      - hr-network       
-      
-  # 2. Frontend (Angular) - Port 4200 hit karega Aspire Gateway (7164) ko
+  # Frontend (Angular) - Port 4200 hit karega Aspire Gateway ko
   hr-frontend:
     build:
       context: D:/hr-ui
@@ -23,12 +8,8 @@
     ports:
       - "4200:80"
     networks:
-      - hr-network 
-    # Depends_on Gateway yahan se hata diya hai kyunke Gateway ab Aspire chala raha hai
+      - hr-network
 
 networks:
-    hr-network:
-       driver: bridge
-
-volumes:
-  sqlserver_data:
+  hr-network:
+    driver: bridge

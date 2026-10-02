@@ -1,4 +1,4 @@
-namespace HR.Payroll.API.Infrastructure.Persistence.Configurations;
+﻿namespace HR.Payroll.API.Infrastructure.Persistence.Configurations;
 
 using HR.Payroll.API.Domain.Employees;
 using HR.Payroll.API.Domain.Inputs;
@@ -11,7 +11,7 @@ public sealed class TaxRegimeConfiguration : IEntityTypeConfiguration<TaxRegime>
 {
     public void Configure(EntityTypeBuilder<TaxRegime> b)
     {
-        b.ToTable("TaxRegimes", t => t.HasCheckConstraint("CK_TaxRegimes_Month", "[TaxYearStartMonth] BETWEEN 1 AND 12"));
+        b.ToTable("TaxRegimes", t => t.HasCheckConstraint("CK_TaxRegimes_Month", "\"TaxYearStartMonth\" BETWEEN 1 AND 12"));
         b.ConfigureAudit();
         b.Property(x => x.CountryCode).AsCountryCode().IsRequired();
         b.Property(x => x.Name).HasMaxLength(150).IsRequired();
@@ -27,7 +27,7 @@ public sealed class TaxSlabConfiguration : IEntityTypeConfiguration<TaxSlab>
 {
     public void Configure(EntityTypeBuilder<TaxSlab> b)
     {
-        b.ToTable("TaxSlabs", t => t.HasCheckConstraint("CK_TaxSlab", "[ToAmount] IS NULL OR [ToAmount] > [FromAmount]"));
+        b.ToTable("TaxSlabs", t => t.HasCheckConstraint("CK_TaxSlab", "\"ToAmount\" IS NULL OR \"ToAmount\" > \"FromAmount\""));
         b.HasKey(x => x.Id);
         b.Property(x => x.RatePercent).AsRate();
         b.HasIndex(x => new { x.TaxRegimeId, x.FromAmount }).IsUnique();
@@ -60,7 +60,7 @@ public sealed class EmployeeTaxOpeningBalanceConfiguration : IEntityTypeConfigur
         b.ToTable("EmployeeTaxOpeningBalances");
         b.ConfigureAudit();
         b.HasOne<PayrollEmployee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Restrict);
-        b.HasIndex(x => new { x.EmployeeId, x.TaxYearStart }).IsUnique().HasFilter("[IsDeleted] = 0");
+        b.HasIndex(x => new { x.EmployeeId, x.TaxYearStart }).IsUnique().HasFilter("\"IsDeleted\" = false");
     }
 }
 
@@ -68,7 +68,7 @@ public sealed class PayrollInputConfiguration : IEntityTypeConfiguration<Payroll
 {
     public void Configure(EntityTypeBuilder<PayrollInput> b)
     {
-        b.ToTable("PayrollInputs", t => t.HasCheckConstraint("CK_PayrollInputs_Value", "[Amount] IS NOT NULL OR [Quantity] IS NOT NULL"));
+        b.ToTable("PayrollInputs", t => t.HasCheckConstraint("CK_PayrollInputs_Value", "\"Amount\" IS NOT NULL OR \"Quantity\" IS NOT NULL"));
         b.ConfigureAudit();
         b.Property(x => x.Quantity).HasPrecision(9, 2);
         b.Property(x => x.SourceReference).HasMaxLength(100).IsRequired();
@@ -80,7 +80,7 @@ public sealed class PayrollInputConfiguration : IEntityTypeConfiguration<Payroll
 
         // Same import dobara chale to duplicate nahi
         b.HasIndex(x => new { x.PayPeriodId, x.EmployeeId, x.PayComponentId, x.Source, x.SourceReference })
-         .IsUnique().HasFilter("[IsDeleted] = 0");
+         .IsUnique().HasFilter("\"IsDeleted\" = false");
     }
 }
 
@@ -88,7 +88,7 @@ public sealed class UnpaidLeaveDayConfiguration : IEntityTypeConfiguration<Unpai
 {
     public void Configure(EntityTypeBuilder<UnpaidLeaveDay> b)
     {
-        b.ToTable("EmployeeUnpaidLeaveDays", t => t.HasCheckConstraint("CK_UnpaidLeaveDay", "[DayFraction] IN (0.50, 1.00)"));
+        b.ToTable("EmployeeUnpaidLeaveDays", t => t.HasCheckConstraint("CK_UnpaidLeaveDay", "\"DayFraction\" IN (0.50, 1.00)"));
         b.HasKey(x => x.Id);
         b.Property(x => x.DayFraction).HasPrecision(3, 2);
         b.HasOne<PayrollEmployee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Restrict);
@@ -111,6 +111,7 @@ public sealed class EmployeeLoanConfiguration : IEntityTypeConfiguration<Employe
         b.HasOne<PayrollEmployee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<PayComponent>().WithMany().HasForeignKey(x => x.DeductionComponentId).OnDelete(DeleteBehavior.Restrict);
 
-        b.HasIndex(x => x.EmployeeId).HasFilter("[Status] = 1 AND [IsDeleted] = 0");
+        b.HasIndex(x => x.EmployeeId).HasFilter("[Status] = 1 AND \"IsDeleted\" = false");
     }
 }
+

@@ -3,8 +3,8 @@ using System;
 using HR.Payroll.API.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -18,57 +18,57 @@ namespace HR.Payroll.API.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "8.0.26")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("HR.Payroll.API.Domain.Employees.PayrollEmployee", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier")
+                        .HasColumnType("uuid")
                         .HasColumnName("EmployeeId");
 
                     b.Property<string>("BankAccountNumber")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<string>("BankAccountTitle")
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("BankName")
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("DepartmentId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("DepartmentName")
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("DesignationTitle")
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("EmployeeCode")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("EmploymentType")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateOnly?>("ExitDate")
                         .HasColumnType("date");
@@ -76,58 +76,58 @@ namespace HR.Payroll.API.Migrations
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
+                        .HasColumnType("character varying(300)");
 
                     b.Property<string>("Iban")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsTaxExempt")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<DateOnly>("JoiningDate")
                         .HasColumnType("date");
 
                     b.Property<DateTime>("LastSyncedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid>("LocationId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("PayGroupId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("bytea");
 
                     b.Property<string>("TaxIdentifier")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("WorkEmail")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("character varying(256)");
 
                     b.HasKey("Id");
 
@@ -135,11 +135,11 @@ namespace HR.Payroll.API.Migrations
 
                     b.HasIndex("TenantId", "EmployeeCode")
                         .IsUnique()
-                        .HasFilter("[IsDeleted] = 0");
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.HasIndex("TenantId", "PayGroupId");
 
-                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("TenantId", "PayGroupId"), new[] { "IsActive", "JoiningDate", "ExitDate" });
+                    NpgsqlIndexBuilderExtensions.IncludeProperties(b.HasIndex("TenantId", "PayGroupId"), new[] { "IsActive", "JoiningDate", "ExitDate" });
 
                     b.ToTable("PayrollEmployees", (string)null);
                 });
@@ -148,80 +148,80 @@ namespace HR.Payroll.API.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("CurrencyCode")
                         .IsRequired()
                         .HasMaxLength(3)
                         .IsUnicode(false)
-                        .HasColumnType("char(3)")
+                        .HasColumnType("character(3)")
                         .IsFixedLength();
 
                     b.Property<Guid>("DeductionComponentId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("EmployeeId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("InstallmentAmount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<byte>("LoanType")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<decimal>("OutstandingAmount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<decimal>("PrincipalAmount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("character varying(500)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("bytea");
 
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");
 
                     b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("DeductionComponentId");
 
                     b.HasIndex("EmployeeId")
-                        .HasFilter("[Status] = 1 AND [IsDeleted] = 0");
+                        .HasFilter("[Status] = 1 AND \"IsDeleted\" = false");
 
                     b.ToTable("EmployeeLoans", null, t =>
                         {
@@ -233,64 +233,64 @@ namespace HR.Payroll.API.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal?>("Amount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("EmployeeId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("PayComponentId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("PayPeriodId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal?>("Quantity")
                         .HasPrecision(9, 2)
-                        .HasColumnType("decimal(9,2)");
+                        .HasColumnType("numeric(9,2)");
 
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("character varying(500)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("bytea");
 
                     b.Property<byte>("Source")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<string>("SourceReference")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -300,11 +300,11 @@ namespace HR.Payroll.API.Migrations
 
                     b.HasIndex("PayPeriodId", "EmployeeId", "PayComponentId", "Source", "SourceReference")
                         .IsUnique()
-                        .HasFilter("[IsDeleted] = 0");
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.ToTable("PayrollInputs", null, t =>
                         {
-                            t.HasCheckConstraint("CK_PayrollInputs_Value", "[Amount] IS NOT NULL OR [Quantity] IS NOT NULL");
+                            t.HasCheckConstraint("CK_PayrollInputs_Value", "\"Amount\" IS NOT NULL OR \"Quantity\" IS NOT NULL");
                         });
                 });
 
@@ -312,27 +312,27 @@ namespace HR.Payroll.API.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("DayFraction")
                         .HasPrecision(3, 2)
-                        .HasColumnType("decimal(3,2)");
+                        .HasColumnType("numeric(3,2)");
 
                     b.Property<Guid>("EmployeeId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateOnly>("LeaveDate")
                         .HasColumnType("date");
 
                     b.Property<Guid>("LeaveRequestId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("ReceivedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -343,7 +343,7 @@ namespace HR.Payroll.API.Migrations
 
                     b.ToTable("EmployeeUnpaidLeaveDays", null, t =>
                         {
-                            t.HasCheckConstraint("CK_UnpaidLeaveDay", "[DayFraction] IN (0.50, 1.00)");
+                            t.HasCheckConstraint("CK_UnpaidLeaveDay", "\"DayFraction\" IN (0.50, 1.00)");
                         });
                 });
 
@@ -351,66 +351,66 @@ namespace HR.Payroll.API.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("CurrencyCode")
                         .IsRequired()
                         .HasMaxLength(3)
                         .IsUnicode(false)
-                        .HasColumnType("char(3)")
+                        .HasColumnType("character(3)")
                         .IsFixedLength();
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<byte>("Method")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<DateTime?>("PaidAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("PaymentBatchId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("PayslipId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Reference")
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("bytea");
 
                     b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -418,11 +418,11 @@ namespace HR.Payroll.API.Migrations
 
                     b.HasIndex("PayslipId")
                         .IsUnique()
-                        .HasFilter("[Status] IN (1, 2) AND [IsDeleted] = 0");
+                        .HasFilter("\"Status\" IN (1, 2) AND \"IsDeleted\" = false");
 
                     b.ToTable("Payments", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Payments_Amount", "[Amount] > 0");
+                            t.HasCheckConstraint("CK_Payments_Amount", "\"Amount\" > 0");
                         });
                 });
 
@@ -430,56 +430,56 @@ namespace HR.Payroll.API.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<byte>("FileFormat")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<string>("FileStorageKey")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("character varying(500)");
 
                     b.Property<DateTime>("GeneratedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<int>("PaymentCount")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("PayrollRunId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("bytea");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -492,45 +492,45 @@ namespace HR.Payroll.API.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("EmployeeLoanId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("PayslipId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("bytea");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -538,11 +538,11 @@ namespace HR.Payroll.API.Migrations
 
                     b.HasIndex("EmployeeLoanId", "PayslipId")
                         .IsUnique()
-                        .HasFilter("[IsDeleted] = 0");
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.ToTable("LoanRepayments", null, t =>
                         {
-                            t.HasCheckConstraint("CK_LoanRepayment", "[Amount] > 0");
+                            t.HasCheckConstraint("CK_LoanRepayment", "\"Amount\" > 0");
                         });
                 });
 
@@ -550,99 +550,99 @@ namespace HR.Payroll.API.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("ApprovedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("ApprovedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CalculatedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("CurrencyCode")
                         .IsRequired()
                         .HasMaxLength(3)
                         .IsUnicode(false)
-                        .HasColumnType("char(3)")
+                        .HasColumnType("character(3)")
                         .IsFixedLength();
 
                     b.Property<string>("FailureReason")
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("PaidAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid>("PayGroupId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("PayPeriodId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<int>("ProcessedEmployees")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("bytea");
 
                     b.Property<byte>("RunType")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<DateTime?>("StartedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("TotalDeductions")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<int>("TotalEmployees")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<decimal>("TotalEmployerCost")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<decimal>("TotalGross")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<decimal>("TotalNet")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -651,15 +651,15 @@ namespace HR.Payroll.API.Migrations
                     b.HasIndex("PayPeriodId")
                         .IsUnique()
                         .HasDatabaseName("UX_Runs_RegularPerPeriod")
-                        .HasFilter("[RunType] = 1 AND [Status] <> 6 AND [IsDeleted] = 0");
+                        .HasFilter("[RunType] = 1 AND [Status] <> 6 AND \"IsDeleted\" = false");
 
                     b.HasIndex("TenantId", "Status");
 
-                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("TenantId", "Status"), new[] { "PayGroupId", "PayPeriodId" });
+                    NpgsqlIndexBuilderExtensions.IncludeProperties(b.HasIndex("TenantId", "Status"), new[] { "PayGroupId", "PayPeriodId" });
 
                     b.ToTable("PayrollRuns", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Runs_Status", "[Status] BETWEEN 1 AND 7");
+                            t.HasCheckConstraint("CK_Runs_Status", "\"Status\" BETWEEN 1 AND 7");
                         });
                 });
 
@@ -667,87 +667,87 @@ namespace HR.Payroll.API.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("BankAccountMasked")
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTime>("CalculatedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("CurrencyCode")
                         .IsRequired()
                         .HasMaxLength(3)
                         .IsUnicode(false)
-                        .HasColumnType("char(3)")
+                        .HasColumnType("character(3)")
                         .IsFixedLength();
 
                     b.Property<string>("DepartmentName")
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("DesignationTitle")
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("EmployeeCode")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<Guid>("EmployeeId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("EmployeeName")
                         .IsRequired()
                         .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
+                        .HasColumnType("character varying(300)");
 
                     b.Property<decimal>("EmployerContributions")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<decimal>("GrossEarnings")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("HoldReason")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("character varying(500)");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<decimal>("NetPay")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<decimal>("PayableDays")
                         .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
+                        .HasColumnType("numeric(5,2)");
 
                     b.Property<Guid>("PayrollRunId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("PayslipNumber")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                        .HasColumnType("character varying(30)");
 
                     b.Property<decimal>("PeriodDays")
                         .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
+                        .HasColumnType("numeric(5,2)");
 
                     b.Property<DateOnly>("PeriodEnd")
                         .HasColumnType("date");
@@ -759,54 +759,54 @@ namespace HR.Payroll.API.Migrations
                         .IsConcurrencyToken()
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("bytea");
 
                     b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<decimal>("TaxAmount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<decimal>("TaxableIncome")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("TotalDeductions")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<decimal>("UnpaidLeaveDays")
                         .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
+                        .HasColumnType("numeric(5,2)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("EmployeeId", "PeriodStart")
                         .IsDescending(false, true);
 
-                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("EmployeeId", "PeriodStart"), new[] { "NetPay", "Status" });
+                    NpgsqlIndexBuilderExtensions.IncludeProperties(b.HasIndex("EmployeeId", "PeriodStart"), new[] { "NetPay", "Status" });
 
                     b.HasIndex("PayrollRunId", "EmployeeId")
                         .IsUnique()
-                        .HasFilter("[IsDeleted] = 0");
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.HasIndex("TenantId", "PayslipNumber")
                         .IsUnique();
 
                     b.ToTable("Payslips", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Payslips_Net", "[NetPay] = [GrossEarnings] - [TotalDeductions]");
+                            t.HasCheckConstraint("CK_Payslips_Net", "\"NetPay\" = \"GrossEarnings\" - \"TotalDeductions\"");
                         });
                 });
 
@@ -814,50 +814,50 @@ namespace HR.Payroll.API.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("ComponentCode")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                        .HasColumnType("character varying(30)");
 
                     b.Property<string>("ComponentName")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<byte>("ComponentType")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<bool>("IsTaxable")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("PayComponentId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("PayslipId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal?>("Quantity")
                         .HasPrecision(9, 2)
-                        .HasColumnType("decimal(9,2)");
+                        .HasColumnType("numeric(9,2)");
 
                     b.Property<decimal?>("Rate")
                         .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
+                        .HasColumnType("numeric(18,4)");
 
                     b.Property<short>("SortOrder")
                         .HasColumnType("smallint");
 
                     b.Property<byte>("Source")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<Guid?>("SourceReference")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -872,29 +872,29 @@ namespace HR.Payroll.API.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("BasisAmount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<byte>("ChangeReason")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("CurrencyCode")
                         .IsRequired()
                         .HasMaxLength(3)
                         .IsUnicode(false)
-                        .HasColumnType("char(3)")
+                        .HasColumnType("character(3)")
                         .IsFixedLength();
 
                     b.Property<DateOnly>("EffectiveFrom")
@@ -904,46 +904,46 @@ namespace HR.Payroll.API.Migrations
                         .HasColumnType("date");
 
                     b.Property<Guid>("EmployeeId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("character varying(500)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("bytea");
 
                     b.Property<byte>("SalaryBasis")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<Guid?>("SalaryGradeId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("SalaryTemplateId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("EmployeeId")
                         .IsUnique()
                         .HasDatabaseName("UX_EmpSalary_Current")
-                        .HasFilter("[EffectiveTo] IS NULL AND [IsDeleted] = 0");
+                        .HasFilter("[EffectiveTo] IS NULL AND \"IsDeleted\" = false");
 
                     b.HasIndex("SalaryGradeId");
 
@@ -954,9 +954,9 @@ namespace HR.Payroll.API.Migrations
 
                     b.ToTable("EmployeeSalaries", null, t =>
                         {
-                            t.HasCheckConstraint("CK_EmpSalary_Amount", "[BasisAmount] > 0");
+                            t.HasCheckConstraint("CK_EmpSalary_Amount", "\"BasisAmount\" > 0");
 
-                            t.HasCheckConstraint("CK_EmpSalary_Dates", "[EffectiveTo] IS NULL OR [EffectiveTo] >= [EffectiveFrom]");
+                            t.HasCheckConstraint("CK_EmpSalary_Dates", "\"EffectiveTo\" IS NULL OR \"EffectiveTo\" >= \"EffectiveFrom\"");
                         });
                 });
 
@@ -964,30 +964,30 @@ namespace HR.Payroll.API.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal?>("Amount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<Guid?>("BaseComponentId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<byte?>("CalcType")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<Guid>("EmployeeSalaryId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsExcluded")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("PayComponentId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal?>("Percentage")
                         .HasPrecision(9, 4)
-                        .HasColumnType("decimal(9,4)");
+                        .HasColumnType("numeric(9,4)");
 
                     b.HasKey("Id");
 
@@ -1005,69 +1005,69 @@ namespace HR.Payroll.API.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("CurrencyCode")
                         .IsRequired()
                         .HasMaxLength(3)
                         .IsUnicode(false)
-                        .HasColumnType("char(3)")
+                        .HasColumnType("character(3)")
                         .IsFixedLength();
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<decimal?>("MaxAnnual")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<decimal?>("MinAnnual")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("bytea");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("TenantId", "Code")
                         .IsUnique()
-                        .HasFilter("[IsDeleted] = 0");
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.ToTable("SalaryGrades", (string)null);
                 });
@@ -1076,46 +1076,46 @@ namespace HR.Payroll.API.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("bytea");
 
                     b.Property<Guid?>("SalaryGradeId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -1128,27 +1128,27 @@ namespace HR.Payroll.API.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal?>("Amount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<Guid?>("BaseComponentId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<byte>("CalcType")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<Guid>("PayComponentId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal?>("Percentage")
                         .HasPrecision(9, 4)
-                        .HasColumnType("decimal(9,4)");
+                        .HasColumnType("numeric(9,4)");
 
                     b.Property<Guid>("SalaryTemplateId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -1166,331 +1166,275 @@ namespace HR.Payroll.API.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                        .HasColumnType("text");
 
                     b.Property<byte>("ComponentType")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("DefaultBaseComponentId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<byte>("DefaultCalcType")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsProrated")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsRecurring")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsTaxable")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("text");
 
                     b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
                         .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("bytea");
 
                     b.Property<bool>("ShowOnPayslip")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<short>("SortOrder")
                         .HasColumnType("smallint");
 
                     b.Property<string>("SystemCode")
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                        .HasColumnType("text");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DefaultBaseComponentId");
-
-                    b.HasIndex("TenantId", "Code")
-                        .IsUnique()
-                        .HasFilter("[IsDeleted] = 0");
-
-                    b.HasIndex("TenantId", "SystemCode")
-                        .IsUnique()
-                        .HasFilter("[SystemCode] IS NOT NULL AND [IsDeleted] = 0");
-
-                    b.ToTable("PayComponents", (string)null);
+                    b.ToTable("PayComponents");
                 });
 
             modelBuilder.Entity("HR.Payroll.API.Domain.Setup.PayGroup", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateOnly>("AnchorDate")
                         .HasColumnType("date");
 
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("text");
 
                     b.Property<string>("CountryCode")
                         .IsRequired()
-                        .HasMaxLength(2)
-                        .IsUnicode(false)
-                        .HasColumnType("char(2)")
-                        .IsFixedLength();
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("CurrencyCode")
                         .IsRequired()
-                        .HasMaxLength(3)
-                        .IsUnicode(false)
-                        .HasColumnType("char(3)")
-                        .IsFixedLength();
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("text");
 
                     b.Property<short>("PayDayOffset")
                         .HasColumnType("smallint");
 
                     b.Property<byte>("PayFrequency")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
                         .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("bytea");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TenantId", "Code")
-                        .IsUnique()
-                        .HasFilter("[IsDeleted] = 0");
-
-                    b.ToTable("PayGroups", (string)null);
+                    b.ToTable("PayGroups");
                 });
 
             modelBuilder.Entity("HR.Payroll.API.Domain.Setup.PayPeriod", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<short>("FiscalYear")
                         .HasColumnType("smallint");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<DateOnly>("PayDate")
                         .HasColumnType("date");
 
                     b.Property<Guid>("PayGroupId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateOnly>("PeriodEnd")
                         .HasColumnType("date");
 
                     b.Property<byte>("PeriodNumber")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<DateOnly>("PeriodStart")
                         .HasColumnType("date");
 
                     b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
                         .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("bytea");
 
                     b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PayGroupId", "PeriodStart")
-                        .IsUnique()
-                        .HasFilter("[IsDeleted] = 0");
-
-                    b.ToTable("PayPeriods", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_PayPeriods_Dates", "[PeriodEnd] >= [PeriodStart] AND [PayDate] >= [PeriodStart]");
-                        });
+                    b.ToTable("PayPeriods");
                 });
 
             modelBuilder.Entity("HR.Payroll.API.Domain.Setup.PayrollSettings", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("BaseCurrency")
                         .IsRequired()
-                        .HasMaxLength(3)
-                        .IsUnicode(false)
-                        .HasColumnType("char(3)")
-                        .IsFixedLength();
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("PayslipNumberPrefix")
                         .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                        .HasColumnType("text");
 
                     b.Property<byte>("ProrationMethod")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<bool>("RequireApproval")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<byte>("RoundingDecimals")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
                         .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("bytea");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TenantId")
-                        .IsUnique()
-                        .HasFilter("[IsDeleted] = 0");
-
-                    b.ToTable("PayrollSettings", (string)null);
+                    b.ToTable("PayrollSettings");
                 });
 
             modelBuilder.Entity("HR.Payroll.API.Domain.Tax.ContributionRule", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<byte>("BaseType")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                        .HasColumnType("character varying(30)");
 
                     b.Property<string>("CountryCode")
                         .IsRequired()
                         .HasMaxLength(2)
                         .IsUnicode(false)
-                        .HasColumnType("char(2)")
+                        .HasColumnType("character(2)")
                         .IsFixedLength();
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateOnly>("EffectiveFrom")
                         .HasColumnType("date");
@@ -1499,57 +1443,57 @@ namespace HR.Payroll.API.Migrations
                         .HasColumnType("date");
 
                     b.Property<Guid?>("EmployeeComponentId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal?>("EmployeeFixedAmount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<decimal?>("EmployeeRatePercent")
                         .HasPrecision(9, 4)
-                        .HasColumnType("decimal(9,4)");
+                        .HasColumnType("numeric(9,4)");
 
                     b.Property<Guid?>("EmployerComponentId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal?>("EmployerFixedAmount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<decimal?>("EmployerRatePercent")
                         .HasPrecision(9, 4)
-                        .HasColumnType("decimal(9,4)");
+                        .HasColumnType("numeric(9,4)");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsOptIn")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasColumnType("character varying(150)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("bytea");
 
                     b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal?>("WageCeiling")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.HasKey("Id");
 
@@ -1566,55 +1510,55 @@ namespace HR.Payroll.API.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("EmployeeId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<decimal>("PriorTaxPaid")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<decimal>("PriorTaxableIncome")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("bytea");
 
                     b.Property<DateOnly>("TaxYearStart")
                         .HasColumnType("date");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("EmployeeId", "TaxYearStart")
                         .IsUnique()
-                        .HasFilter("[IsDeleted] = 0");
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.ToTable("EmployeeTaxOpeningBalances", (string)null);
                 });
@@ -1623,26 +1567,26 @@ namespace HR.Payroll.API.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<byte>("CalcMethod")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<string>("CountryCode")
                         .IsRequired()
                         .HasMaxLength(2)
                         .IsUnicode(false)
-                        .HasColumnType("char(2)")
+                        .HasColumnType("character(2)")
                         .IsFixedLength();
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateOnly>("EffectiveFrom")
                         .HasColumnType("date");
@@ -1651,44 +1595,44 @@ namespace HR.Payroll.API.Migrations
                         .HasColumnType("date");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasColumnType("character varying(150)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("bytea");
 
                     b.Property<byte>("TaxYearStartMonth")
-                        .HasColumnType("tinyint");
+                        .HasColumnType("smallint");
 
                     b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CountryCode", "EffectiveFrom");
 
-                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("CountryCode", "EffectiveFrom"), new[] { "TenantId", "EffectiveTo", "IsActive" });
+                    NpgsqlIndexBuilderExtensions.IncludeProperties(b.HasIndex("CountryCode", "EffectiveFrom"), new[] { "TenantId", "EffectiveTo", "IsActive" });
 
                     b.ToTable("TaxRegimes", null, t =>
                         {
-                            t.HasCheckConstraint("CK_TaxRegimes_Month", "[TaxYearStartMonth] BETWEEN 1 AND 12");
+                            t.HasCheckConstraint("CK_TaxRegimes_Month", "\"TaxYearStartMonth\" BETWEEN 1 AND 12");
                         });
                 });
 
@@ -1696,26 +1640,26 @@ namespace HR.Payroll.API.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("FixedAmount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<decimal>("FromAmount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<decimal>("RatePercent")
                         .HasPrecision(9, 4)
-                        .HasColumnType("decimal(9,4)");
+                        .HasColumnType("numeric(9,4)");
 
                     b.Property<Guid>("TaxRegimeId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal?>("ToAmount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.HasKey("Id");
 
@@ -1724,7 +1668,7 @@ namespace HR.Payroll.API.Migrations
 
                     b.ToTable("TaxSlabs", null, t =>
                         {
-                            t.HasCheckConstraint("CK_TaxSlab", "[ToAmount] IS NULL OR [ToAmount] > [FromAmount]");
+                            t.HasCheckConstraint("CK_TaxSlab", "\"ToAmount\" IS NULL OR \"ToAmount\" > \"FromAmount\"");
                         });
                 });
 
@@ -1734,43 +1678,43 @@ namespace HR.Payroll.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime?>("Consumed")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<Guid>("ConsumerId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("Delivered")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<DateTime?>("ExpirationTime")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<long?>("LastSequenceNumber")
                         .HasColumnType("bigint");
 
                     b.Property<Guid>("LockId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("MessageId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<int>("ReceiveCount")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("Received")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("bytea");
 
                     b.HasKey("Id");
 
@@ -1785,78 +1729,78 @@ namespace HR.Payroll.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("SequenceNumber"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("SequenceNumber"));
 
                     b.Property<string>("Body")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("ContentType")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<Guid?>("ConversationId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("CorrelationId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("DestinationAddress")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<DateTime?>("EnqueueTime")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<DateTime?>("ExpirationTime")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<string>("FaultAddress")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<string>("Headers")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<Guid?>("InboxConsumerId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("InboxMessageId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("InitiatorId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("MessageId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("MessageType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<Guid?>("OutboxId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Properties")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<Guid?>("RequestId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("ResponseAddress")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<DateTime>("SentTime")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<string>("SourceAddress")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("character varying(256)");
 
                     b.HasKey("SequenceNumber");
 
@@ -1865,12 +1809,10 @@ namespace HR.Payroll.API.Migrations
                     b.HasIndex("ExpirationTime");
 
                     b.HasIndex("OutboxId", "SequenceNumber")
-                        .IsUnique()
-                        .HasFilter("[OutboxId] IS NOT NULL");
+                        .IsUnique();
 
                     b.HasIndex("InboxMessageId", "InboxConsumerId", "SequenceNumber")
-                        .IsUnique()
-                        .HasFilter("[InboxMessageId] IS NOT NULL AND [InboxConsumerId] IS NOT NULL");
+                        .IsUnique();
 
                     b.ToTable("OutboxMessage");
                 });
@@ -1879,26 +1821,26 @@ namespace HR.Payroll.API.Migrations
                 {
                     b.Property<Guid>("OutboxId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("Created")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<DateTime?>("Delivered")
                         .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .HasColumnType("timestamp(3) with time zone");
 
                     b.Property<long?>("LastSequenceNumber")
                         .HasColumnType("bigint");
 
                     b.Property<Guid>("LockId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("bytea");
 
                     b.HasKey("OutboxId");
 
@@ -2108,23 +2050,6 @@ namespace HR.Payroll.API.Migrations
                         .WithMany("Lines")
                         .HasForeignKey("SalaryTemplateId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("HR.Payroll.API.Domain.Setup.PayComponent", b =>
-                {
-                    b.HasOne("HR.Payroll.API.Domain.Setup.PayComponent", null)
-                        .WithMany()
-                        .HasForeignKey("DefaultBaseComponentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
-
-            modelBuilder.Entity("HR.Payroll.API.Domain.Setup.PayPeriod", b =>
-                {
-                    b.HasOne("HR.Payroll.API.Domain.Setup.PayGroup", null)
-                        .WithMany()
-                        .HasForeignKey("PayGroupId")
-                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 

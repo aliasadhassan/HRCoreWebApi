@@ -9,7 +9,7 @@ public sealed class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
     public void Configure(EntityTypeBuilder<Employee> b)
     {
         b.ToTable("Employees", t =>
-            t.HasCheckConstraint("CK_Employees_ExitAfterJoin", "[ExitDate] IS NULL OR [ExitDate] >= [JoiningDate]"));
+            t.HasCheckConstraint("CK_Employees_ExitAfterJoin", "\"ExitDate\" IS NULL OR \"ExitDate\" >= \"JoiningDate\""));
         b.ConfigureAuditable();
 
         b.Property(x => x.EmployeeCode).HasMaxLength(20).IsRequired();
@@ -25,7 +25,7 @@ public sealed class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         b.Property(x => x.PersonalPhone).HasMaxLength(50);
         b.Property(x => x.ExitReason).HasMaxLength(500);
 
-        // Value object → isi table ke columns
+        // Value object â†’ isi table ke columns
         b.OwnsOne(x => x.Address, a =>
         {
             a.Property(p => p.Line1).HasColumnName("AddressLine1").HasMaxLength(300);
@@ -49,9 +49,9 @@ public sealed class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         b.Navigation(x => x.JobHistory).UsePropertyAccessMode(PropertyAccessMode.Field);
         b.Navigation(x => x.Documents).UsePropertyAccessMode(PropertyAccessMode.Field);
 
-        b.HasIndex(x => new { x.TenantId, x.EmployeeCode }).IsUnique().HasFilter("[IsDeleted] = 0");
-        b.HasIndex(x => new { x.TenantId, x.WorkEmail }).IsUnique().HasFilter("[IsDeleted] = 0");
-        b.HasIndex(x => new { x.TenantId, x.UserId }).IsUnique().HasFilter("[UserId] IS NOT NULL AND [IsDeleted] = 0");
+        b.HasIndex(x => new { x.TenantId, x.EmployeeCode }).IsUnique().HasFilter("\"IsDeleted\" = false");
+        b.HasIndex(x => new { x.TenantId, x.WorkEmail }).IsUnique().HasFilter("\"IsDeleted\" = false");
+        b.HasIndex(x => new { x.TenantId, x.UserId }).IsUnique().HasFilter("\"UserId\" IS NOT NULL AND \"IsDeleted\" = false");
         b.HasIndex(x => new { x.TenantId, x.EmploymentStatus }).IncludeProperties(x => new { x.DepartmentId, x.LocationId });
     }
 }
@@ -83,7 +83,7 @@ public sealed class EmployeeDocumentConfiguration : IEntityTypeConfiguration<Emp
         b.Property(x => x.StorageKey).HasMaxLength(500).IsRequired();
 
         // Passport/visa/contract expiry alerts
-        b.HasIndex(x => new { x.TenantId, x.ExpiryDate }).HasFilter("[ExpiryDate] IS NOT NULL AND [IsDeleted] = 0");
+        b.HasIndex(x => new { x.TenantId, x.ExpiryDate }).HasFilter("\"ExpiryDate\" IS NOT NULL AND \"IsDeleted\" = false");
     }
 }
 
@@ -98,3 +98,6 @@ public sealed class JobHistoryEntryConfiguration : IEntityTypeConfiguration<JobH
         b.HasIndex(x => new { x.EmployeeId, x.EffectiveDate }).IsDescending(false, true);
     }
 }
+
+
+

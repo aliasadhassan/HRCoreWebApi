@@ -19,7 +19,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         b.Property(x => x.AvatarUrl).HasMaxLength(500);
 
         b.HasIndex(x => new { x.TenantId, x.NormalizedEmail }).IsUnique()
-         .HasFilter("[IsDeleted] = 0");
+         .HasFilter("\"IsDeleted\" = false");
         b.HasIndex(x => new { x.TenantId, x.EmployeeId }).IsUnique()
          .HasFilter("[EmployeeId] IS NOT NULL AND [IsDeleted] = 0");
 
