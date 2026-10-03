@@ -10,10 +10,18 @@
         }
       ],
       "UpstreamPathTemplate": "/identity/{everything}",
-      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Patch", "Delete", "Options" ],
-      "HttpHandlerOptions": { "UseCookieContainer": false }
+      "UpstreamHttpMethod": [
+        "Get",
+        "Post",
+        "Put",
+        "Patch",
+        "Delete",
+        "Options"
+      ],
+      "HttpHandlerOptions": {
+        "UseCookieContainer": false
+      }
     },
-
     {
       "DownstreamPathTemplate": "/api/employees",
       "DownstreamScheme": "https",
@@ -24,7 +32,11 @@
         }
       ],
       "UpstreamPathTemplate": "/employees",
-      "UpstreamHttpMethod": [ "Get", "Post", "Options" ],
+      "UpstreamHttpMethod": [
+        "Get",
+        "Post",
+        "Options"
+      ],
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "ApiGatewayKey",
         "AllowedScopes": []
@@ -40,13 +52,40 @@
         }
       ],
       "UpstreamPathTemplate": "/employees/{everything}",
-      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete", "Options" ],
+      "UpstreamHttpMethod": [
+        "Get",
+        "Post",
+        "Put",
+        "Delete",
+        "Options"
+      ],
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "ApiGatewayKey",
         "AllowedScopes": []
       }
     },
-
+    {
+      "DownstreamPathTemplate": "/api/leave/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "127.0.0.1",
+          "Port": 7259
+        }
+      ],
+      "UpstreamPathTemplate": "/leave/{everything}",
+      "UpstreamHttpMethod": [
+        "Get",
+        "Post",
+        "Put",
+        "Delete",
+        "Options"
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "ApiGatewayKey",
+        "AllowedScopes": []
+      }
+    },
     {
       "DownstreamPathTemplate": "/api/{resource}",
       "DownstreamScheme": "https",
@@ -57,7 +96,11 @@
         }
       ],
       "UpstreamPathTemplate": "/org/{resource}",
-      "UpstreamHttpMethod": [ "Get", "Post", "Options" ],
+      "UpstreamHttpMethod": [
+        "Get",
+        "Post",
+        "Options"
+      ],
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "ApiGatewayKey",
         "AllowedScopes": []
@@ -73,7 +116,12 @@
         }
       ],
       "UpstreamPathTemplate": "/org/{resource}/{id}",
-      "UpstreamHttpMethod": [ "Get", "Put", "Delete", "Options" ],
+      "UpstreamHttpMethod": [
+        "Get",
+        "Put",
+        "Delete",
+        "Options"
+      ],
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "ApiGatewayKey",
         "AllowedScopes": []
@@ -89,7 +137,14 @@
         }
       ],
       "UpstreamPathTemplate": "/payroll/{everything}",
-      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Patch", "Delete", "Options" ],
+      "UpstreamHttpMethod": [
+        "Get",
+        "Post",
+        "Put",
+        "Patch",
+        "Delete",
+        "Options"
+      ],
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "ApiGatewayKey",
         "AllowedScopes": []
