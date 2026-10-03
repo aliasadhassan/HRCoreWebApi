@@ -65,9 +65,9 @@ public sealed class UsersController(
         query = status switch
         {
             UserStatus.Disabled => query.Where(u => !u.IsActive),
-            UserStatus.Locked => query.Where(u => u.IsActive && u.LockoutEnd > now),
+            UserStatus.Locked => query.Where(u => u.IsActive && u.LockoutEnd != null && u.LockoutEnd > now),
             UserStatus.Invited => query.Where(IsInvited(now)),
-            UserStatus.Active => query.Where(u => u.IsActive && !(u.LockoutEnd > now)
+            UserStatus.Active => query.Where(u => u.IsActive && (u.LockoutEnd == null || u.LockoutEnd <= now)
                                                  && (u.PasswordHash != null || u.ExternalLogins.Any() || u.EmailConfirmed)),
             _ => query
         };
@@ -79,7 +79,14 @@ public sealed class UsersController(
             .Take(pageSize)
             .Select(u => new
             {
-                u.Id, u.Email, u.DisplayName, u.AvatarUrl, u.IsActive, u.LockoutEnd, u.LastLoginAt, u.CreatedAt,
+                u.Id,
+                u.Email,
+                u.DisplayName,
+                u.AvatarUrl,
+                u.IsActive,
+                u.LockoutEnd,
+                u.LastLoginAt,
+                u.CreatedAt,
                 u.EmailConfirmed,
                 HasPassword = u.PasswordHash != null,
                 IsSso = u.ExternalLogins.Any(),
@@ -108,10 +115,10 @@ public sealed class UsersController(
         var q = TenantUsers();
         return Ok(new UserCountsDto(
             await q.CountAsync(ct),
-            await q.CountAsync(u => u.IsActive && !(u.LockoutEnd > now)
+            await q.CountAsync(u => u.IsActive && (u.LockoutEnd == null || u.LockoutEnd <= now)
                                     && (u.PasswordHash != null || u.ExternalLogins.Any() || u.EmailConfirmed), ct),
             await q.CountAsync(IsInvited(now), ct),
-            await q.CountAsync(u => u.IsActive && u.LockoutEnd > now, ct),
+            await q.CountAsync(u => u.IsActive && u.LockoutEnd != null && u.LockoutEnd > now, ct),
             await q.CountAsync(u => !u.IsActive, ct)));
     }
 
@@ -313,7 +320,7 @@ public sealed class UsersController(
 
     /// <summary>Invite bheja, abhi password set nahi kiya aur SSO se bhi nahi aaya.</summary>
     private static System.Linq.Expressions.Expression<Func<User, bool>> IsInvited(DateTime now)
-        => u => u.IsActive && !(u.LockoutEnd > now) && u.PasswordHash == null && !u.EmailConfirmed && !u.ExternalLogins.Any();
+        => u => u.IsActive && (u.LockoutEnd == null || u.LockoutEnd <= now) && u.PasswordHash == null && !u.EmailConfirmed && !u.ExternalLogins.Any();
 
     private static UserStatus StatusOf(bool isActive, DateTime? lockoutEnd, bool hasPassword, bool isSso, bool emailConfirmed, DateTime now)
     {
