@@ -338,7 +338,6 @@ namespace HR.Employee.API.Migrations
             modelBuilder.Entity("HR.Employee.API.Domain.Attendance.AttendancePunch", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("AttendanceDayId")

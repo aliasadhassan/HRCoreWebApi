@@ -7,6 +7,7 @@ using HR.Employee.API.Consumers;
 using HR.Employee.API.Infrastructure.Identity;
 using HR.Employee.API.Infrastructure.Logging;
 using HR.Employee.API.Infrastructure.Persistence;
+using HR.Shared.Library.Authorization;
 using HR.Shared.Library.Helpers;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -109,7 +110,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ClockSkew = TimeSpan.FromSeconds(30)
         };
     });
-builder.Services.AddAuthorization();
+builder.Services.AddPermissionAuthorization();   // [HasPermission(...)] — token ke "perm" claims
 #endregion
 
 var app = builder.Build();

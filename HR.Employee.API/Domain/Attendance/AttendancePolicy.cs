@@ -13,8 +13,8 @@ public sealed class AttendancePolicy : AuditableEntity
     public Guid? LocationId { get; private set; }
     public bool IsActive { get; private set; } = true;
 
-    // Din ka status: kitne minutes kaam = full day / half day (is se kam = absent)
-    public short FullDayMinutes { get; private set; } = 480;
+    // Din ka status: kam se kam itne minutes = full day / half day (is se kam = absent)
+    public short FullDayMinutes { get; private set; } = 360;
     public short HalfDayMinutes { get; private set; } = 240;
     public byte? LatesPerHalfDay { get; private set; }                // e.g. 3 late = 1 half day cut; null = koi cut nahi
 
@@ -111,6 +111,35 @@ public sealed class AttendancePolicy : AuditableEntity
         OvertimeRateWorkday = rateWorkday;
         OvertimeRateWeeklyOff = rateWeeklyOff;
         OvertimeRateHoliday = rateHoliday;
+    }
+
+    /// <summary>Policy mein methods allowed hain ya nahi (Web/Mobile/Biometric).</summary>
+    public bool Allows(PunchSource source) => source switch
+    {
+        PunchSource.Web => AllowedMethods.HasFlag(ClockInMethods.Web),
+        PunchSource.Mobile => AllowedMethods.HasFlag(ClockInMethods.Mobile),
+        PunchSource.Biometric => AllowedMethods.HasFlag(ClockInMethods.Biometric),
+        _ => true
+    };
+
+    /// <summary>Haversine — office ke radius ke andar? Geofence band ho to hamesha true.</summary>
+    public bool IsInsideGeofence(decimal? latitude, decimal? longitude)
+    {
+        if (!RequireGeofence)
+            return true;
+        if (latitude is null || longitude is null)
+            return false;
+
+        const double earthRadiusMeters = 6_371_000;
+        static double Rad(double deg) => deg * Math.PI / 180;
+
+        var dLat = Rad((double)(latitude.Value - GeoLatitude!.Value));
+        var dLon = Rad((double)(longitude.Value - GeoLongitude!.Value));
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                Math.Cos(Rad((double)GeoLatitude.Value)) * Math.Cos(Rad((double)latitude.Value)) *
+                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+        var distance = 2 * earthRadiusMeters * Math.Asin(Math.Sqrt(a));
+        return distance <= GeoRadiusMeters!.Value;
     }
 
     public decimal OvertimeRateFor(DayType dayType) => dayType switch

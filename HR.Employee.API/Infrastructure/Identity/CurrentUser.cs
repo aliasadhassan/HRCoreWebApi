@@ -2,6 +2,7 @@ namespace HR.Employee.API.Infrastructure.Identity;
 
 using System.Security.Claims;
 using HR.Employee.API.Application.Common.Interfaces;
+using HR.Shared.Library.Authorization;
 
 /// <summary>JWT claims (Identity API ke JwtTokenHelper se) → current user + tenant.</summary>
 public sealed class CurrentUser(IHttpContextAccessor accessor) : ICurrentUser
@@ -15,6 +16,8 @@ public sealed class CurrentUser(IHttpContextAccessor accessor) : ICurrentUser
     public Guid? TenantId => Parse(Principal?.FindFirst(TenantClaim)?.Value);
 
     public string? Email => Principal?.FindFirst(ClaimTypes.Email)?.Value;
+
+    public bool HasPermission(string permission) => Principal?.HasPermission(permission) ?? false;
 
     public Guid RequireTenantId()
         => TenantId ?? throw new UnauthorizedAccessException("Tenant information is missing from the access token.");

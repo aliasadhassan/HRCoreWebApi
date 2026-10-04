@@ -165,6 +165,8 @@ public sealed class AttendancePunchConfiguration : IEntityTypeConfiguration<Atte
     {
         b.ToTable("AttendancePunches", AttendanceSchema.Name);
         b.HasKey(x => x.Id);
+        // Id domain khud deta hai (AddPunch) — warna EF pehle se save hue din mein naya punch "Modified" samajh leta
+        b.Property(x => x.Id).ValueGeneratedNever();
 
         b.Property(x => x.Latitude).HasPrecision(9, 6);
         b.Property(x => x.Longitude).HasPrecision(9, 6);

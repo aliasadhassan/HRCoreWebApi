@@ -59,6 +59,25 @@ public sealed class AttendanceDay : AuditableEntity
         };
     }
 
+    /// <summary>Roster/holiday badla ho to schedule dobara set (manual edit wale din nahi chhede jate).</summary>
+    public void Reschedule(DayType dayType, Guid? shiftId, DateTime? scheduledStart, DateTime? scheduledEnd)
+    {
+        if (scheduledStart is not null && scheduledEnd is not null && scheduledEnd <= scheduledStart)
+            throw new DomainException("Scheduled end must be after the scheduled start.");
+
+        DayType = dayType;
+        ShiftId = shiftId;
+        ScheduledStart = scheduledStart;
+        ScheduledEnd = scheduledEnd;
+    }
+
+    public void Apply(AttendanceTotals totals)
+    {
+        if (IsManuallyEdited)
+            return;   // HR ne haath se theek kiya — calculator overwrite na kare
+        ApplyTotals(totals.WorkedMinutes, totals.LateMinutes, totals.EarlyLeaveMinutes, totals.OvertimeMinutes, totals.Status);
+    }
+
     public AttendancePunch AddPunch(
         DateTime punchedAt, PunchDirection direction, PunchSource source,
         Guid? deviceId, decimal? latitude, decimal? longitude, string? ipAddress, string? note)
@@ -140,6 +159,7 @@ public sealed class AttendancePunch : Entity
         DateTime punchedAt, PunchDirection direction, PunchSource source,
         Guid? deviceId, decimal? latitude, decimal? longitude, string? ipAddress, string? note)
     {
+        Id = Guid.NewGuid();   // save se pehle bhi IgnorePunch(id) chal sake (EF naye child ko phir bhi Added hi maanta hai)
         PunchedAt = punchedAt;
         Direction = direction;
         Source = source;
