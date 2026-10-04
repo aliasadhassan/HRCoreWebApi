@@ -1,5 +1,6 @@
 namespace HR.Employee.API.Application.Common.Interfaces;
 
+using HR.Employee.API.Domain.Attendance;
 using HR.Employee.API.Domain.Employees;
 using HR.Employee.API.Domain.Leaves;
 using HR.Employee.API.Domain.Organization;
@@ -25,6 +26,14 @@ public interface IAppDbContext
     DbSet<LeaveApprovalSettings> LeaveApprovalSettings { get; }
     DbSet<LeaveBalance> LeaveBalances { get; }
     DbSet<LeaveRequest> LeaveRequests { get; }
+
+    DbSet<Shift> Shifts { get; }
+    DbSet<ShiftAssignment> ShiftAssignments { get; }
+    DbSet<RosterEntry> RosterEntries { get; }
+    DbSet<AttendancePolicy> AttendancePolicies { get; }
+    DbSet<AttendanceDevice> AttendanceDevices { get; }
+    DbSet<AttendanceDay> AttendanceDays { get; }
+    DbSet<AttendanceRequest> AttendanceRequests { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
