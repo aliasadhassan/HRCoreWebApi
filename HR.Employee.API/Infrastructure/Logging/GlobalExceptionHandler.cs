@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 /// <summary>Ek hi jagah saare exceptions → ProblemDetails. (GlobalExceptionFilter hata diya — woh isay chalne hi nahi deta tha.)</summary>
 public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IHostEnvironment environment) : IExceptionHandler
@@ -36,8 +37,9 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
             ConflictException => (StatusCodes.Status409Conflict, "Conflict", exception.Message),
             DbUpdateConcurrencyException => (StatusCodes.Status409Conflict, "Concurrency conflict",
                 "This record was changed by someone else. Reload and try again."),
-            DbUpdateException { InnerException: SqlException { Number: 2601 or 2627 } } => (StatusCodes.Status409Conflict,
-                "Duplicate", "A record with the same unique value already exists."),
+            DbUpdateException { InnerException: SqlException { Number: 2601 or 2627 } }
+                or DbUpdateException { InnerException: PostgresException { SqlState: PostgresErrorCodes.UniqueViolation } }
+                => (StatusCodes.Status409Conflict, "Duplicate", "A record with the same unique value already exists."),
             UnauthorizedAccessException => (StatusCodes.Status403Forbidden, "Forbidden", exception.Message),
             _ => (StatusCodes.Status500InternalServerError, "Internal Server Error",
                 environment.IsDevelopment() ? exception.Message : "An unexpected error occurred.")
