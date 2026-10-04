@@ -24,7 +24,7 @@ public sealed record AttendanceDayDto(
 public sealed record AttendanceDayDetailDto(AttendanceDayDto Day, IReadOnlyList<PunchDto> Punches);
 
 public sealed record MyTodayDto(
-    DateOnly WorkDate, DayType DayType, string? ShiftName, DateTime? ScheduledStart, DateTime? ScheduledEnd,
+    Guid EmployeeId, DateOnly WorkDate, DayType DayType, string? ShiftName, DateTime? ScheduledStart, DateTime? ScheduledEnd,
     AttendanceDayDto? Day, IReadOnlyList<PunchDto> Punches, PunchDirection NextAction,
     bool RequiresLocation, IReadOnlyList<PunchSource> AllowedSources);
 
@@ -315,7 +315,7 @@ public sealed class TimesheetHandlers(IAppDbContext db, ICurrentUser currentUser
 
         var allowed = new[] { PunchSource.Web, PunchSource.Mobile }.Where(policy.Allows).ToList();
         return new MyTodayDto(
-            workDate, schedule.DayType, schedule.Shift?.Name, schedule.StartUtc, schedule.EndUtc, day, punches,
+            employeeId, workDate, schedule.DayType, schedule.Shift?.Name, schedule.StartUtc, schedule.EndUtc, day, punches,
             punches.Any(p => !p.IsIgnored) ? PunchDirection.Out : PunchDirection.In,
             policy.RequireGeofence, allowed);
     }
