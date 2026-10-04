@@ -30,5 +30,6 @@ public abstract class AuditableEntity : Entity
     public DateTime? UpdatedAt { get; internal set; }
     public Guid? UpdatedBy { get; internal set; }
     public bool IsDeleted { get; internal set; }
-    public byte[] RowVersion { get; private set; } = default!;
+    /// <summary>Postgres ka xmin system column — har update pe khud badalta hai (bytea rowversion Postgres mein generate nahi hota).</summary>
+    public uint RowVersion { get; private set; }
 }

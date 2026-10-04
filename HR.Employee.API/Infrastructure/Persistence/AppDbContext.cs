@@ -2,6 +2,7 @@ namespace HR.Employee.API.Infrastructure.Persistence;
 
 using System.Reflection;
 using HR.Employee.API.Application.Common.Interfaces;
+using HR.Employee.API.Domain.Attendance;
 using HR.Employee.API.Domain.Common;
 using HR.Employee.API.Domain.Employees;
 using HR.Employee.API.Domain.Leaves;
@@ -39,6 +40,14 @@ public sealed class AppDbContext(
     public DbSet<LeaveApprovalSettings> LeaveApprovalSettings => Set<LeaveApprovalSettings>();
     public DbSet<LeaveBalance> LeaveBalances => Set<LeaveBalance>();
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
+
+    public DbSet<Shift> Shifts => Set<Shift>();
+    public DbSet<ShiftAssignment> ShiftAssignments => Set<ShiftAssignment>();
+    public DbSet<RosterEntry> RosterEntries => Set<RosterEntry>();
+    public DbSet<AttendancePolicy> AttendancePolicies => Set<AttendancePolicy>();
+    public DbSet<AttendanceDevice> AttendanceDevices => Set<AttendanceDevice>();
+    public DbSet<AttendanceDay> AttendanceDays => Set<AttendanceDay>();
+    public DbSet<AttendanceRequest> AttendanceRequests => Set<AttendanceRequest>();
 
     /// <summary>Query filter har query pe isay parameter ki tarah padhta hai.</summary>
     private Guid CurrentTenantId => currentUser.TenantId ?? Guid.Empty;
