@@ -50,6 +50,8 @@ public sealed class AppDbContext(
     public DbSet<PayrollInput> PayrollInputs => Set<PayrollInput>();
     public DbSet<UnpaidLeaveDay> UnpaidLeaveDays => Set<UnpaidLeaveDay>();
     public DbSet<EmployeeLoan> EmployeeLoans => Set<EmployeeLoan>();
+    public DbSet<LoanRequest> LoanRequests => Set<LoanRequest>();
+    public DbSet<LoanPolicy> LoanPolicies => Set<LoanPolicy>();
 
     public DbSet<PayrollRun> PayrollRuns => Set<PayrollRun>();
     public DbSet<Payslip> Payslips => Set<Payslip>();
@@ -84,6 +86,11 @@ public sealed class AppDbContext(
                 continue;
 
             modelBuilder.Entity(clrType).Ignore(nameof(Entity.DomainEvents));
+
+            // Setup entities (PayComponent, PayGroup, PayPeriod, PayrollSettings) ki configuration nahi hai,
+            // isliye ConfigureAudit wala IsRowVersion yahan sab pe — RowVersion = Postgres ka xmin
+            if (typeof(AuditableBase).IsAssignableFrom(clrType))
+                modelBuilder.Entity(clrType).Property(nameof(AuditableBase.RowVersion)).IsRowVersion();
 
             if (typeof(AuditableEntity).IsAssignableFrom(clrType))
                 TenantFilterMethod.MakeGenericMethod(clrType).Invoke(this, [modelBuilder]);

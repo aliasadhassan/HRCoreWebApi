@@ -22,6 +22,8 @@ public enum LoanType : byte { Loan = 1, SalaryAdvance = 2 }
 
 public enum LoanStatus : byte { Active = 1, Paused = 2, Closed = 3, Cancelled = 4 }
 
+public enum LoanRequestStatus : byte { Pending = 1, Approved = 2, Rejected = 3, Cancelled = 4 }
+
 public enum PayPeriodStatus : byte { Open = 1, Locked = 2 }
 
 public enum RunType : byte { Regular = 1, OffCycle = 2, FinalSettlement = 3 }

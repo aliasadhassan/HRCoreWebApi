@@ -29,6 +29,8 @@ public interface IAppDbContext
     DbSet<PayrollInput> PayrollInputs { get; }
     DbSet<UnpaidLeaveDay> UnpaidLeaveDays { get; }
     DbSet<EmployeeLoan> EmployeeLoans { get; }
+    DbSet<LoanRequest> LoanRequests { get; }
+    DbSet<LoanPolicy> LoanPolicies { get; }
 
     DbSet<PayrollRun> PayrollRuns { get; }
     DbSet<Payslip> Payslips { get; }
