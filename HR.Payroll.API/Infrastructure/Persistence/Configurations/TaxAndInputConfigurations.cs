@@ -115,3 +115,47 @@ public sealed class EmployeeLoanConfiguration : IEntityTypeConfiguration<Employe
     }
 }
 
+
+public sealed class LoanRequestConfiguration : IEntityTypeConfiguration<LoanRequest>
+{
+    public void Configure(EntityTypeBuilder<LoanRequest> b)
+    {
+        b.ToTable("LoanRequests", t =>
+        {
+            t.HasCheckConstraint("CK_LoanRequests_Amounts", "\"RequestedAmount\" > 0 AND \"RequestedInstallments\" BETWEEN 1 AND 120");
+            t.HasCheckConstraint("CK_LoanRequests_Approved",
+                "\"Status\" <> 2 OR (\"EmployeeLoanId\" IS NOT NULL AND \"ApprovedAmount\" > 0 AND \"ApprovedInstallmentAmount\" > 0)");
+        });
+        b.ConfigureAudit();
+        b.Property(x => x.CurrencyCode).AsCurrency().IsRequired();
+        b.Property(x => x.Reason).HasMaxLength(1000).IsRequired();
+        b.Property(x => x.DecisionComment).HasMaxLength(500);
+
+        b.HasOne<PayrollEmployee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<EmployeeLoan>().WithMany().HasForeignKey(x => x.EmployeeLoanId).OnDelete(DeleteBehavior.Restrict);
+
+        b.HasIndex(x => new { x.EmployeeId, x.CreatedAt });
+        // Approvals inbox
+        b.HasIndex(x => new { x.TenantId, x.Status }).HasFilter("\"Status\" = 1 AND \"IsDeleted\" = false");
+        b.HasIndex(x => x.EmployeeLoanId).IsUnique().HasFilter("\"EmployeeLoanId\" IS NOT NULL");
+    }
+}
+
+public sealed class LoanPolicyConfiguration : IEntityTypeConfiguration<LoanPolicy>
+{
+    public void Configure(EntityTypeBuilder<LoanPolicy> b)
+    {
+        b.ToTable("LoanPolicies", t =>
+        {
+            t.HasCheckConstraint("CK_LoanPolicies_Advance", "\"MaxAdvancePercent\" > 0 AND \"MaxAdvancePercent\" <= 100");
+            t.HasCheckConstraint("CK_LoanPolicies_Installments", "\"MaxLoanInstallments\" BETWEEN 1 AND 120 AND \"MaxAdvanceInstallments\" BETWEEN 1 AND 12");
+        });
+        b.ConfigureAudit();
+        b.Property(x => x.MaxAdvancePercent).HasPrecision(5, 2);
+
+        b.HasOne<PayComponent>().WithMany().HasForeignKey(x => x.LoanDeductionComponentId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<PayComponent>().WithMany().HasForeignKey(x => x.AdvanceDeductionComponentId).OnDelete(DeleteBehavior.Restrict);
+
+        b.HasIndex(x => x.TenantId).IsUnique().HasFilter("\"IsDeleted\" = false");
+    }
+}

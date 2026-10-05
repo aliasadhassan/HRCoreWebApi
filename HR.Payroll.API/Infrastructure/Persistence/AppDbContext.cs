@@ -50,6 +50,8 @@ public sealed class AppDbContext(
     public DbSet<PayrollInput> PayrollInputs => Set<PayrollInput>();
     public DbSet<UnpaidLeaveDay> UnpaidLeaveDays => Set<UnpaidLeaveDay>();
     public DbSet<EmployeeLoan> EmployeeLoans => Set<EmployeeLoan>();
+    public DbSet<LoanRequest> LoanRequests => Set<LoanRequest>();
+    public DbSet<LoanPolicy> LoanPolicies => Set<LoanPolicy>();
 
     public DbSet<PayrollRun> PayrollRuns => Set<PayrollRun>();
     public DbSet<Payslip> Payslips => Set<Payslip>();
