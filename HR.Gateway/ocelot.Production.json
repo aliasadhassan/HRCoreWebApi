@@ -59,6 +59,22 @@
         "AuthenticationProviderKey": "ApiGatewayKey",
         "AllowedScopes": []
       }
+    },
+    {
+      "DownstreamPathTemplate": "/api/leave/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "hr-employee",
+          "Port": 80
+        }
+      ],
+      "UpstreamPathTemplate": "/leave/{everything}",
+      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete", "Options" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "ApiGatewayKey",
+        "AllowedScopes": []
+      }
     }
   ],
   "GlobalConfiguration": {
