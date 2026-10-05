@@ -6,41 +6,11 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace HR.Payroll.API.Migrations
 {
     /// <inheritdoc />
-    /// <remarks>
-    /// Snapshot pehle "payroll" default schema ke baghair tha, is liye EF ne har table ke liye RenameTable bhi banaya.
-    /// Database mein tables pehle se payroll schema mein hain, woh hata diye; sirf naye tables.
-    /// </remarks>
     public partial class AddLoanRequestsAndPolicy : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             migrationBuilder.CreateTable(
                 name: "LoanPolicies",
                 schema: "payroll",
@@ -63,7 +33,7 @@ namespace HR.Payroll.API.Migrations
                     UpdatedAt = table.Column<DateTime>(type: "timestamp(3) with time zone", precision: 3, nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uuid", nullable: true),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: false, defaultValueSql: "gen_random_bytes(8)"),   // Postgres khud rowversion nahi banata (baqi payroll tables jaisa)
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     TenantId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
@@ -112,7 +82,7 @@ namespace HR.Payroll.API.Migrations
                     UpdatedAt = table.Column<DateTime>(type: "timestamp(3) with time zone", precision: 3, nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uuid", nullable: true),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: false, defaultValueSql: "gen_random_bytes(8)"),   // Postgres khud rowversion nahi banata (baqi payroll tables jaisa)
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     TenantId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
@@ -188,31 +158,6 @@ namespace HR.Payroll.API.Migrations
             migrationBuilder.DropTable(
                 name: "LoanRequests",
                 schema: "payroll");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         }
     }
 }

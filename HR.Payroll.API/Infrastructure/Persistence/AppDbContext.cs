@@ -87,6 +87,11 @@ public sealed class AppDbContext(
 
             modelBuilder.Entity(clrType).Ignore(nameof(Entity.DomainEvents));
 
+            // Setup entities (PayComponent, PayGroup, PayPeriod, PayrollSettings) ki configuration nahi hai,
+            // isliye ConfigureAudit wala IsRowVersion yahan sab pe — RowVersion = Postgres ka xmin
+            if (typeof(AuditableBase).IsAssignableFrom(clrType))
+                modelBuilder.Entity(clrType).Property(nameof(AuditableBase.RowVersion)).IsRowVersion();
+
             if (typeof(AuditableEntity).IsAssignableFrom(clrType))
                 TenantFilterMethod.MakeGenericMethod(clrType).Invoke(this, [modelBuilder]);
             else if (typeof(SharedAuditableEntity).IsAssignableFrom(clrType))

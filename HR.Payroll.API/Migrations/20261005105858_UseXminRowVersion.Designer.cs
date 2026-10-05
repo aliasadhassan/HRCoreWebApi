@@ -3,6 +3,7 @@ using System;
 using HR.Payroll.API.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HR.Payroll.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261005105858_UseXminRowVersion")]
+    partial class UseXminRowVersion
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -227,199 +230,6 @@ namespace HR.Payroll.API.Migrations
                     b.ToTable("EmployeeLoans", "payroll", t =>
                         {
                             t.HasCheckConstraint("CK_Loans_Amounts", "[PrincipalAmount] > 0 AND [InstallmentAmount] > 0 AND [OutstandingAmount] BETWEEN 0 AND [PrincipalAmount]");
-                        });
-                });
-
-            modelBuilder.Entity("HR.Payroll.API.Domain.Inputs.LoanPolicy", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("AdvanceDeductionComponentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("AdvancesEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("AllowMultipleActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasPrecision(3)
-                        .HasColumnType("timestamp(3) with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid?>("LoanDeductionComponentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("LoansEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<byte>("MaxAdvanceInstallments")
-                        .HasColumnType("smallint");
-
-                    b.Property<decimal>("MaxAdvancePercent")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)");
-
-                    b.Property<decimal?>("MaxLoanAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<short>("MaxLoanInstallments")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte?>("MaxLoanSalaryMultiple")
-                        .HasColumnType("smallint");
-
-                    b.Property<short>("MinServiceMonths")
-                        .HasColumnType("smallint");
-
-                    b.Property<uint>("RowVersion")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasPrecision(3)
-                        .HasColumnType("timestamp(3) with time zone");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AdvanceDeductionComponentId");
-
-                    b.HasIndex("LoanDeductionComponentId");
-
-                    b.HasIndex("TenantId")
-                        .IsUnique()
-                        .HasFilter("\"IsDeleted\" = false");
-
-                    b.ToTable("LoanPolicies", "payroll", t =>
-                        {
-                            t.HasCheckConstraint("CK_LoanPolicies_Advance", "\"MaxAdvancePercent\" > 0 AND \"MaxAdvancePercent\" <= 100");
-
-                            t.HasCheckConstraint("CK_LoanPolicies_Installments", "\"MaxLoanInstallments\" BETWEEN 1 AND 120 AND \"MaxAdvanceInstallments\" BETWEEN 1 AND 12");
-                        });
-                });
-
-            modelBuilder.Entity("HR.Payroll.API.Domain.Inputs.LoanRequest", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal?>("ApprovedAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<decimal?>("ApprovedInstallmentAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasPrecision(3)
-                        .HasColumnType("timestamp(3) with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CurrencyCode")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .IsUnicode(false)
-                        .HasColumnType("character(3)")
-                        .IsFixedLength();
-
-                    b.Property<DateTime?>("DecidedAt")
-                        .HasPrecision(3)
-                        .HasColumnType("timestamp(3) with time zone");
-
-                    b.Property<Guid?>("DecidedByUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("DecisionComment")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<Guid>("EmployeeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("EmployeeLoanId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<byte>("LoanType")
-                        .HasColumnType("smallint");
-
-                    b.Property<DateOnly>("PreferredStartDate")
-                        .HasColumnType("date");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<decimal>("RequestedAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<short>("RequestedInstallments")
-                        .HasColumnType("smallint");
-
-                    b.Property<uint>("RowVersion")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("smallint");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasPrecision(3)
-                        .HasColumnType("timestamp(3) with time zone");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EmployeeLoanId")
-                        .IsUnique()
-                        .HasFilter("\"EmployeeLoanId\" IS NOT NULL");
-
-                    b.HasIndex("EmployeeId", "CreatedAt");
-
-                    b.HasIndex("TenantId", "Status")
-                        .HasFilter("\"Status\" = 1 AND \"IsDeleted\" = false");
-
-                    b.ToTable("LoanRequests", "payroll", t =>
-                        {
-                            t.HasCheckConstraint("CK_LoanRequests_Amounts", "\"RequestedAmount\" > 0 AND \"RequestedInstallments\" BETWEEN 1 AND 120");
-
-                            t.HasCheckConstraint("CK_LoanRequests_Approved", "\"Status\" <> 2 OR (\"EmployeeLoanId\" IS NOT NULL AND \"ApprovedAmount\" > 0 AND \"ApprovedInstallmentAmount\" > 0)");
                         });
                 });
 
@@ -2072,33 +1882,6 @@ namespace HR.Payroll.API.Migrations
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("HR.Payroll.API.Domain.Inputs.LoanPolicy", b =>
-                {
-                    b.HasOne("HR.Payroll.API.Domain.Setup.PayComponent", null)
-                        .WithMany()
-                        .HasForeignKey("AdvanceDeductionComponentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("HR.Payroll.API.Domain.Setup.PayComponent", null)
-                        .WithMany()
-                        .HasForeignKey("LoanDeductionComponentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
-
-            modelBuilder.Entity("HR.Payroll.API.Domain.Inputs.LoanRequest", b =>
-                {
-                    b.HasOne("HR.Payroll.API.Domain.Employees.PayrollEmployee", null)
-                        .WithMany()
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("HR.Payroll.API.Domain.Inputs.EmployeeLoan", null)
-                        .WithMany()
-                        .HasForeignKey("EmployeeLoanId")
-                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("HR.Payroll.API.Domain.Inputs.PayrollInput", b =>
