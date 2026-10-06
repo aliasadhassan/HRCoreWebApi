@@ -152,7 +152,7 @@ public sealed class Payslip : AuditableEntity
     private decimal Sum(ComponentType type) => _lines.Where(l => l.ComponentType == type).Sum(l => l.Amount);
 }
 
-public sealed class PayslipLine : Entity
+public sealed class PayslipLine : TenantChildEntity
 {
     public Guid PayslipId { get; private set; }
     public Guid PayComponentId { get; private set; }

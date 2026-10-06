@@ -16,6 +16,7 @@ public sealed class UserCreatedConsumer(AppDbContext db, ILogger<UserCreatedCons
     {
         var message = context.Message;
         var email = message.Email.Trim();
+        await db.UseTenantAsync(message.TenantId, context.CancellationToken);   // RLS: sirf message wale tenant ke rows
 
         // Background consumer mein HTTP user/tenant nahi hota → filter bypass, tenant khud check
         var employee = await db.Employees

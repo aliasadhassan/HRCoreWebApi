@@ -43,6 +43,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 
+TenantSession.EnsureSessionPooling(connectionString);   // RLS app role + transaction pooler = tenant leak
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString, sql =>
     {

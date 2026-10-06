@@ -11,6 +11,7 @@ using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Storage;
 
 /// <summary>
 /// Repository + UnitOfWork + transaction ki zaroorat nahi — ye sab yahin hai:
@@ -49,13 +50,23 @@ public sealed class AppDbContext(
     public DbSet<AttendanceDay> AttendanceDays => Set<AttendanceDay>();
     public DbSet<AttendanceRequest> AttendanceRequests => Set<AttendanceRequest>();
 
+    private Guid? _tenantOverride;
+
+    /// <summary>
+    /// Is scope ka tenant: HTTP request mein JWT wala, background consumer mein message wala (UseTenantAsync).
+    /// Query filter, audit rules aur Postgres RLS (app.tenant_id) teeno yahi padhte hain.
+    /// </summary>
+    internal Guid? SessionTenantId => _tenantOverride ?? currentUser.TenantId;
+
     /// <summary>Query filter har query pe isay parameter ki tarah padhta hai.</summary>
-    private Guid CurrentTenantId => currentUser.TenantId ?? Guid.Empty;
+    private Guid CurrentTenantId => SessionTenantId ?? Guid.Empty;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         // Child rows parent ke saath hide hon — yahi chahiye, warning ka shor band
-        => optionsBuilder.ConfigureWarnings(w =>
-            w.Ignore(CoreEventId.PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning));
+        => optionsBuilder
+            .ConfigureWarnings(w =>
+                w.Ignore(CoreEventId.PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning))
+            .AddInterceptors(TenantConnectionInterceptor.Instance);   // RLS: har connection pe app.tenant_id
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -87,6 +98,22 @@ public sealed class AppDbContext(
 
     private void ApplyTenantFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : AuditableEntity
         => modelBuilder.Entity<TEntity>().HasQueryFilter(e => e.TenantId == CurrentTenantId && !e.IsDeleted);
+
+    /// <summary>
+    /// Background consumer (HTTP user nahi): message ka tenant is scope pe lagao — query filter, audit aur RLS sab.
+    /// MassTransit inbox consumer se pehle hi connection/transaction khol deta hai, is liye khula connection foran update.
+    /// </summary>
+    public async Task UseTenantAsync(Guid tenantId, CancellationToken ct)
+    {
+        if (tenantId == Guid.Empty)
+            throw new ArgumentException("Tenant is required.", nameof(tenantId));
+
+        _tenantOverride = tenantId;
+
+        var connection = Database.GetDbConnection();
+        if (connection.State == System.Data.ConnectionState.Open)
+            await TenantSession.ApplyAsync(connection, tenantId, ct, Database.CurrentTransaction?.GetDbTransaction());
+    }
 
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
@@ -131,7 +158,7 @@ public sealed class AppDbContext(
     {
         var now = DateTime.UtcNow;
         var userId = currentUser.UserId;
-        var tenantId = currentUser.TenantId;
+        var tenantId = SessionTenantId;
 
         foreach (var entry in ChangeTracker.Entries<AuditableEntity>().ToList())
         {
@@ -168,6 +195,12 @@ public sealed class AppDbContext(
                     break;
             }
         }
+
+        // Child rows (punch, policy rule, payslip line...) ka apna TenantId: composite FK + RLS isi se check hote hain
+        foreach (var entry in ChangeTracker.Entries<TenantChildEntity>())
+            if (entry.State == EntityState.Added && entry.Entity.TenantId == Guid.Empty)
+                entry.Entity.TenantId = tenantId
+                    ?? throw new InvalidOperationException($"TenantId is missing for new {entry.Entity.GetType().Name}.");
     }
 
     /// <summary>Defense in depth: query filter ke bawajood doosre tenant ka row kabhi update na ho.</summary>
