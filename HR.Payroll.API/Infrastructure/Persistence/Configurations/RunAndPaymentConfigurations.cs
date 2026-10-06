@@ -22,7 +22,7 @@ public sealed class PayrollRunConfiguration : IEntityTypeConfiguration<PayrollRu
 
         // â­ Ek period ka ek hi regular run (cancelled chhod kar) â€” "salary 2X" yahin rukti hai
         b.HasIndex(x => x.PayPeriodId).IsUnique()
-         .HasFilter("[RunType] = 1 AND [Status] <> 6 AND \"IsDeleted\" = false")
+         .HasFilter("\"RunType\" = 1 AND \"Status\" <> 6 AND \"IsDeleted\" = false")
          .HasDatabaseName("UX_Runs_RegularPerPeriod");
         b.HasIndex(x => new { x.TenantId, x.Status }).IncludeProperties(x => new { x.PayGroupId, x.PayPeriodId });
     }
@@ -55,7 +55,9 @@ public sealed class PayslipConfiguration : IEntityTypeConfiguration<Payslip>
 
         // â­ Ek run mein ek employee ki ek payslip
         b.HasIndex(x => new { x.PayrollRunId, x.EmployeeId }).IsUnique().HasFilter("\"IsDeleted\" = false");
-        b.HasIndex(x => new { x.TenantId, x.PayslipNumber }).IsUnique();
+        // Non-unique: cancelled run apni payslips rakhta hai, aur usi period ka naya run wahi number banata hai.
+        // Unique tab hoga jab cancel payslips ko soft-delete karega (tenancy step 04 ke saath).
+        b.HasIndex(x => new { x.TenantId, x.PayslipNumber });
         b.HasIndex(x => new { x.EmployeeId, x.PeriodStart }).IsDescending(false, true)
          .IncludeProperties(x => new { x.NetPay, x.Status });
     }

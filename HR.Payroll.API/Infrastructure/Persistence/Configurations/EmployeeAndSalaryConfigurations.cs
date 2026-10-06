@@ -96,7 +96,7 @@ public sealed class EmployeeSalaryConfiguration : IEntityTypeConfiguration<Emplo
         b.Navigation(x => x.Overrides).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         // Ek employee ki ek hi CURRENT salary
-        b.HasIndex(x => x.EmployeeId).IsUnique().HasFilter("[EffectiveTo] IS NULL AND \"IsDeleted\" = false")
+        b.HasIndex(x => x.EmployeeId).IsUnique().HasFilter("\"EffectiveTo\" IS NULL AND \"IsDeleted\" = false")
          .HasDatabaseName("UX_EmpSalary_Current");
         b.HasIndex(x => new { x.EmployeeId, x.EffectiveFrom }).IsDescending(false, true);
     }

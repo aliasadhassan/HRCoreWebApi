@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HR.Employee.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261004101236_AddAttendanceSchema")]
-    partial class AddAttendanceSchema
+    [Migration("20261006100540_TenantCompositeKeys")]
+    partial class TenantCompositeKeys
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -341,7 +341,6 @@ namespace HR.Employee.API.Migrations
             modelBuilder.Entity("HR.Employee.API.Domain.Attendance.AttendancePunch", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("AttendanceDayId")
