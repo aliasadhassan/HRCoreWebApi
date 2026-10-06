@@ -21,6 +21,15 @@ public abstract class Entity
     public void ClearDomainEvents() => _domainEvents.Clear();
 }
 
+/// <summary>
+/// Aggregate ka child row (punch, policy rule) jo doosri tenant table ko bhi point karta hai.
+/// Apna TenantId zaroori hai taake composite FK aur RLS isay bhi check kar saken. AppDbContext Add pe khud set karta hai.
+/// </summary>
+public abstract class TenantChildEntity : Entity
+{
+    public Guid TenantId { get; internal set; }
+}
+
 /// <summary>Tenant-owned, audited, soft-deletable entity. Audit fields AppDbContext khud set karta hai.</summary>
 public abstract class AuditableEntity : Entity
 {

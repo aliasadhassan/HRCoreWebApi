@@ -19,6 +19,15 @@ public abstract class Entity
     public void ClearDomainEvents() => _domainEvents.Clear();
 }
 
+/// <summary>
+/// Aggregate ka child row (payslip line, salary component) jo doosri tenant table (PayComponents) ko bhi point karta hai.
+/// Apna TenantId zaroori hai taake composite FK aur RLS isay bhi check kar saken. AppDbContext Add pe khud set karta hai.
+/// </summary>
+public abstract class TenantChildEntity : Entity
+{
+    public Guid TenantId { get; internal set; }
+}
+
 /// <summary>Audit + soft delete + concurrency. AppDbContext khud set karta hai.</summary>
 public abstract class AuditableBase : Entity
 {

@@ -87,7 +87,7 @@ public sealed class EmployeeSalary : AuditableEntity
     }
 }
 
-public sealed class EmployeeSalaryComponent : Entity
+public sealed class EmployeeSalaryComponent : TenantChildEntity
 {
     public Guid EmployeeSalaryId { get; private set; }
     public Guid PayComponentId { get; private set; }

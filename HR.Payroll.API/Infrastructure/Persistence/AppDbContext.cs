@@ -11,6 +11,7 @@ using HR.Payroll.API.Domain.Salaries;
 using HR.Payroll.API.Domain.Setup;
 using HR.Payroll.API.Domain.Tax;
 using MassTransit;
+using HR.Shared.Library.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -24,7 +25,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 public sealed class AppDbContext(
     DbContextOptions<AppDbContext> options,
     ICurrentUser currentUser,
-    IPublisher publisher) : DbContext(options), IAppDbContext
+    IPublisher publisher) : DbContext(options), IAppDbContext, ITenantSessionContext
 {
     private static readonly MethodInfo TenantFilterMethod =
         typeof(AppDbContext).GetMethod(nameof(ApplyTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!;
@@ -60,11 +61,19 @@ public sealed class AppDbContext(
     public DbSet<PaymentBatch> PaymentBatches => Set<PaymentBatch>();
     public DbSet<Payment> Payments => Set<Payment>();
 
-    private Guid CurrentTenantId => currentUser.TenantId ?? Guid.Empty;
+    private readonly TenantScope _tenant = new(() => currentUser.TenantId);
+
+    /// <summary>Is scope ka tenant (JWT ya consumer message) — RLS interceptor bhi yahi padhta hai.</summary>
+    public Guid? SessionTenantId => _tenant.TenantId;
+
+    /// <summary>Query filter har query pe isay parameter ki tarah padhta hai.</summary>
+    private Guid CurrentTenantId => _tenant.FilterId;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.ConfigureWarnings(w => w.Ignore(
-            CoreEventId.PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning));
+        => optionsBuilder
+            .ConfigureWarnings(w => w.Ignore(
+                CoreEventId.PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning))
+            .AddInterceptors(TenantConnectionInterceptor.Instance);   // RLS: har connection pe app.tenant_id
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -122,6 +131,9 @@ public sealed class AppDbContext(
         });
     }
 
+    /// <summary>Background consumer (HTTP user nahi): message ka tenant is scope pe — query filter, audit aur RLS sab.</summary>
+    public Task UseTenantAsync(Guid tenantId, CancellationToken ct) => _tenant.UseAsync(Database, tenantId, ct);
+
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
         await DispatchDomainEventsAsync(cancellationToken);
@@ -164,7 +176,7 @@ public sealed class AppDbContext(
     {
         var now = DateTime.UtcNow;
         var userId = currentUser.UserId;
-        var tenantId = currentUser.TenantId;
+        var tenantId = SessionTenantId;
 
         foreach (var entry in ChangeTracker.Entries<AuditableBase>().ToList())
         {
@@ -194,6 +206,8 @@ public sealed class AppDbContext(
                     break;
             }
         }
+
+        _tenant.StampAdded<TenantChildEntity>(ChangeTracker, c => c.TenantId, (c, t) => c.TenantId = t);
     }
 
     /// <summary>

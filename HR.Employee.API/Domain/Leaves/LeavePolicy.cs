@@ -58,7 +58,7 @@ public sealed class LeavePolicy : AuditableEntity
     public LeavePolicyRule? RuleFor(Guid leaveTypeId) => _rules.FirstOrDefault(r => r.LeaveTypeId == leaveTypeId);
 }
 
-public sealed class LeavePolicyRule : Entity
+public sealed class LeavePolicyRule : TenantChildEntity
 {
     public Guid LeavePolicyId { get; private set; }
     public Guid LeaveTypeId { get; private set; }

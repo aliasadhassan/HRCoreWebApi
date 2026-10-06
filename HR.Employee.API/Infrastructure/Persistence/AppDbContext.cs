@@ -8,6 +8,7 @@ using HR.Employee.API.Domain.Employees;
 using HR.Employee.API.Domain.Leaves;
 using HR.Employee.API.Domain.Organization;
 using MassTransit;
+using HR.Shared.Library.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -21,7 +22,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 public sealed class AppDbContext(
     DbContextOptions<AppDbContext> options,
     ICurrentUser currentUser,
-    IPublisher publisher) : DbContext(options), IAppDbContext
+    IPublisher publisher) : DbContext(options), IAppDbContext, ITenantSessionContext
 {
     private static readonly MethodInfo TenantFilterMethod =
         typeof(AppDbContext).GetMethod(nameof(ApplyTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!;
@@ -49,13 +50,20 @@ public sealed class AppDbContext(
     public DbSet<AttendanceDay> AttendanceDays => Set<AttendanceDay>();
     public DbSet<AttendanceRequest> AttendanceRequests => Set<AttendanceRequest>();
 
+    private readonly TenantScope _tenant = new(() => currentUser.TenantId);
+
+    /// <summary>Is scope ka tenant (JWT ya consumer message) — RLS interceptor bhi yahi padhta hai.</summary>
+    public Guid? SessionTenantId => _tenant.TenantId;
+
     /// <summary>Query filter har query pe isay parameter ki tarah padhta hai.</summary>
-    private Guid CurrentTenantId => currentUser.TenantId ?? Guid.Empty;
+    private Guid CurrentTenantId => _tenant.FilterId;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         // Child rows parent ke saath hide hon — yahi chahiye, warning ka shor band
-        => optionsBuilder.ConfigureWarnings(w =>
-            w.Ignore(CoreEventId.PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning));
+        => optionsBuilder
+            .ConfigureWarnings(w =>
+                w.Ignore(CoreEventId.PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning))
+            .AddInterceptors(TenantConnectionInterceptor.Instance);   // RLS: har connection pe app.tenant_id
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -87,6 +95,9 @@ public sealed class AppDbContext(
 
     private void ApplyTenantFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : AuditableEntity
         => modelBuilder.Entity<TEntity>().HasQueryFilter(e => e.TenantId == CurrentTenantId && !e.IsDeleted);
+
+    /// <summary>Background consumer (HTTP user nahi): message ka tenant is scope pe — query filter, audit aur RLS sab.</summary>
+    public Task UseTenantAsync(Guid tenantId, CancellationToken ct) => _tenant.UseAsync(Database, tenantId, ct);
 
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
@@ -131,7 +142,7 @@ public sealed class AppDbContext(
     {
         var now = DateTime.UtcNow;
         var userId = currentUser.UserId;
-        var tenantId = currentUser.TenantId;
+        var tenantId = SessionTenantId;
 
         foreach (var entry in ChangeTracker.Entries<AuditableEntity>().ToList())
         {
@@ -168,6 +179,8 @@ public sealed class AppDbContext(
                     break;
             }
         }
+
+        _tenant.StampAdded<TenantChildEntity>(ChangeTracker, c => c.TenantId, (c, t) => c.TenantId = t);
     }
 
     /// <summary>Defense in depth: query filter ke bawajood doosre tenant ka row kabhi update na ho.</summary>

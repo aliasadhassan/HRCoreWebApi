@@ -111,7 +111,7 @@ public sealed class SalaryTemplate : AuditableEntity
     }
 }
 
-public sealed class SalaryTemplateLine : Entity
+public sealed class SalaryTemplateLine : TenantChildEntity
 {
     public Guid SalaryTemplateId { get; private set; }
     public Guid PayComponentId { get; private set; }

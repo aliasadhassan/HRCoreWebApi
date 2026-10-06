@@ -8,7 +8,8 @@ using Microsoft.EntityFrameworkCore;
 
 /// <summary>
 /// Employee API → Payroll ki local copy. Background consumer mein HTTP user/tenant nahi hota,
-/// is liye IgnoreQueryFilters + tenant khud message se.
+/// is liye tenant message se (UseTenantAsync: query filter + Postgres RLS) aur IgnoreQueryFilters soft-deleted ke liye.
+/// RLS ke baad doosre tenant ka same Id yahan dikhta nahi; insert PK pe fail ho kar retry → error queue jata hai.
 /// EF Inbox (Program.cs) same message dobara process nahi hone deta.
 /// SentTime se out-of-order events pakde jate hain (PayrollEmployee.IsStale).
 /// </summary>
@@ -19,6 +20,7 @@ public sealed class EmployeeCreatedConsumer(AppDbContext db, ILogger<EmployeeCre
     {
         var m = context.Message;
         var occurredAt = context.SentTime ?? DateTime.UtcNow;
+        await db.UseTenantAsync(m.TenantId, context.CancellationToken);   // RLS: sirf message wale tenant ke rows
 
         var employee = await db.PayrollEmployees.IgnoreQueryFilters()
             .FirstOrDefaultAsync(e => e.Id == m.EmployeeId, context.CancellationToken);
@@ -51,6 +53,7 @@ public sealed class EmployeeExitedConsumer(AppDbContext db, ILogger<EmployeeExit
     public async Task Consume(ConsumeContext<EmployeeExitedIntegrationEvent> context)
     {
         var m = context.Message;
+        await db.UseTenantAsync(m.TenantId, context.CancellationToken);
 
         var employee = await db.PayrollEmployees.IgnoreQueryFilters()
             .FirstOrDefaultAsync(e => e.Id == m.EmployeeId && e.TenantId == m.TenantId, context.CancellationToken);

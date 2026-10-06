@@ -139,7 +139,7 @@ public sealed class AttendanceDay : AuditableEntity
 }
 
 /// <summary>Raw clock event. Kabhi delete nahi — galat punch IsIgnored hota hai (audit trail).</summary>
-public sealed class AttendancePunch : Entity
+public sealed class AttendancePunch : TenantChildEntity
 {
     public Guid AttendanceDayId { get; private set; }
     public DateTime PunchedAt { get; private set; }            // UTC
