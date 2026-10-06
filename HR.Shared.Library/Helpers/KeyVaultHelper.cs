@@ -11,6 +11,9 @@ namespace HR.Shared.Library.Helpers
     public interface IKeyVaultHelper
     {
         Task<string> GetSecretValueAsync(string secretName);
+
+        /// <summary>Secret na ho (404) to null — optional / per-service override secrets ke liye.</summary>
+        Task<string?> TryGetSecretValueAsync(string secretName);
     }
     public class KeyVaultHelper : IKeyVaultHelper
     {
@@ -30,6 +33,18 @@ namespace HR.Shared.Library.Helpers
         {
             var secret = await _client.GetSecretAsync(secretName);
             return secret.Value.Value;
+        }
+
+        public async Task<string?> TryGetSecretValueAsync(string secretName)
+        {
+            try
+            {
+                return await GetSecretValueAsync(secretName);
+            }
+            catch (Azure.RequestFailedException ex) when (ex.Status == 404)
+            {
+                return null;
+            }
         }
     }
 }
