@@ -70,7 +70,7 @@ builder.Services.AddMassTransit(x =>
     // Outbox: publish DB ke saath ek hi transaction mein (dual-write khatam)
     x.AddEntityFrameworkOutbox<AppDbContext>(o =>
     {
-        o.UseSqlServer();
+        o.UsePostgres(); // Supabase Postgres: SQL Server lock syntax (SELECT TOP 1 ... WITH (UPDLOCK)) yahan fail hota hai
         o.UseBusOutbox();
     });
 

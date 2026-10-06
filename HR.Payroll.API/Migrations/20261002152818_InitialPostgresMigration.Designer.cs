@@ -224,11 +224,11 @@ namespace HR.Payroll.API.Migrations
                     b.HasIndex("DeductionComponentId");
 
                     b.HasIndex("EmployeeId")
-                        .HasFilter("[Status] = 1 AND \"IsDeleted\" = false");
+                        .HasFilter("\"Status\" = 1 AND \"IsDeleted\" = false");
 
                     b.ToTable("EmployeeLoans", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Loans_Amounts", "[PrincipalAmount] > 0 AND [InstallmentAmount] > 0 AND [OutstandingAmount] BETWEEN 0 AND [PrincipalAmount]");
+                            t.HasCheckConstraint("CK_Loans_Amounts", "\"PrincipalAmount\" > 0 AND \"InstallmentAmount\" > 0 AND \"OutstandingAmount\" BETWEEN 0 AND \"PrincipalAmount\"");
                         });
                 });
 
@@ -654,7 +654,7 @@ namespace HR.Payroll.API.Migrations
                     b.HasIndex("PayPeriodId")
                         .IsUnique()
                         .HasDatabaseName("UX_Runs_RegularPerPeriod")
-                        .HasFilter("[RunType] = 1 AND [Status] <> 6 AND \"IsDeleted\" = false");
+                        .HasFilter("\"RunType\" = 1 AND \"Status\" <> 6 AND \"IsDeleted\" = false");
 
                     b.HasIndex("TenantId", "Status");
 
@@ -946,7 +946,7 @@ namespace HR.Payroll.API.Migrations
                     b.HasIndex("EmployeeId")
                         .IsUnique()
                         .HasDatabaseName("UX_EmpSalary_Current")
-                        .HasFilter("[EffectiveTo] IS NULL AND \"IsDeleted\" = false");
+                        .HasFilter("\"EffectiveTo\" IS NULL AND \"IsDeleted\" = false");
 
                     b.HasIndex("SalaryGradeId");
 

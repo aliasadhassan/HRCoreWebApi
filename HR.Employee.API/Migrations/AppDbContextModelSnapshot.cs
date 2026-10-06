@@ -1508,7 +1508,7 @@ namespace HR.Employee.API.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AssignedApproverId")
-                        .HasFilter("[Decision] = 0");
+                        .HasFilter("\"Decision\" = 0");
 
                     b.HasIndex("LeaveRequestId", "Level")
                         .IsUnique();

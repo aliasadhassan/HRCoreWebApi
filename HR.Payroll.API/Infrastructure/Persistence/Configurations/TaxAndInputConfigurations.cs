@@ -103,7 +103,7 @@ public sealed class EmployeeLoanConfiguration : IEntityTypeConfiguration<Employe
     public void Configure(EntityTypeBuilder<EmployeeLoan> b)
     {
         b.ToTable("EmployeeLoans", t => t.HasCheckConstraint("CK_Loans_Amounts",
-            "[PrincipalAmount] > 0 AND [InstallmentAmount] > 0 AND [OutstandingAmount] BETWEEN 0 AND [PrincipalAmount]"));
+            "\"PrincipalAmount\" > 0 AND \"InstallmentAmount\" > 0 AND \"OutstandingAmount\" BETWEEN 0 AND \"PrincipalAmount\""));
         b.ConfigureAudit();
         b.Property(x => x.CurrencyCode).AsCurrency().IsRequired();
         b.Property(x => x.Remarks).HasMaxLength(500);
@@ -111,7 +111,7 @@ public sealed class EmployeeLoanConfiguration : IEntityTypeConfiguration<Employe
         b.HasOne<PayrollEmployee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<PayComponent>().WithMany().HasForeignKey(x => x.DeductionComponentId).OnDelete(DeleteBehavior.Restrict);
 
-        b.HasIndex(x => x.EmployeeId).HasFilter("[Status] = 1 AND \"IsDeleted\" = false");
+        b.HasIndex(x => x.EmployeeId).HasFilter("\"Status\" = 1 AND \"IsDeleted\" = false");
     }
 }
 

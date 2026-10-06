@@ -458,7 +458,7 @@ namespace HR.Payroll.API.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_EmployeeLoans", x => x.Id);
-                    table.CheckConstraint("CK_Loans_Amounts", "[PrincipalAmount] > 0 AND [InstallmentAmount] > 0 AND [OutstandingAmount] BETWEEN 0 AND [PrincipalAmount]");
+                    table.CheckConstraint("CK_Loans_Amounts", "\"PrincipalAmount\" > 0 AND \"InstallmentAmount\" > 0 AND \"OutstandingAmount\" BETWEEN 0 AND \"PrincipalAmount\"");
                     table.ForeignKey(
                         name: "FK_EmployeeLoans_PayComponents_DeductionComponentId",
                         column: x => x.DeductionComponentId,
@@ -905,7 +905,7 @@ namespace HR.Payroll.API.Migrations
                 name: "IX_EmployeeLoans_EmployeeId",
                 table: "EmployeeLoans",
                 column: "EmployeeId",
-                filter: "[Status] = 1 AND \"IsDeleted\" = false");
+                filter: "\"Status\" = 1 AND \"IsDeleted\" = false");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EmployeeSalaries_EmployeeId_EffectiveFrom",
@@ -928,7 +928,7 @@ namespace HR.Payroll.API.Migrations
                 table: "EmployeeSalaries",
                 column: "EmployeeId",
                 unique: true,
-                filter: "[EffectiveTo] IS NULL AND \"IsDeleted\" = false");
+                filter: "\"EffectiveTo\" IS NULL AND \"IsDeleted\" = false");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EmployeeSalaryComponents_BaseComponentId",
@@ -1076,7 +1076,7 @@ namespace HR.Payroll.API.Migrations
                 table: "PayrollRuns",
                 column: "PayPeriodId",
                 unique: true,
-                filter: "[RunType] = 1 AND [Status] <> 6 AND \"IsDeleted\" = false");
+                filter: "\"RunType\" = 1 AND \"Status\" <> 6 AND \"IsDeleted\" = false");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PayslipLines_PayComponentId",

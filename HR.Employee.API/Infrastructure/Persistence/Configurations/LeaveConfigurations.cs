@@ -147,7 +147,7 @@ public sealed class LeaveRequestApprovalConfiguration : IEntityTypeConfiguration
 
         b.HasIndex(x => new { x.LeaveRequestId, x.Level }).IsUnique();
         // "My approvals" inbox
-        b.HasIndex(x => x.AssignedApproverId).HasFilter("[Decision] = 0");
+        b.HasIndex(x => x.AssignedApproverId).HasFilter("\"Decision\" = 0");
     }
 }
 
