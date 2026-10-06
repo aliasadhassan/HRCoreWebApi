@@ -8,10 +8,10 @@ using HR.Employee.API.Domain.Employees;
 using HR.Employee.API.Domain.Leaves;
 using HR.Employee.API.Domain.Organization;
 using MassTransit;
+using HR.Shared.Library.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.EntityFrameworkCore.Storage;
 
 /// <summary>
 /// Repository + UnitOfWork + transaction ki zaroorat nahi — ye sab yahin hai:
@@ -22,7 +22,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 public sealed class AppDbContext(
     DbContextOptions<AppDbContext> options,
     ICurrentUser currentUser,
-    IPublisher publisher) : DbContext(options), IAppDbContext
+    IPublisher publisher) : DbContext(options), IAppDbContext, ITenantSessionContext
 {
     private static readonly MethodInfo TenantFilterMethod =
         typeof(AppDbContext).GetMethod(nameof(ApplyTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!;
@@ -56,7 +56,7 @@ public sealed class AppDbContext(
     /// Is scope ka tenant: HTTP request mein JWT wala, background consumer mein message wala (UseTenantAsync).
     /// Query filter, audit rules aur Postgres RLS (app.tenant_id) teeno yahi padhte hain.
     /// </summary>
-    internal Guid? SessionTenantId => _tenantOverride ?? currentUser.TenantId;
+    public Guid? SessionTenantId => _tenantOverride ?? currentUser.TenantId;
 
     /// <summary>Query filter har query pe isay parameter ki tarah padhta hai.</summary>
     private Guid CurrentTenantId => SessionTenantId ?? Guid.Empty;
@@ -109,10 +109,7 @@ public sealed class AppDbContext(
             throw new ArgumentException("Tenant is required.", nameof(tenantId));
 
         _tenantOverride = tenantId;
-
-        var connection = Database.GetDbConnection();
-        if (connection.State == System.Data.ConnectionState.Open)
-            await TenantSession.ApplyAsync(connection, tenantId, ct, Database.CurrentTransaction?.GetDbTransaction());
+        await TenantSession.ApplyIfOpenAsync(Database, tenantId, ct);
     }
 
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)

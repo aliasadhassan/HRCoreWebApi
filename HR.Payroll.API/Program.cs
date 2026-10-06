@@ -9,6 +9,7 @@ using HR.Payroll.API.Infrastructure.Logging;
 using HR.Payroll.API.Infrastructure.Persistence;
 using HR.Shared.Library.Authorization;
 using HR.Shared.Library.Helpers;
+using HR.Shared.Library.Persistence;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;

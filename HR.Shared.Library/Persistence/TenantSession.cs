@@ -1,8 +1,11 @@
-namespace HR.Payroll.API.Infrastructure.Persistence;
+namespace HR.Shared.Library.Persistence;
 
 using System.Data;
 using System.Data.Common;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
 
 /// <summary>
@@ -10,7 +13,7 @@ using Npgsql;
 /// Policies <c>tenancy.current_tenant_id()</c> padhti hain; khali value = NULL = koi row nahi (fail closed).
 /// Pool se aaya connection pichle request ka tenant le kar na aaye, is liye har open pe dobara set (ya khali) hota hai.
 /// </summary>
-internal static class TenantSession
+public static class TenantSession
 {
     private const string Sql = "SELECT set_config('app.tenant_id', @tenant, false)";
 
@@ -24,6 +27,15 @@ internal static class TenantSession
     {
         await using var command = CreateCommand(connection, tenantId, transaction);
         await command.ExecuteNonQueryAsync(ct);
+    }
+
+    /// <summary>Connection pehle se khula hai (MassTransit inbox ne khola) to tenant foran us par bhi lagao.</summary>
+    public static Task ApplyIfOpenAsync(DatabaseFacade database, Guid tenantId, CancellationToken ct)
+    {
+        var connection = database.GetDbConnection();
+        return connection.State == ConnectionState.Open
+            ? ApplyAsync(connection, tenantId, ct, database.CurrentTransaction?.GetDbTransaction())
+            : Task.CompletedTask;
     }
 
     private static DbCommand CreateCommand(DbConnection connection, Guid? tenantId, DbTransaction? transaction)
@@ -55,14 +67,20 @@ internal static class TenantSession
     }
 }
 
-/// <summary>AppDbContext ka har naya connection: SessionTenantId ko <c>app.tenant_id</c> mein likho.</summary>
-internal sealed class TenantConnectionInterceptor : DbConnectionInterceptor
+/// <summary>ITenantSessionContext wale DbContext ka har naya connection: SessionTenantId ko <c>app.tenant_id</c> mein likho.</summary>
+public sealed class TenantConnectionInterceptor : DbConnectionInterceptor
 {
     public static readonly TenantConnectionInterceptor Instance = new();
 
     public override void ConnectionOpened(DbConnection connection, ConnectionEndEventData eventData)
-        => TenantSession.Apply(connection, (eventData.Context as AppDbContext)?.SessionTenantId);
+        => TenantSession.Apply(connection, (eventData.Context as ITenantSessionContext)?.SessionTenantId);
 
     public override Task ConnectionOpenedAsync(DbConnection connection, ConnectionEndEventData eventData, CancellationToken cancellationToken = default)
-        => TenantSession.ApplyAsync(connection, (eventData.Context as AppDbContext)?.SessionTenantId, cancellationToken);
+        => TenantSession.ApplyAsync(connection, (eventData.Context as ITenantSessionContext)?.SessionTenantId, cancellationToken);
+}
+
+/// <summary>DbContext jo is scope ka tenant batata hai (JWT ya consumer message se).</summary>
+public interface ITenantSessionContext
+{
+    Guid? SessionTenantId { get; }
 }
