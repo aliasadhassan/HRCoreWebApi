@@ -11,6 +11,12 @@ namespace HR.Shared.Library.Helpers
     public interface IKeyVaultHelper
     {
         Task<string> GetSecretValueAsync(string secretName);
+
+        /// <summary>Secret na ho (404) to null — optional / per-service override secrets ke liye.</summary>
+        Task<string?> TryGetSecretValueAsync(string secretName);
+
+        /// <summary>Service ka apna DB secret (RLS app role) ho to woh, warna shared SupabaseConnectionString.</summary>
+        Task<string> GetDbConnectionStringAsync(string serviceSecretName);
     }
     public class KeyVaultHelper : IKeyVaultHelper
     {
@@ -31,5 +37,21 @@ namespace HR.Shared.Library.Helpers
             var secret = await _client.GetSecretAsync(secretName);
             return secret.Value.Value;
         }
+
+        public async Task<string?> TryGetSecretValueAsync(string secretName)
+        {
+            try
+            {
+                return await GetSecretValueAsync(secretName);
+            }
+            catch (Azure.RequestFailedException ex) when (ex.Status == 404)
+            {
+                return null;
+            }
+        }
+
+        public async Task<string> GetDbConnectionStringAsync(string serviceSecretName)
+            => await TryGetSecretValueAsync(serviceSecretName)
+               ?? await GetSecretValueAsync(KeyVaultSecrets.SharedDb);
     }
 }

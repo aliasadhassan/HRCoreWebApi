@@ -26,7 +26,7 @@ var jwtKey = await kvHelper.GetSecretValueAsync("JwtKey");
 if (string.IsNullOrEmpty(jwtKey))
     throw new Exception("JWT Key 'JwtKey' not found in Azure Key Vault.");
 
-var connectionString = await kvHelper.GetSecretValueAsync("SupabaseConnectionString");
+var connectionString = await kvHelper.GetDbConnectionStringAsync(KeyVaultSecrets.PayrollDb);
 #endregion
 
 #region API + exception handling
