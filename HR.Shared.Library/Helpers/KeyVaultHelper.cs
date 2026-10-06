@@ -52,6 +52,6 @@ namespace HR.Shared.Library.Helpers
 
         public async Task<string> GetDbConnectionStringAsync(string serviceSecretName)
             => await TryGetSecretValueAsync(serviceSecretName)
-               ?? await GetSecretValueAsync("SupabaseConnectionString");
+               ?? await GetSecretValueAsync(KeyVaultSecrets.SharedDb);
     }
 }
