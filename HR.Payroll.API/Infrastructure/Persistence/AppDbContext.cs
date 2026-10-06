@@ -61,16 +61,13 @@ public sealed class AppDbContext(
     public DbSet<PaymentBatch> PaymentBatches => Set<PaymentBatch>();
     public DbSet<Payment> Payments => Set<Payment>();
 
-    private Guid? _tenantOverride;
+    private readonly TenantScope _tenant = new(() => currentUser.TenantId);
 
-    /// <summary>
-    /// Is scope ka tenant: HTTP request mein JWT wala, background consumer mein message wala (UseTenantAsync).
-    /// Query filter, audit rules aur Postgres RLS (app.tenant_id) teeno yahi padhte hain.
-    /// </summary>
-    public Guid? SessionTenantId => _tenantOverride ?? currentUser.TenantId;
+    /// <summary>Is scope ka tenant (JWT ya consumer message) — RLS interceptor bhi yahi padhta hai.</summary>
+    public Guid? SessionTenantId => _tenant.TenantId;
 
     /// <summary>Query filter har query pe isay parameter ki tarah padhta hai.</summary>
-    private Guid CurrentTenantId => SessionTenantId ?? Guid.Empty;
+    private Guid CurrentTenantId => _tenant.FilterId;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder
@@ -134,18 +131,8 @@ public sealed class AppDbContext(
         });
     }
 
-    /// <summary>
-    /// Background consumer (HTTP user nahi): message ka tenant is scope pe lagao — query filter, audit aur RLS sab.
-    /// MassTransit inbox consumer se pehle hi connection/transaction khol deta hai, is liye khula connection foran update.
-    /// </summary>
-    public async Task UseTenantAsync(Guid tenantId, CancellationToken ct)
-    {
-        if (tenantId == Guid.Empty)
-            throw new ArgumentException("Tenant is required.", nameof(tenantId));
-
-        _tenantOverride = tenantId;
-        await TenantSession.ApplyIfOpenAsync(Database, tenantId, ct);
-    }
+    /// <summary>Background consumer (HTTP user nahi): message ka tenant is scope pe — query filter, audit aur RLS sab.</summary>
+    public Task UseTenantAsync(Guid tenantId, CancellationToken ct) => _tenant.UseAsync(Database, tenantId, ct);
 
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
@@ -220,11 +207,7 @@ public sealed class AppDbContext(
             }
         }
 
-        // Child rows (punch, policy rule, payslip line...) ka apna TenantId: composite FK + RLS isi se check hote hain
-        foreach (var entry in ChangeTracker.Entries<TenantChildEntity>())
-            if (entry.State == EntityState.Added && entry.Entity.TenantId == Guid.Empty)
-                entry.Entity.TenantId = tenantId
-                    ?? throw new InvalidOperationException($"TenantId is missing for new {entry.Entity.GetType().Name}.");
+        _tenant.StampAdded<TenantChildEntity>(ChangeTracker, c => c.TenantId, (c, t) => c.TenantId = t);
     }
 
     /// <summary>
