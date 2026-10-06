@@ -26,9 +26,7 @@ var jwtKey = await kvHelper.GetSecretValueAsync("JwtKey");
 if (string.IsNullOrEmpty(jwtKey))
     throw new Exception("JWT Key 'JwtKey' not found in Azure Key Vault.");
 
-// Apna secret ho to us se (RLS app role hr_employee_app), warna shared postgres wala
-var connectionString = await kvHelper.TryGetSecretValueAsync("EmployeeDbConnectionString")
-    ?? await kvHelper.GetSecretValueAsync("SupabaseConnectionString");
+var connectionString = await kvHelper.GetDbConnectionStringAsync("EmployeeDbConnectionString");
 #endregion
 
 #region API + exception handling
