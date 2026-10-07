@@ -194,6 +194,34 @@ public sealed class Employee : AuditableEntity
         RecordHistory(JobChangeType.StatusChange, confirmationDate, "Probation confirmed");
     }
 
+    /// <summary>Exit case shuru: notice period (status OnNotice). Asal exit case complete hone par Exit() se.</summary>
+    public void ServeNotice(DateOnly noticeDate, DateOnly lastWorkingDay)
+    {
+        EnsureNotExited();
+
+        if (EmploymentStatus == EmploymentStatus.OnNotice)
+            throw new DomainException("This employee is already serving notice.");
+        if (lastWorkingDay < JoiningDate)
+            throw new DomainException("Last working day cannot be before the joining date.");
+        if (lastWorkingDay < noticeDate)
+            throw new DomainException("Last working day cannot be before the notice date.");
+
+        EmploymentStatus = EmploymentStatus.OnNotice;
+        RecordHistory(JobChangeType.StatusChange, noticeDate, $"Notice served, last working day {lastWorkingDay:yyyy-MM-dd}");
+    }
+
+    /// <summary>Exit case cancel: notice wapas, pehle wala status (probation confirm nahi hua tha to Probation).</summary>
+    public void WithdrawNotice(DateOnly effectiveDate)
+    {
+        EnsureNotExited();
+
+        if (EmploymentStatus != EmploymentStatus.OnNotice)
+            return;
+
+        EmploymentStatus = ProbationEndDate is not null && ConfirmationDate is null ? EmploymentStatus.Probation : EmploymentStatus.Active;
+        RecordHistory(JobChangeType.StatusChange, effectiveDate < JoiningDate ? JoiningDate : effectiveDate, "Notice withdrawn");
+    }
+
     public void Exit(DateOnly exitDate, string reason)
     {
         EnsureNotExited();

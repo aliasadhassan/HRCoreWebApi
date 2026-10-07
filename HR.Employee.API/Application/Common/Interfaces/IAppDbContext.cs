@@ -3,6 +3,7 @@ namespace HR.Employee.API.Application.Common.Interfaces;
 using HR.Employee.API.Domain.Attendance;
 using HR.Employee.API.Domain.Employees;
 using HR.Employee.API.Domain.Leaves;
+using HR.Employee.API.Domain.Lifecycle;
 using HR.Employee.API.Domain.Organization;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,6 +35,9 @@ public interface IAppDbContext
     DbSet<AttendanceDevice> AttendanceDevices { get; }
     DbSet<AttendanceDay> AttendanceDays { get; }
     DbSet<AttendanceRequest> AttendanceRequests { get; }
+
+    DbSet<ChecklistTemplate> ChecklistTemplates { get; }
+    DbSet<LifecycleCase> LifecycleCases { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
