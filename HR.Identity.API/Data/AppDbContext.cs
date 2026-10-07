@@ -20,11 +20,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<TenantSubscription> TenantSubscriptions => Set<TenantSubscription>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
-        => modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+    {
+        // Identity ka apna schema (employee/payroll ki tarah), public mein nahi
+        modelBuilder.HasDefaultSchema("identity");
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+    }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder c)
     {
-        // har DateTime column = datetime2(3)
+        // har DateTime column = timestamptz(3)
         c.Properties<DateTime>().HavePrecision(3);
         c.Properties<DateTime?>().HavePrecision(3);
     }
