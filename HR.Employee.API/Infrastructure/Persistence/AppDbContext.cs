@@ -6,6 +6,7 @@ using HR.Employee.API.Domain.Attendance;
 using HR.Employee.API.Domain.Common;
 using HR.Employee.API.Domain.Employees;
 using HR.Employee.API.Domain.Leaves;
+using HR.Employee.API.Domain.Lifecycle;
 using HR.Employee.API.Domain.Organization;
 using MassTransit;
 using HR.Shared.Library.Persistence;
@@ -49,6 +50,9 @@ public sealed class AppDbContext(
     public DbSet<AttendanceDevice> AttendanceDevices => Set<AttendanceDevice>();
     public DbSet<AttendanceDay> AttendanceDays => Set<AttendanceDay>();
     public DbSet<AttendanceRequest> AttendanceRequests => Set<AttendanceRequest>();
+
+    public DbSet<ChecklistTemplate> ChecklistTemplates => Set<ChecklistTemplate>();
+    public DbSet<LifecycleCase> LifecycleCases => Set<LifecycleCase>();
 
     private readonly TenantScope _tenant = new(() => currentUser.TenantId);
 
