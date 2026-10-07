@@ -136,6 +136,7 @@ builder.Services.AddHttpClient<MicrosoftGraphService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<RefreshTokenService>();
+builder.Services.AddScoped<SubscriptionService>();
 
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();

@@ -17,6 +17,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<UserToken> UserTokens => Set<UserToken>();
     public DbSet<LoginAudit> LoginAudits => Set<LoginAudit>();
+    public DbSet<TenantSubscription> TenantSubscriptions => Set<TenantSubscription>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         => modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);

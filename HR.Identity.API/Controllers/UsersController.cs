@@ -25,6 +25,7 @@ namespace HR.Identity.API.Controllers;
 public sealed class UsersController(
     AppDbContext db,
     RefreshTokenService refreshTokens,
+    SubscriptionService subscriptions,
     IEmailService email,
     IPublishEndpoint publish,
     IOptions<AuthSettings> authSettings,
@@ -148,6 +149,9 @@ public sealed class UsersController(
         if (await db.Users.AnyAsync(u => u.TenantId == tenantId && u.NormalizedEmail == normalized, ct))
             return Problem(statusCode: 409, detail: "A user with this email already exists.");
 
+        if (!await subscriptions.HasFreeSeatAsync(tenantId, ct))
+            return SeatLimitReached();
+
         var roleIds = await ValidRoleIdsAsync(request.RoleIds, ct);
         if (roleIds is null)
             return Problem(statusCode: 400, detail: "One or more roles are not available.");
@@ -254,6 +258,9 @@ public sealed class UsersController(
     {
         var user = await FindAsync(id, ct);
         if (user is null) return NotFound();
+        if (!user.IsActive && !await subscriptions.HasFreeSeatAsync(user.TenantId, ct))
+            return SeatLimitReached();
+
         user.IsActive = true;
         user.UpdatedBy = MeId;
         await db.SaveChangesAsync(ct);
@@ -317,6 +324,10 @@ public sealed class UsersController(
         var tenantId = TenantId;
         return db.Users.FirstOrDefaultAsync(u => u.Id == id && u.TenantId == tenantId, ct);
     }
+
+    private ObjectResult SeatLimitReached() =>
+        Problem(statusCode: 409, title: "SEAT_LIMIT_REACHED",
+                detail: "Your plan's user limit is reached. Deactivate a user or upgrade the plan.");
 
     /// <summary>Invite bheja, abhi password set nahi kiya aur SSO se bhi nahi aaya.</summary>
     private static System.Linq.Expressions.Expression<Func<User, bool>> IsInvited(DateTime now)
