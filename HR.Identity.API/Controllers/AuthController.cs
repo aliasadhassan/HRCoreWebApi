@@ -4,9 +4,7 @@ using HR.Identity.API.Helpers;
 using HR.Identity.API.Models;
 using HR.Identity.API.Models.Common;
 using HR.Identity.API.Services;
-using HR.Shared.Library.Events;
 using HR.Shared.Library.Helpers;
-using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
@@ -26,18 +24,16 @@ namespace HR.Identity.API.Controllers
         IEmailService emailService,
         EmailTemplatesHelper emailTemplatesHelper,
         IOptions<AuthSettings> authSettingsConfig,
-        IPublishEndpoint publishEndpoint,
         MicrosoftGraphService graphService,
         ILogger<AuthController> logger) : ControllerBase
     {
         private const string RefreshCookie = "X-Refresh-Token";
         private const string MicrosoftProvider = "Microsoft";
-        private const string DefaultTenantSlug = "hr-cloud";   // TODO: tenant signup / subdomain se resolve
-        private const string DefaultRoleName = "EMPLOYEE";
         private const int MaxFailedAttempts = 5;
         private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
         private const string GenericLoginError = "Invalid Email or Password";
         private const string GenericResetMessage = "If your email is registered, you will receive a reset link.";
+        private const string NotInvitedMessage = "Sign-up is by invitation only. Ask your HR administrator to invite you.";
 
         private string? ClientIp => HttpContext.Connection.RemoteIpAddress?.ToString();
 
@@ -54,49 +50,13 @@ namespace HR.Identity.API.Controllers
         public IActionResult Get() => Ok($"JWT working for {User.Identity?.Name}");
 
         // ─────────────────────────────── REGISTER ───────────────────────────────
+        // Open signup band (audit C2): pehle har koi "hr-cloud" tenant mein EMPLOYEE ban jata tha.
+        // Ab sirf invite: Admin Users > Invite → email link → reset-password (Invite token) se password set.
+        // Route rakha hai taake purana client clear error dikhaye.
         [AllowAnonymous]
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] Models.RegisterRequest model)
-        {
-            if (model == null || string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
-                return BadRequest(new { message = "Email and Password are required." });
-
-            var email = model.Email.Trim();
-            var normalizedEmail = email.ToUpperInvariant();
-
-            try
-            {
-                var tenant = await GetDefaultTenantAsync();
-                if (tenant is null)
-                    return StatusCode(500, new { message = "Default tenant is not configured." });
-
-                if (await context.Users.AnyAsync(x => x.TenantId == tenant.Id && x.NormalizedEmail == normalizedEmail))
-                    return Conflict(new { message = "User with this email already exists" });
-
-                var user = new User
-                {
-                    TenantId = tenant.Id,
-                    Email = email,
-                    NormalizedEmail = normalizedEmail,
-                    DisplayName = string.IsNullOrWhiteSpace(model.Username) ? email : model.Username.Trim(),
-                    PasswordHash = PasswordHelper.Hash(model.Password)
-                };
-                await AssignDefaultRoleAsync(user);
-
-                context.Users.Add(user);
-                await context.SaveChangesAsync();
-
-                await publishEndpoint.Publish(new UserCreatedEvent(user.Id, user.TenantId, user.DisplayName, user.Email));
-
-                logger.LogInformation("User {Email} registered with ID {UserId}", user.Email, user.Id);
-                return StatusCode(201, new { message = "User registered successfully" });
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error registering user {Email}", email);
-                return StatusCode(500, new { message = "Internal server error" });
-            }
-        }
+        public IActionResult Register() =>
+            StatusCode(403, new { code = "REGISTRATION_DISABLED", message = NotInvitedMessage });
 
         // ──────────────────────────────── LOGIN ─────────────────────────────────
         [AllowAnonymous]
@@ -180,7 +140,6 @@ namespace HR.Identity.API.Controllers
                     .FirstOrDefaultAsync(l => l.Provider == MicrosoftProvider && l.ProviderKey == msUser.Id);
 
                 var user = link?.User;
-                var isNewUser = false;
 
                 if (link is not null)
                 {
@@ -188,30 +147,17 @@ namespace HR.Identity.API.Controllers
                 }
                 else
                 {
-                    // 2) Link nahi mila: email se existing user (pehli dafa SSO) ya naya user
+                    // 2) Link nahi mila: email se existing (invited) user — pehli dafa SSO
                     //    NOTE: email-based linking tab hi safe hai jab Entra app registration single-tenant ho
                     user = await context.Users
                         .Include(u => u.Tenant)
                         .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail);
 
+                    // Auto-provision band (audit C2): anjaan email kisi tenant mein khud nahi jayega
                     if (user is null)
                     {
-                        var tenant = await GetDefaultTenantAsync();
-                        if (tenant is null)
-                            return StatusCode(500, new { message = "Default tenant is not configured." });
-
-                        user = new User
-                        {
-                            Tenant = tenant,
-                            Email = msUser.Email.Trim(),
-                            NormalizedEmail = normalizedEmail,
-                            DisplayName = string.IsNullOrWhiteSpace(msUser.DisplayName) ? msUser.Email : msUser.DisplayName,
-                            PasswordHash = null,            // SSO-only account
-                            EmailConfirmed = true
-                        };
-                        await AssignDefaultRoleAsync(user);
-                        context.Users.Add(user);
-                        isNewUser = true;
+                        await AuditFailureAsync(null, msUser.Email, LoginMethod.Microsoft, "NotInvited");
+                        return StatusCode(403, new { code = "NOT_INVITED", message = NotInvitedMessage });
                     }
 
                     user.ExternalLogins.Add(new UserExternalLogin
@@ -228,15 +174,7 @@ namespace HR.Identity.API.Controllers
                     return StatusCode(403, new { message = "Your account is disabled. Contact your administrator." });
                 }
 
-                var result = await SignInAsync(user, LoginMethod.Microsoft);   // yahan save ho jata hai
-
-                if (isNewUser)
-                {
-                    await publishEndpoint.Publish(new UserCreatedEvent(user.Id, user.TenantId, user.DisplayName, user.Email));
-                    logger.LogInformation("New user auto-provisioned via SSO: {Email}", user.Email);
-                }
-
-                return result;
+                return await SignInAsync(user, LoginMethod.Microsoft);   // yahan save ho jata hai
             }
             catch (Exception ex)
             {
@@ -421,16 +359,6 @@ namespace HR.Identity.API.Controllers
                 message = "Too many failed attempts. Your account is temporarily locked.",
                 retryAfterSeconds
             });
-        }
-
-        private Task<Tenant?> GetDefaultTenantAsync() =>
-            context.Tenants.FirstOrDefaultAsync(t => t.Slug == DefaultTenantSlug);
-
-        private async Task AssignDefaultRoleAsync(User user)
-        {
-            var role = await context.Roles.FirstOrDefaultAsync(r => r.TenantId == null && r.NormalizedName == DefaultRoleName);
-            if (role is not null)
-                user.UserRoles.Add(new UserRole { RoleId = role.Id });
         }
 
         private void AddAudit(User? user, string? email, LoginMethod method, bool succeeded, string? reason = null)
