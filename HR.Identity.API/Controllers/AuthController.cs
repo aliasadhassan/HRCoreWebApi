@@ -25,6 +25,7 @@ namespace HR.Identity.API.Controllers
         EmailTemplatesHelper emailTemplatesHelper,
         IOptions<AuthSettings> authSettingsConfig,
         MicrosoftGraphService graphService,
+        SubscriptionService subscriptions,
         ILogger<AuthController> logger) : ControllerBase
     {
         private const string RefreshCookie = "X-Refresh-Token";
@@ -34,6 +35,8 @@ namespace HR.Identity.API.Controllers
         private const string GenericLoginError = "Invalid Email or Password";
         private const string GenericResetMessage = "If your email is registered, you will receive a reset link.";
         private const string NotInvitedMessage = "Sign-up is by invitation only. Ask your HR administrator to invite you.";
+        private const string SubscriptionExpiredCode = "SUBSCRIPTION_EXPIRED";
+        private const string SubscriptionExpiredMessage = "Your company's subscription has expired. Contact your administrator.";
 
         private string? ClientIp => HttpContext.Connection.RemoteIpAddress?.ToString();
 
@@ -197,6 +200,11 @@ namespace HR.Identity.API.Controllers
 
                 switch (result.Status)
                 {
+                    case RefreshStatus.Success when !await subscriptions.HasAccessAsync(result.User!.TenantId):
+                        // License khatam (M4) — session yahin band, data mehfooz
+                        DeleteRefreshTokenCookie();
+                        return StatusCode(403, new { code = SubscriptionExpiredCode, message = SubscriptionExpiredMessage });
+
                     case RefreshStatus.Success:
                         SetRefreshTokenCookie(result.Token!, result.ExpiresAt);
                         // Har refresh pe taaza roles/permissions — role badla to yahan asar
@@ -334,6 +342,13 @@ namespace HR.Identity.API.Controllers
         // ──────────────────────────────── HELPERS ───────────────────────────────
         private async Task<IActionResult> SignInAsync(User user, LoginMethod method)
         {
+            // License (M4): grace ke baad login band
+            if (!await subscriptions.HasAccessAsync(user.TenantId))
+            {
+                await AuditFailureAsync(user, user.Email, method, "SubscriptionExpired");
+                return StatusCode(403, new { code = SubscriptionExpiredCode, message = SubscriptionExpiredMessage });
+            }
+
             user.LastLoginAt = DateTime.UtcNow;
             user.AccessFailedCount = 0;
             user.LockoutEnd = null;

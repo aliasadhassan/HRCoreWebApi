@@ -1,6 +1,7 @@
 using HR.Identity.API.Data;
 using HR.Identity.API.Models;
 using HR.Identity.API.Models.Admin;
+using HR.Identity.API.Services;
 using HR.Shared.Library.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +15,7 @@ namespace HR.Identity.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/company")]
-public sealed class CompanyController(AppDbContext db) : ControllerBase
+public sealed class CompanyController(AppDbContext db, SubscriptionService subscriptions) : ControllerBase
 {
     private static readonly HashSet<string> DateFormats = ["dd-MMM-yyyy", "dd/MM/yyyy", "MM/dd/yyyy", "yyyy-MM-dd"];
 
@@ -28,6 +29,24 @@ public sealed class CompanyController(AppDbContext db) : ControllerBase
         var tenant = await LoadAsync(track: false, ct);
         if (tenant is null) return NotFound();
         return Ok(ToDto(tenant));
+    }
+
+    /// <summary>Plan / license (read-only). Badalna platform owner ka kaam hai, company admin ka nahi.</summary>
+    [HttpGet("subscription")]
+    [HasPermission(Permissions.SettingsView)]
+    public async Task<ActionResult<SubscriptionDto>> GetSubscription(CancellationToken ct)
+    {
+        var tenantId = TenantId;
+        var sub = await subscriptions.GetCurrentAsync(tenantId, ct);
+        if (sub is null) return NotFound();
+
+        var today = SubscriptionService.Today;
+        int? daysLeft = sub.EndDate is { } end ? Math.Max(0, end.DayNumber - today.DayNumber) : null;
+        return Ok(new SubscriptionDto(
+            sub.PlanCode, sub.Status, sub.StartDate, sub.EndDate, sub.GraceUntil, daysLeft,
+            InGrace: sub.EndDate < today && sub.AllowsAccessOn(today),
+            sub.SeatLimit, await subscriptions.SeatsUsedAsync(tenantId, ct),
+            sub.BillingCycle, sub.Amount, sub.CurrencyCode, sub.AutoRenew));
     }
 
     [HttpPut("profile")]

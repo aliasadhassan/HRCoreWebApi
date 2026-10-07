@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using HR.Identity.API.Models.Common;
 
 namespace HR.Identity.API.Models.Admin;
 
@@ -20,6 +21,21 @@ public sealed record CompanySettingsDto(
     byte WorkWeekDays,
     byte PasswordMinLength,
     byte MaxFailedLoginAttempts);
+
+public sealed record SubscriptionDto(
+    string PlanCode,
+    SubscriptionStatus Status,
+    DateOnly StartDate,
+    DateOnly? EndDate,
+    DateOnly? GraceUntil,
+    int? DaysLeft,
+    bool InGrace,
+    int? SeatLimit,
+    int SeatsUsed,
+    BillingCycle BillingCycle,
+    decimal Amount,
+    string CurrencyCode,
+    bool AutoRenew);
 
 public sealed record CompanyDto(CompanyProfileDto Profile, CompanySettingsDto Settings, DateTime? UpdatedAt);
 
