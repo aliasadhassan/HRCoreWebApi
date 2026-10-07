@@ -20,6 +20,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         b.HasIndex(x => new { x.TenantId, x.NormalizedEmail }).IsUnique()
          .HasFilter("\"IsDeleted\" = false");
+        // H5: ek email = ek company. Login email se user dhoondta hai, is liye poore system mein unique
+        b.HasIndex(x => x.NormalizedEmail).IsUnique()
+         .HasDatabaseName("UX_Users_NormalizedEmail")
+         .HasFilter("\"IsDeleted\" = false");
         b.HasIndex(x => new { x.TenantId, x.EmployeeId }).IsUnique()
          .HasFilter("[EmployeeId] IS NOT NULL AND [IsDeleted] = 0");
 

@@ -70,9 +70,10 @@ namespace HR.Identity.API.Controllers
 
             try
             {
+                // Email poore system mein unique hai (H5, UX_Users_NormalizedEmail) — is liye tenant ke baghair lookup safe
                 var user = await context.Users
                     .Include(u => u.Tenant).ThenInclude(t => t.Settings)
-                    .FirstOrDefaultAsync(x => x.NormalizedEmail == normalizedEmail);
+                    .SingleOrDefaultAsync(x => x.NormalizedEmail == normalizedEmail);
 
                 if (user is null)
                 {
