@@ -4,6 +4,7 @@ using System.Reflection;
 using HR.Payroll.API.Application.Common.Interfaces;
 using HR.Payroll.API.Domain.Common;
 using HR.Payroll.API.Domain.Employees;
+using HR.Payroll.API.Domain.Expenses;
 using HR.Payroll.API.Domain.Inputs;
 using HR.Payroll.API.Domain.Payments;
 using HR.Payroll.API.Domain.Runs;
@@ -53,6 +54,11 @@ public sealed class AppDbContext(
     public DbSet<EmployeeLoan> EmployeeLoans => Set<EmployeeLoan>();
     public DbSet<LoanRequest> LoanRequests => Set<LoanRequest>();
     public DbSet<LoanPolicy> LoanPolicies => Set<LoanPolicy>();
+
+    public DbSet<ExpensePolicy> ExpensePolicies => Set<ExpensePolicy>();
+    public DbSet<ExpenseCategory> ExpenseCategories => Set<ExpenseCategory>();
+    public DbSet<ExpenseClaim> ExpenseClaims => Set<ExpenseClaim>();
+    public DbSet<TravelRequest> TravelRequests => Set<TravelRequest>();
 
     public DbSet<PayrollRun> PayrollRuns => Set<PayrollRun>();
     public DbSet<Payslip> Payslips => Set<Payslip>();

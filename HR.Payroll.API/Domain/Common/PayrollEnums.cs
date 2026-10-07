@@ -16,7 +16,7 @@ public enum TaxCalcMethod : byte { None = 0, Annualized = 1, PerPeriodFlat = 2 }
 
 public enum ContributionBase : byte { BasicSalary = 1, Gross = 2, FixedAmount = 3 }
 
-public enum InputSource : byte { Manual = 1, Import = 2, Attendance = 3 }
+public enum InputSource : byte { Manual = 1, Import = 2, Attendance = 3, Expense = 4 }
 
 public enum LoanType : byte { Loan = 1, SalaryAdvance = 2 }
 
@@ -51,3 +51,15 @@ public static class PayFrequencyExtensions
         _ => throw new DomainException("Unknown pay frequency.")
     };
 }
+
+public enum ExpenseClaimStatus : byte { Submitted = 1, Approved = 2, Rejected = 3, Cancelled = 4, Paid = 5 }
+
+/// <summary>Payroll = agli salary ke saath (PayrollInput); Direct = HR alag se de kar "paid" mark kare.</summary>
+public enum PayoutMethod : byte { Payroll = 1, Direct = 2 }
+
+public enum TravelRequestStatus : byte { Pending = 1, Approved = 2, Rejected = 3, Cancelled = 4 }
+
+public enum TravelMode : byte { Air = 1, Rail = 2, Road = 3, Other = 4 }
+
+/// <summary>Travel advance: None = maanga nahi / mila nahi; Settled = claim ne hisaab bara-bar kar diya.</summary>
+public enum AdvanceStatus : byte { None = 0, Approved = 1, Paid = 2, Settled = 3 }
