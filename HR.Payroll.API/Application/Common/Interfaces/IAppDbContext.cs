@@ -1,6 +1,7 @@
 namespace HR.Payroll.API.Application.Common.Interfaces;
 
 using HR.Payroll.API.Domain.Employees;
+using HR.Payroll.API.Domain.Expenses;
 using HR.Payroll.API.Domain.Inputs;
 using HR.Payroll.API.Domain.Payments;
 using HR.Payroll.API.Domain.Runs;
@@ -31,6 +32,11 @@ public interface IAppDbContext
     DbSet<EmployeeLoan> EmployeeLoans { get; }
     DbSet<LoanRequest> LoanRequests { get; }
     DbSet<LoanPolicy> LoanPolicies { get; }
+
+    DbSet<ExpensePolicy> ExpensePolicies { get; }
+    DbSet<ExpenseCategory> ExpenseCategories { get; }
+    DbSet<ExpenseClaim> ExpenseClaims { get; }
+    DbSet<TravelRequest> TravelRequests { get; }
 
     DbSet<PayrollRun> PayrollRuns { get; }
     DbSet<Payslip> Payslips { get; }
