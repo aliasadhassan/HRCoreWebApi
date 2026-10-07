@@ -146,8 +146,14 @@ public sealed class UsersController(
         var emailAddress = request.Email.Trim();
         var normalized = emailAddress.ToUpperInvariant();
 
-        if (await db.Users.AnyAsync(u => u.TenantId == tenantId && u.NormalizedEmail == normalized, ct))
+        // H5: email poore system mein unique (UX_Users_NormalizedEmail) — doosri company ka user bhi rokta hai
+        var existingTenantId = await db.Users.Where(u => u.NormalizedEmail == normalized)
+            .Select(u => (Guid?)u.TenantId).FirstOrDefaultAsync(ct);
+        if (existingTenantId == tenantId)
             return Problem(statusCode: 409, detail: "A user with this email already exists.");
+        if (existingTenantId is not null)
+            return Problem(statusCode: 409, title: "EMAIL_IN_OTHER_COMPANY",
+                           detail: "This email is already used by another company. Use a different email.");
 
         if (!await subscriptions.HasFreeSeatAsync(tenantId, ct))
             return SeatLimitReached();
