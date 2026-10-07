@@ -20,7 +20,7 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
         b.Property(x => x.RevokedReason).HasMaxLength(100);
 
         b.HasIndex(x => x.TokenHash).IsUnique();
-        b.HasIndex(x => x.UserId).HasFilter("[RevokedAt] IS NULL").IncludeProperties(x => x.ExpiresAt);
+        b.HasIndex(x => x.UserId).HasFilter("\"RevokedAt\" IS NULL").IncludeProperties(x => x.ExpiresAt);
         b.HasIndex(x => x.FamilyId);
 
         b.HasOne(x => x.User).WithMany(u => u.RefreshTokens)
@@ -38,7 +38,7 @@ public class UserTokenConfiguration : IEntityTypeConfiguration<UserToken>
         b.Property(x => x.TokenHash).HasMaxLength(32).IsRequired();
 
         b.HasIndex(x => x.TokenHash).IsUnique();
-        b.HasIndex(x => new { x.UserId, x.Purpose }).HasFilter("[UsedAt] IS NULL");
+        b.HasIndex(x => new { x.UserId, x.Purpose }).HasFilter("\"UsedAt\" IS NULL");
 
         b.HasOne(x => x.User).WithMany(u => u.Tokens)
          .HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);

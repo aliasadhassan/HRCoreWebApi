@@ -25,7 +25,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
          .HasDatabaseName("UX_Users_NormalizedEmail")
          .HasFilter("\"IsDeleted\" = false");
         b.HasIndex(x => new { x.TenantId, x.EmployeeId }).IsUnique()
-         .HasFilter("[EmployeeId] IS NOT NULL AND [IsDeleted] = 0");
+         .HasFilter("\"EmployeeId\" IS NOT NULL AND \"IsDeleted\" = false");
 
         b.HasOne(x => x.Tenant).WithMany(t => t.Users)
          .HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);

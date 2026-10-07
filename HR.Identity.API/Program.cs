@@ -45,7 +45,8 @@ var vaultUri = builder.Configuration["VaultUri"];
 var kvHelper = new KeyVaultHelper(vaultUri!);
 
 // 2. Startup ke waqt hi Connection String fetch karein
-var connectionString = await kvHelper.GetSecretValueAsync("SupabaseConnectionString");
+// IdentityDbConnectionString (hr_identity_app) ho to woh, warna shared SupabaseConnectionString
+var connectionString = await kvHelper.GetDbConnectionStringAsync("IdentityDbConnectionString");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString, sql =>

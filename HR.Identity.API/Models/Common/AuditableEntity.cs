@@ -8,5 +8,6 @@ public abstract class AuditableEntity
     public DateTime? UpdatedAt { get; set; }
     public Guid? UpdatedBy { get; set; }
     public bool IsDeleted { get; set; }
-    public byte[] RowVersion { get; set; } = default!;
+    /// <summary>Concurrency = Postgres xmin (bytea RowVersion nahi).</summary>
+    public uint RowVersion { get; set; }
 }

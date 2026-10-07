@@ -14,7 +14,7 @@ public class TenantSettings
     public short SessionTimeoutMinutes { get; set; } = 60;
     public DateTime? UpdatedAt { get; set; }
     public Guid? UpdatedBy { get; set; }
-    public byte[] RowVersion { get; set; } = default!;
+    public uint RowVersion { get; set; } // xmin
 
     public Tenant Tenant { get; set; } = default!;
 }
