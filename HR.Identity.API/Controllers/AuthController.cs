@@ -208,7 +208,7 @@ namespace HR.Identity.API.Controllers
                     case RefreshStatus.Success:
                         SetRefreshTokenCookie(result.Token!, result.ExpiresAt);
                         // Har refresh pe taaza roles/permissions — role badla to yahan asar
-                        return Ok(new { accessToken = await accessTokens.CreateAsync(result.User!) });
+                        return Ok(new { accessToken = await accessTokens.CreateAsync(result.User) });
 
                     case RefreshStatus.Superseded:
                         // Doosri parallel request ne abhi rotate kiya — browser mein nayi cookie aa chuki, retry karo
