@@ -41,6 +41,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IHttpContextAc
         // Identity ka apna schema (employee/payroll ki tarah), public mein nahi
         modelBuilder.HasDefaultSchema("identity");
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+        modelBuilder.ApplyConfiguration(new AuditLogConfiguration());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder c)
@@ -71,13 +72,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IHttpContextAc
                     break;
             }
         }
-        if (audit is { Count: > 0 } && http?.HttpContext?.User is { } principal && principal.GetTenantId() is { } tenantId)
-        {
-            var userId = principal.GetUserId();
-            var who = principal.FindFirst(JwtTokenHelper.DisplayNameClaim)?.Value ?? principal.Identity?.Name;
-            AuditLogs.AddRange(audit.Select(c => AuditLog.From(tenantId, c, now, userId, who, Operation(), _correlationId)));
-        }
+        WriteAudit(audit, now);
         return await base.SaveChangesAsync(ct);
+    }
+
+    private void WriteAudit(List<AuditCapture>? audit, DateTime now)
+    {
+        if (audit is not { Count: > 0 } || http?.HttpContext?.User is not { } principal || principal.GetTenantId() is not { } tenantId)
+            return;
+        var userName = principal.FindFirst(JwtTokenHelper.DisplayNameClaim)?.Value ?? principal.Identity?.Name;
+        var who = new AuditContext(now, principal.GetUserId(), userName, Operation(), _correlationId);
+        AuditLogs.AddRange(audit.Select(c => AuditLog.From(tenantId, c, who)));
     }
 
     /// <summary>
@@ -90,36 +95,52 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IHttpContextAc
             return null;
 
         var result = AuditTrail.Capture(ChangeTracker, Audited.Contains, skipFields: (_, field) => Noisy.Contains(field));
+        result.AddRange(await CaptureUserRolesAsync(ct));
+        result.AddRange(await CaptureRolePermissionsAsync(ct));
+        return result;
+    }
 
-        // UserRole: user ko role mila / hata — EntityId = user, field "Role"
+    /// <summary>User ko role mila / hata — EntityId = user, field "Role".</summary>
+    private async Task<List<AuditCapture>> CaptureUserRolesAsync(CancellationToken ct)
+    {
+        var result = new List<AuditCapture>();
         foreach (var e in ChangeTracker.Entries<UserRole>().Where(e => e.State is EntityState.Added or EntityState.Deleted).ToList())
         {
             var user = await FindAsync(Users, e.Entity.UserId, ct);
-            var role = await FindAsync(Roles, e.Entity.RoleId, ct);
+            var role = (await FindAsync(Roles, e.Entity.RoleId, ct))?.Name;
             var added = e.State == EntityState.Added;
+            var change = added ? new AuditFieldChange("Role", null, role) : new AuditFieldChange("Role", role, null);
             result.Add(new AuditCapture(nameof(UserRole), e.Entity.UserId, added ? AuditAction.Created : AuditAction.Deleted,
-                user?.DisplayName, user?.EmployeeId,
-                [new AuditFieldChange("Role", added ? null : role?.Name, added ? role?.Name : null)]));
+                user?.DisplayName, user?.EmployeeId, [change]));
         }
+        return result;
+    }
 
-        // RolePermission: ek role ki saari di / li gayi permissions ek hi row mein
+    /// <summary>Ek role ki saari di / li gayi permissions ek hi row mein. Hata kar wapis di gayi = koi badlaav nahi.</summary>
+    private async Task<List<AuditCapture>> CaptureRolePermissionsAsync(CancellationToken ct)
+    {
         var grants = ChangeTracker.Entries<RolePermission>()
-            .Where(e => e.State is EntityState.Added or EntityState.Deleted).ToList();
-        foreach (var byRole in grants.GroupBy(e => e.Entity.RoleId))
+            .Where(e => e.State is EntityState.Added or EntityState.Deleted)
+            .GroupBy(e => (e.Entity.RoleId, e.Entity.PermissionId))
+            .Where(g => g.Select(e => e.State).Distinct().Count() == 1)
+            .Select(g => (g.Key.RoleId, g.Key.PermissionId, Added: g.First().State == EntityState.Added))
+            .ToList();
+        if (grants.Count == 0)
+            return [];
+
+        var ids = grants.Select(g => g.PermissionId).Distinct().ToList();
+        var codes = await Permissions.AsNoTracking().Where(p => ids.Contains(p.Id)).ToDictionaryAsync(p => p.Id, p => p.Code, ct);
+
+        var result = new List<AuditCapture>();
+        foreach (var byRole in grants.GroupBy(g => g.RoleId))
         {
             var role = await FindAsync(Roles, byRole.Key, ct);
-            var ids = byRole.Select(e => e.Entity.PermissionId).Distinct().ToList();
-            var codes = await Permissions.AsNoTracking().Where(p => ids.Contains(p.Id)).ToDictionaryAsync(p => p.Id, p => p.Code, ct);
-            // Hata kar wapis di gayi permission = koi badlaav nahi
             var changes = byRole
-                .GroupBy(e => e.Entity.PermissionId)
-                .Where(g => g.Select(e => e.State).Distinct().Count() == 1)
-                .Select(g => (Code: codes.GetValueOrDefault(g.Key) ?? g.Key.ToString(), Added: g.First().State == EntityState.Added))
+                .Select(g => (Code: codes.GetValueOrDefault(g.PermissionId) ?? g.PermissionId.ToString(), g.Added))
                 .OrderBy(x => x.Code)
-                .Select(x => new AuditFieldChange("Permission", x.Added ? null : x.Code, x.Added ? x.Code : null))
+                .Select(x => x.Added ? new AuditFieldChange("Permission", null, x.Code) : new AuditFieldChange("Permission", x.Code, null))
                 .ToList();
-            if (changes.Count > 0)
-                result.Add(new AuditCapture(nameof(RolePermission), byRole.Key, AuditAction.Updated, role?.Name, null, changes));
+            result.Add(new AuditCapture(nameof(RolePermission), byRole.Key, AuditAction.Updated, role?.Name, null, changes));
         }
         return result;
     }

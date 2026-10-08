@@ -50,70 +50,69 @@ public static class AuditTrail
         var result = new List<AuditCapture>();
         foreach (var entry in changeTracker.Entries())
         {
-            if (entry.State is EntityState.Unchanged or EntityState.Detached)
-                continue;
-
-            var clr = entry.Metadata.ClrType;
-            var owned = entry.Metadata.IsOwned();
-            if (owned && entry.State == EntityState.Deleted)
-                continue;   // owner ke soft delete pe owned (Address) bhi Deleted dikhta hai — shor
-            if (!owned && !include(clr))
-                continue;
-
-            var action = entry.State switch
-            {
-                EntityState.Added => AuditAction.Created,
-                EntityState.Deleted => AuditAction.Deleted,
-                _ => IsSoftDelete(entry) ? AuditAction.Deleted : AuditAction.Updated
-            };
-
-            var changes = new List<AuditFieldChange>();
-            if (action != AuditAction.Deleted)
-            {
-                foreach (var p in entry.Properties)
-                {
-                    var name = p.Metadata.Name;
-                    if (p.Metadata.IsShadowProperty() || Skipped.Contains(name) || skipFields?.Invoke(clr, name) == true)
-                        continue;
-                    if (action == AuditAction.Created)
-                    {
-                        if (p.CurrentValue is null || p.CurrentValue is string { Length: 0 })
-                            continue;
-                        changes.Add(new AuditFieldChange(name, null, Format(name, p.CurrentValue)));
-                    }
-                    else if (p.IsModified && !Equals(p.OriginalValue, p.CurrentValue))
-                    {
-                        changes.Add(new AuditFieldChange(name, Format(name, p.OriginalValue), Format(name, p.CurrentValue)));
-                    }
-                }
-
-                // Sirf audit fields / xmin badle (koi asli badlaav nahi) — likhne ki zaroorat nahi
-                if (action == AuditAction.Updated && changes.Count == 0)
-                    continue;
-            }
-
-            string type;
-            Guid id;
-            if (owned)
-            {
-                var ownership = entry.Metadata.FindOwnership()!;
-                if (!include(ownership.PrincipalEntityType.ClrType))
-                    continue;
-                type = $"{ownership.PrincipalEntityType.ClrType.Name}.{ownership.PrincipalToDependent?.Name}";
-                id = ownership.Properties.Select(fk => entry.Property(fk.Name).CurrentValue).OfType<Guid>().FirstOrDefault();
-            }
-            else
-            {
-                type = clr.Name;
-                // "Id" na ho (TenantSettings) to primary key ka pehla Guid
-                var key = entry.Metadata.FindPrimaryKey()?.Properties ?? [];
-                id = key.Select(k => entry.Property(k.Name).CurrentValue).OfType<Guid>().FirstOrDefault();
-            }
-
-            Guid? subject = isEmployee?.Invoke(clr) == true ? id : GuidOf(entry, "EmployeeId");
-            result.Add(new AuditCapture(type, id, action, owned ? null : LabelOf(entry), subject, changes));
+            if (CaptureEntry(entry, include, isEmployee, skipFields) is { } capture)
+                result.Add(capture);
         }
         return result;
+    }
+
+    private static AuditCapture? CaptureEntry(
+        EntityEntry entry, Func<Type, bool> include, Func<Type, bool>? isEmployee, Func<Type, string, bool>? skipFields)
+    {
+        if (entry.State is EntityState.Unchanged or EntityState.Detached)
+            return null;
+
+        var clr = entry.Metadata.ClrType;
+        var ownership = entry.Metadata.IsOwned() ? entry.Metadata.FindOwnership() : null;
+        // Owner ke soft delete pe owned (Address) bhi Deleted dikhta hai — shor
+        if (ownership is not null && entry.State == EntityState.Deleted)
+            return null;
+        if (!include(ownership?.PrincipalEntityType.ClrType ?? clr))
+            return null;
+
+        var action = ActionOf(entry);
+        var changes = action == AuditAction.Deleted ? [] : ChangesOf(entry, action, clr, skipFields);
+        // Sirf audit fields / xmin badle (koi asli badlaav nahi) — likhne ki zaroorat nahi
+        if (action == AuditAction.Updated && changes.Count == 0)
+            return null;
+
+        if (ownership is not null)
+        {
+            var ownerId = ownership.Properties.Select(fk => entry.Property(fk.Name).CurrentValue).OfType<Guid>().FirstOrDefault();
+            var type = $"{ownership.PrincipalEntityType.ClrType.Name}.{ownership.PrincipalToDependent?.Name}";
+            return new AuditCapture(type, ownerId, action, null, GuidOf(entry, "EmployeeId"), changes);
+        }
+
+        // "Id" na ho (TenantSettings) to primary key ka pehla Guid
+        var key = entry.Metadata.FindPrimaryKey()?.Properties ?? [];
+        var id = key.Select(k => entry.Property(k.Name).CurrentValue).OfType<Guid>().FirstOrDefault();
+        var subject = isEmployee?.Invoke(clr) == true ? id : GuidOf(entry, "EmployeeId");
+        return new AuditCapture(clr.Name, id, action, LabelOf(entry), subject, changes);
+    }
+
+    private static AuditAction ActionOf(EntityEntry entry) => entry.State switch
+    {
+        EntityState.Added => AuditAction.Created,
+        EntityState.Deleted => AuditAction.Deleted,
+        _ => IsSoftDelete(entry) ? AuditAction.Deleted : AuditAction.Updated
+    };
+
+    private static List<AuditFieldChange> ChangesOf(
+        EntityEntry entry, AuditAction action, Type clr, Func<Type, string, bool>? skipFields)
+    {
+        var changes = new List<AuditFieldChange>();
+        foreach (var p in entry.Properties)
+        {
+            var name = p.Metadata.Name;
+            if (p.Metadata.IsShadowProperty() || Skipped.Contains(name) || skipFields?.Invoke(clr, name) == true)
+                continue;
+
+            if (action == AuditAction.Created && p.CurrentValue is not (null or string { Length: 0 }))
+                changes.Add(new AuditFieldChange(name, null, Format(name, p.CurrentValue)));
+            else if (action == AuditAction.Updated && p.IsModified && !Equals(p.OriginalValue, p.CurrentValue))
+                changes.Add(new AuditFieldChange(name, Format(name, p.OriginalValue), Format(name, p.CurrentValue)));
+        }
+        return changes;
     }
 
     public static string Serialize(IReadOnlyList<AuditFieldChange> changes)

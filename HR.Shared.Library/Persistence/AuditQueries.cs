@@ -2,24 +2,6 @@ namespace HR.Shared.Library.Persistence;
 
 using Microsoft.EntityFrameworkCore;
 
-/// <summary>Har service ki AuditLogs entity — taake parhne ka code teeno (Employee / Payroll / Identity) mein ek ho.</summary>
-public interface IAuditRecord
-{
-    Guid Id { get; }
-    Guid TenantId { get; }
-    DateTime At { get; }
-    Guid? UserId { get; }
-    string? UserName { get; }
-    AuditAction Action { get; }
-    string EntityType { get; }
-    Guid EntityId { get; }
-    string? EntityLabel { get; }
-    Guid? SubjectEmployeeId { get; }
-    string? Operation { get; }
-    Guid CorrelationId { get; }
-    string Changes { get; }
-}
-
 public sealed record AuditEntryDto(
     Guid Id, DateTime At, Guid? UserId, string? UserName, AuditAction Action, string EntityType, Guid EntityId,
     string? EntityLabel, Guid? SubjectEmployeeId, string? SubjectName, string? Operation, Guid CorrelationId,
@@ -52,10 +34,10 @@ public static class AuditQueries
 
     /// <param name="source">Pehle se tenant pe filter ki hui AuditLogs.</param>
     /// <param name="subjectNames">Employee ids → naam (Employee / PayrollEmployee table se). Null = naam nahi.</param>
-    public static async Task<AuditPageDto> PageAsync<T>(
-        IQueryable<T> source, AuditFilter f,
+    public static async Task<AuditPageDto> PageAsync(
+        IQueryable<AuditLog> source, AuditFilter f,
         Func<IReadOnlyCollection<Guid>, CancellationToken, Task<Dictionary<Guid, string>>>? subjectNames,
-        CancellationToken ct) where T : class, IAuditRecord
+        CancellationToken ct)
     {
         var limit = Math.Clamp(f.Limit, 1, MaxLimit);
         var q = Filter(source, f);
@@ -87,8 +69,8 @@ public static class AuditQueries
     }
 
     /// <param name="offsetMinutes">Browser ka UTC offset (Pakistan = 300) — din ki bucketing local din pe ho.</param>
-    public static async Task<AuditSummaryDto> SummaryAsync<T>(
-        IQueryable<T> source, int days, int offsetMinutes, DateTime utcNow, CancellationToken ct) where T : class, IAuditRecord
+    public static async Task<AuditSummaryDto> SummaryAsync(
+        IQueryable<AuditLog> source, int days, int offsetMinutes, DateTime utcNow, CancellationToken ct)
     {
         days = Math.Clamp(days, 1, MaxSummaryDays);
         offsetMinutes = Math.Clamp(offsetMinutes, -14 * 60, 14 * 60);
@@ -133,12 +115,12 @@ public static class AuditQueries
     }
 
     /// <summary>Filter dropdown: is tenant mein kaun kaun si cheezen audit mein aayi hain.</summary>
-    public static async Task<IReadOnlyList<AuditCountDto>> EntityTypesAsync<T>(IQueryable<T> source, CancellationToken ct)
-        where T : class, IAuditRecord
+    public static async Task<IReadOnlyList<AuditCountDto>> EntityTypesAsync(IQueryable<AuditLog> source, CancellationToken ct)
+       
         => (await source.GroupBy(x => x.EntityType).Select(g => new { g.Key, Count = g.Count() }).ToListAsync(ct))
             .Select(x => new AuditCountDto(x.Key, x.Count)).OrderBy(x => x.Key).ToList();
 
-    private static IQueryable<T> Filter<T>(IQueryable<T> q, AuditFilter f) where T : class, IAuditRecord
+    private static IQueryable<AuditLog> Filter(IQueryable<AuditLog> q, AuditFilter f)
     {
         if (f.Before is { } before) q = q.Where(x => x.At < before);
         if (f.From is { } from) q = q.Where(x => x.At >= from);

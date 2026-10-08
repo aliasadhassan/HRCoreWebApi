@@ -23,79 +23,6 @@ namespace HR.Identity.API.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("HR.Identity.API.Models.AuditLog", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<byte>("Action")
-                        .HasColumnType("smallint");
-
-                    b.Property<DateTime>("At")
-                        .HasPrecision(3)
-                        .HasColumnType("timestamp(3) with time zone");
-
-                    b.Property<string>("Changes")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<Guid>("CorrelationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("EntityId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("EntityLabel")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("EntityType")
-                        .IsRequired()
-                        .HasMaxLength(80)
-                        .HasColumnType("character varying(80)");
-
-                    b.Property<string>("Operation")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<Guid?>("SubjectEmployeeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("UserName")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "At")
-                        .IsDescending(false, true)
-                        .HasDatabaseName("IX_AuditLogs_TenantId_At");
-
-                    b.HasIndex("TenantId", "CorrelationId")
-                        .HasDatabaseName("IX_AuditLogs_TenantId_CorrelationId");
-
-                    b.HasIndex("TenantId", "SubjectEmployeeId")
-                        .HasDatabaseName("IX_AuditLogs_TenantId_Subject")
-                        .HasFilter("\"SubjectEmployeeId\" IS NOT NULL");
-
-                    b.HasIndex("TenantId", "EntityType", "EntityId")
-                        .HasDatabaseName("IX_AuditLogs_TenantId_Entity");
-
-                    b.HasIndex("TenantId", "UserId", "At")
-                        .HasDatabaseName("IX_AuditLogs_TenantId_UserId_At");
-
-                    b.ToTable("AuditLogs", "identity", t =>
-                        {
-                            t.HasCheckConstraint("CK_AuditLogs_Action", "\"Action\" BETWEEN 1 AND 3");
-                        });
-                });
-
             modelBuilder.Entity("HR.Identity.API.Models.LoginAudit", b =>
                 {
                     b.Property<long>("Id")
@@ -763,6 +690,79 @@ namespace HR.Identity.API.Migrations
                         .HasFilter("\"UsedAt\" IS NULL");
 
                     b.ToTable("UserTokens", "identity");
+                });
+
+            modelBuilder.Entity("HR.Shared.Library.Persistence.AuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte>("Action")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime>("At")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<string>("Changes")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("CorrelationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EntityLabel")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("Operation")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid?>("SubjectEmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "At")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_AuditLogs_TenantId_At");
+
+                    b.HasIndex("TenantId", "CorrelationId")
+                        .HasDatabaseName("IX_AuditLogs_TenantId_CorrelationId");
+
+                    b.HasIndex("TenantId", "SubjectEmployeeId")
+                        .HasDatabaseName("IX_AuditLogs_TenantId_Subject")
+                        .HasFilter("\"SubjectEmployeeId\" IS NOT NULL");
+
+                    b.HasIndex("TenantId", "EntityType", "EntityId")
+                        .HasDatabaseName("IX_AuditLogs_TenantId_Entity");
+
+                    b.HasIndex("TenantId", "UserId", "At")
+                        .HasDatabaseName("IX_AuditLogs_TenantId_UserId_At");
+
+                    b.ToTable("AuditLogs", "identity", t =>
+                        {
+                            t.HasCheckConstraint("CK_AuditLogs_Action", "\"Action\" BETWEEN 1 AND 3");
+                        });
                 });
 
             modelBuilder.Entity("HR.Identity.API.Models.RefreshToken", b =>

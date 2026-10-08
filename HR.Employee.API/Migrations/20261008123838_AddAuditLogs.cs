@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace HR.Payroll.API.Migrations
+namespace HR.Employee.API.Migrations
 {
     /// <inheritdoc />
     public partial class AddAuditLogs : Migration
@@ -13,10 +13,11 @@ namespace HR.Payroll.API.Migrations
         {
             migrationBuilder.CreateTable(
                 name: "AuditLogs",
-                schema: "payroll",
+                schema: "employee",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     At = table.Column<DateTime>(type: "timestamp(3) with time zone", precision: 3, nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: true),
                     UserName = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: true),
@@ -27,8 +28,7 @@ namespace HR.Payroll.API.Migrations
                     SubjectEmployeeId = table.Column<Guid>(type: "uuid", nullable: true),
                     Operation = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     CorrelationId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Changes = table.Column<string>(type: "jsonb", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uuid", nullable: false)
+                    Changes = table.Column<string>(type: "jsonb", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -38,44 +38,44 @@ namespace HR.Payroll.API.Migrations
 
             migrationBuilder.CreateIndex(
                 name: "IX_AuditLogs_TenantId_At",
-                schema: "payroll",
+                schema: "employee",
                 table: "AuditLogs",
                 columns: new[] { "TenantId", "At" },
                 descending: new[] { false, true });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AuditLogs_TenantId_CorrelationId",
-                schema: "payroll",
+                schema: "employee",
                 table: "AuditLogs",
                 columns: new[] { "TenantId", "CorrelationId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AuditLogs_TenantId_Entity",
-                schema: "payroll",
+                schema: "employee",
                 table: "AuditLogs",
                 columns: new[] { "TenantId", "EntityType", "EntityId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AuditLogs_TenantId_Subject",
-                schema: "payroll",
+                schema: "employee",
                 table: "AuditLogs",
                 columns: new[] { "TenantId", "SubjectEmployeeId" },
                 filter: "\"SubjectEmployeeId\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AuditLogs_TenantId_UserId_At",
-                schema: "payroll",
+                schema: "employee",
                 table: "AuditLogs",
                 columns: new[] { "TenantId", "UserId", "At" });
 
             // Audit sirf likha / parha jata hai: app role ke paas UPDATE / DELETE nahi
             migrationBuilder.Sql(@"
-    REVOKE ALL ON payroll.""AuditLogs"" FROM PUBLIC;
-    GRANT SELECT, INSERT ON payroll.""AuditLogs"" TO hr_payroll_app;
-    REVOKE UPDATE, DELETE, TRUNCATE ON payroll.""AuditLogs"" FROM hr_payroll_app;
-    ALTER TABLE payroll.""AuditLogs"" ENABLE ROW LEVEL SECURITY;
-    DROP POLICY IF EXISTS tenant_isolation ON payroll.""AuditLogs"";
-    CREATE POLICY tenant_isolation ON payroll.""AuditLogs"" TO hr_payroll_app USING (""TenantId"" = tenancy.current_tenant_id()) WITH CHECK (""TenantId"" = tenancy.current_tenant_id());
+    REVOKE ALL ON employee.""AuditLogs"" FROM PUBLIC;
+    GRANT SELECT, INSERT ON employee.""AuditLogs"" TO hr_employee_app;
+    REVOKE UPDATE, DELETE, TRUNCATE ON employee.""AuditLogs"" FROM hr_employee_app;
+    ALTER TABLE employee.""AuditLogs"" ENABLE ROW LEVEL SECURITY;
+    DROP POLICY IF EXISTS tenant_isolation ON employee.""AuditLogs"";
+    CREATE POLICY tenant_isolation ON employee.""AuditLogs"" TO hr_employee_app USING (""TenantId"" = tenancy.current_tenant_id()) WITH CHECK (""TenantId"" = tenancy.current_tenant_id());
 ");
         }
 
@@ -84,7 +84,7 @@ namespace HR.Payroll.API.Migrations
         {
             migrationBuilder.DropTable(
                 name: "AuditLogs",
-                schema: "payroll");
+                schema: "employee");
         }
     }
 }

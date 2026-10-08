@@ -3,7 +3,6 @@ namespace HR.Employee.API.Infrastructure.Persistence;
 using System.Reflection;
 using HR.Employee.API.Application.Common.Interfaces;
 using HR.Employee.API.Domain.Assets;
-using HR.Employee.API.Domain.Audit;
 using HR.Employee.API.Domain.Performance;
 using HR.Employee.API.Domain.Helpdesk;
 using HR.Employee.API.Domain.Recruitment;
@@ -106,6 +105,7 @@ public sealed class AppDbContext(
     {
         modelBuilder.HasDefaultSchema("employee");
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+        modelBuilder.ApplyConfiguration(new AuditLogConfiguration());
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes().ToList())
         {
@@ -168,6 +168,18 @@ public sealed class AppDbContext(
         throw new InvalidOperationException("Domain events did not settle after 10 dispatch rounds.");
     }
 
+    private List<AuditCapture> CaptureAudit(Guid? tenantId)
+        => tenantId is null ? [] : AuditTrail.Capture(ChangeTracker, t => typeof(Domain.Common.Entity).IsAssignableFrom(t), t => t == typeof(Domain.Employees.Employee));
+
+    /// <summary>Audit rows isi SaveChanges mein — badlaav aur uska record ek saath commit ya rollback.</summary>
+    private void WriteAudit(Guid? tenantId, List<AuditCapture> captured, DateTime now, Guid? userId)
+    {
+        if (tenantId is not { } tid || captured.Count == 0)
+            return;
+        var who = new AuditContext(now, userId, userId is null ? "System" : currentUser.Name, currentUser.Operation, _correlationId);
+        AuditLogs.AddRange(captured.Select(c => AuditLog.From(tid, c, who)));
+    }
+
     private void ApplyAuditRules()
     {
         var now = DateTime.UtcNow;
@@ -175,9 +187,7 @@ public sealed class AppDbContext(
         var tenantId = SessionTenantId;
 
         // Pehle badlaav padh lo (soft delete abhi Deleted state mein hai), phir audit fields lagao
-        var captured = tenantId is null
-            ? new List<AuditCapture>()
-            : AuditTrail.Capture(ChangeTracker, t => typeof(Domain.Common.Entity).IsAssignableFrom(t) && t != typeof(AuditLog), t => t == typeof(Domain.Employees.Employee));
+        var captured = CaptureAudit(tenantId);
 
         foreach (var entry in ChangeTracker.Entries<AuditableEntity>().ToList())
         {
@@ -217,11 +227,7 @@ public sealed class AppDbContext(
 
         _tenant.StampAdded<TenantChildEntity>(ChangeTracker, c => c.TenantId, (c, t) => c.TenantId = t);
 
-        if (tenantId is { } tid && captured.Count > 0)
-        {
-            var who = userId is null ? "System" : currentUser.Name;
-            AuditLogs.AddRange(captured.Select(c => AuditLog.From(tid, c, now, userId, who, currentUser.Operation, _correlationId)));
-        }
+        WriteAudit(tenantId, captured, now, userId);
     }
 
     /// <summary>Defense in depth: query filter ke bawajood doosre tenant ka row kabhi update na ho.</summary>

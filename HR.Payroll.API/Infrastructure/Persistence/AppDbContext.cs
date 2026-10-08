@@ -70,7 +70,7 @@ public sealed class AppDbContext(
     public DbSet<LoanRepayment> LoanRepayments => Set<LoanRepayment>();
 
     public DbSet<PaymentBatch> PaymentBatches => Set<PaymentBatch>();
-    public DbSet<Domain.Audit.AuditLog> AuditLogs => Set<Domain.Audit.AuditLog>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<Payment> Payments => Set<Payment>();
 
     private readonly TenantScope _tenant = new(() => currentUser.TenantId);
@@ -83,7 +83,7 @@ public sealed class AppDbContext(
     /// har calculation pe hazaron rows. Run khud (status, approve, paid) audit hota hai.
     /// </summary>
     private static readonly HashSet<Type> NotAudited =
-        [typeof(Domain.Audit.AuditLog), typeof(Payslip), typeof(PayslipLine), typeof(Payment), typeof(LoanRepayment), typeof(UnpaidLeaveDay)];
+        [typeof(Payslip), typeof(PayslipLine), typeof(Payment), typeof(LoanRepayment), typeof(UnpaidLeaveDay)];
 
     /// <summary>Is scope ka tenant (JWT ya consumer message) — RLS interceptor bhi yahi padhta hai.</summary>
     public Guid? SessionTenantId => _tenant.TenantId;
@@ -109,6 +109,7 @@ public sealed class AppDbContext(
         modelBuilder.HasDefaultSchema("payroll");
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+        modelBuilder.ApplyConfiguration(new AuditLogConfiguration());
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes().ToList())
         {
@@ -194,6 +195,18 @@ public sealed class AppDbContext(
         throw new InvalidOperationException("Domain events did not settle after 10 dispatch rounds.");
     }
 
+    private List<AuditCapture> CaptureAudit(Guid? tenantId)
+        => tenantId is null ? [] : AuditTrail.Capture(ChangeTracker, t => typeof(Entity).IsAssignableFrom(t) && !NotAudited.Contains(t), t => t == typeof(PayrollEmployee));
+
+    /// <summary>Audit rows isi SaveChanges mein — badlaav aur uska record ek saath commit ya rollback.</summary>
+    private void WriteAudit(Guid? tenantId, List<AuditCapture> captured, DateTime now, Guid? userId)
+    {
+        if (tenantId is not { } tid || captured.Count == 0)
+            return;
+        var who = new AuditContext(now, userId, userId is null ? "System" : currentUser.Name, currentUser.Operation, _correlationId);
+        AuditLogs.AddRange(captured.Select(c => AuditLog.From(tid, c, who)));
+    }
+
     private void ApplyAuditRules()
     {
         var now = DateTime.UtcNow;
@@ -201,9 +214,7 @@ public sealed class AppDbContext(
         var tenantId = SessionTenantId;
 
         // Pehle badlaav padh lo (soft delete abhi Deleted state mein hai), phir audit fields lagao
-        var captured = tenantId is null
-            ? new List<AuditCapture>()
-            : AuditTrail.Capture(ChangeTracker, t => typeof(Entity).IsAssignableFrom(t) && !NotAudited.Contains(t), t => t == typeof(PayrollEmployee));
+        var captured = CaptureAudit(tenantId);
 
         foreach (var entry in ChangeTracker.Entries<AuditableBase>().ToList())
         {
@@ -236,11 +247,7 @@ public sealed class AppDbContext(
 
         _tenant.StampAdded<TenantChildEntity>(ChangeTracker, c => c.TenantId, (c, t) => c.TenantId = t);
 
-        if (tenantId is { } tid && captured.Count > 0)
-        {
-            var who = userId is null ? "System" : currentUser.Name;
-            AuditLogs.AddRange(captured.Select(c => Domain.Audit.AuditLog.From(tid, c, now, userId, who, currentUser.Operation, _correlationId)));
-        }
+        WriteAudit(tenantId, captured, now, userId);
     }
 
     /// <summary>

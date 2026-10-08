@@ -1,32 +1,35 @@
 namespace HR.Employee.API.Presentation.Controllers;
 
-using HR.Employee.API.Application.Audit;
+using HR.Employee.API.Application.Common.Interfaces;
 using HR.Shared.Library.Authorization;
 using HR.Shared.Library.Persistence;
-using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
-/// <summary>Gateway: /audit/{everything}. Poori company ka itihaas, isliye settings.view (Login activity jaisa).</summary>
-[ApiController]
-[Authorize]
+/// <summary>
+/// Audit page ka "people" hissa. Gateway: /audit/{everything}. Poori company ka itihaas, isliye settings.view
+/// (Login activity jaisa). Log AppDbContext.SaveChanges khud likhta hai, yahan sirf parhna.
+/// </summary>
 [Route("api/audit")]
 [HasPermission(Permissions.SettingsView)]
-public sealed class AuditController(ISender mediator) : ControllerBase
+public sealed class AuditController(IAppDbContext db, ICurrentUser currentUser) : AuditControllerBase
 {
-    [HttpGet("entries")]
-    public async Task<ActionResult<AuditPageDto>> Entries(
-        [FromQuery] DateTime? before, [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] Guid? userId,
-        [FromQuery] string? entityType, [FromQuery] Guid? entityId, [FromQuery] Guid? subjectEmployeeId,
-        [FromQuery] AuditAction? action, [FromQuery] string? search, [FromQuery] int limit, CancellationToken ct)
-        => Ok(await mediator.Send(new GetAuditEntriesQuery(new AuditFilter(
-            before, from, to, userId, entityType, entityId, subjectEmployeeId, action, search, limit == 0 ? 50 : limit)), ct));
+    protected override IQueryable<AuditLog> Logs()
+    {
+        var tenantId = currentUser.RequireTenantId();
+        return db.AuditLogs.AsNoTracking().Where(x => x.TenantId == tenantId);
+    }
 
-    [HttpGet("summary")]
-    public async Task<ActionResult<AuditSummaryDto>> Summary([FromQuery] int days, [FromQuery] int offsetMinutes, CancellationToken ct)
-        => Ok(await mediator.Send(new GetAuditSummaryQuery(days == 0 ? 30 : days, offsetMinutes), ct));
+    protected override Func<IReadOnlyCollection<Guid>, CancellationToken, Task<Dictionary<Guid, string>>> SubjectNames => SubjectNamesAsync;
 
-    [HttpGet("entity-types")]
-    public async Task<ActionResult<IReadOnlyList<AuditCountDto>>> EntityTypes(CancellationToken ct)
-        => Ok(await mediator.Send(new GetAuditEntityTypesQuery(), ct));
+    // Hataye gaye (soft delete) employees ka naam bhi chahiye — audit mein wohi to dikhte hain
+    private async Task<Dictionary<Guid, string>> SubjectNamesAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken)
+    {
+        var tenantId = currentUser.RequireTenantId();
+        return (await db.Employees.IgnoreQueryFilters().AsNoTracking()
+                .Where(e => e.TenantId == tenantId && ids.Contains(e.Id))
+                .Select(e => new { e.Id, e.FirstName, e.LastName, e.EmployeeCode })
+                .ToListAsync(cancellationToken))
+            .ToDictionary(e => e.Id, e => $"{e.FirstName} {e.LastName} · {e.EmployeeCode}");
+    }
 }
