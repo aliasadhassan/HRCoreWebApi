@@ -93,6 +93,22 @@
       }
     },
     {
+      "DownstreamPathTemplate": "/api/performance/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "hr-employee",
+          "Port": 80
+        }
+      ],
+      "UpstreamPathTemplate": "/performance/{everything}",
+      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete", "Options" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "ApiGatewayKey",
+        "AllowedScopes": []
+      }
+    },
+    {
       "DownstreamPathTemplate": "/api/leave/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
