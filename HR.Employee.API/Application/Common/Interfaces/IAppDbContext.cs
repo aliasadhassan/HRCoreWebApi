@@ -1,6 +1,7 @@
 namespace HR.Employee.API.Application.Common.Interfaces;
 
 using HR.Employee.API.Domain.Assets;
+using HR.Employee.API.Domain.Audit;
 using HR.Employee.API.Domain.Performance;
 using HR.Employee.API.Domain.Helpdesk;
 using HR.Employee.API.Domain.Recruitment;
@@ -58,6 +59,7 @@ public interface IAppDbContext
     DbSet<Interview> Interviews { get; }
     DbSet<HelpdeskCategory> HelpdeskCategories { get; }
     DbSet<HelpdeskTicket> HelpdeskTickets { get; }
+    DbSet<AuditLog> AuditLogs { get; }
     DbSet<TicketActivity> TicketActivities { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

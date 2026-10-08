@@ -1,6 +1,7 @@
 namespace HR.Employee.API.Infrastructure.Identity;
 
 using System.Security.Claims;
+using Microsoft.AspNetCore.Routing;
 using HR.Employee.API.Application.Common.Interfaces;
 using HR.Shared.Library.Authorization;
 
@@ -16,6 +17,19 @@ public sealed class CurrentUser(IHttpContextAccessor accessor) : ICurrentUser
     public Guid? TenantId => Parse(Principal?.FindFirst(TenantClaim)?.Value);
 
     public string? Email => Principal?.FindFirst(ClaimTypes.Email)?.Value;
+
+    public string? Name => Principal?.FindFirst("name")?.Value ?? Email;
+
+    public string? Operation
+    {
+        get
+        {
+            var ctx = accessor.HttpContext;
+            if (ctx is null) return null;
+            var route = (ctx.GetEndpoint() as RouteEndpoint)?.RoutePattern.RawText ?? ctx.Request.Path.Value;
+            return $"{ctx.Request.Method} {route}";
+        }
+    }
 
     public bool HasPermission(string permission) => Principal?.HasPermission(permission) ?? false;
 

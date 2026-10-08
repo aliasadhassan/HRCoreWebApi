@@ -3,6 +3,7 @@ namespace HR.Employee.API.Infrastructure.Persistence;
 using System.Reflection;
 using HR.Employee.API.Application.Common.Interfaces;
 using HR.Employee.API.Domain.Assets;
+using HR.Employee.API.Domain.Audit;
 using HR.Employee.API.Domain.Performance;
 using HR.Employee.API.Domain.Helpdesk;
 using HR.Employee.API.Domain.Recruitment;
@@ -74,8 +75,12 @@ public sealed class AppDbContext(
     public DbSet<HelpdeskCategory> HelpdeskCategories => Set<HelpdeskCategory>();
     public DbSet<HelpdeskTicket> HelpdeskTickets => Set<HelpdeskTicket>();
     public DbSet<TicketActivity> TicketActivities => Set<TicketActivity>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     private readonly TenantScope _tenant = new(() => currentUser.TenantId);
+
+    /// <summary>Ek request (scope) ke saare audit rows isi id ke saath — Activity mein ek line.</summary>
+    private readonly Guid _correlationId = Guid.NewGuid();
 
     /// <summary>Is scope ka tenant (JWT ya consumer message) — RLS interceptor bhi yahi padhta hai.</summary>
     public Guid? SessionTenantId => _tenant.TenantId;
@@ -169,6 +174,11 @@ public sealed class AppDbContext(
         var userId = currentUser.UserId;
         var tenantId = SessionTenantId;
 
+        // Pehle badlaav padh lo (soft delete abhi Deleted state mein hai), phir audit fields lagao
+        var captured = tenantId is null
+            ? new List<AuditCapture>()
+            : AuditTrail.Capture(ChangeTracker, t => typeof(Domain.Common.Entity).IsAssignableFrom(t) && t != typeof(AuditLog), t => t == typeof(Domain.Employees.Employee));
+
         foreach (var entry in ChangeTracker.Entries<AuditableEntity>().ToList())
         {
             var entity = entry.Entity;
@@ -206,6 +216,12 @@ public sealed class AppDbContext(
         }
 
         _tenant.StampAdded<TenantChildEntity>(ChangeTracker, c => c.TenantId, (c, t) => c.TenantId = t);
+
+        if (tenantId is { } tid && captured.Count > 0)
+        {
+            var who = userId is null ? "System" : currentUser.Name;
+            AuditLogs.AddRange(captured.Select(c => AuditLog.From(tid, c, now, userId, who, currentUser.Operation, _correlationId)));
+        }
     }
 
     /// <summary>Defense in depth: query filter ke bawajood doosre tenant ka row kabhi update na ho.</summary>

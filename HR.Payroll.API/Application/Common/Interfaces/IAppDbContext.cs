@@ -50,6 +50,8 @@ public interface IAppDbContext
     DbSet<PaymentBatch> PaymentBatches { get; }
     DbSet<Payment> Payments { get; }
 
+    DbSet<Domain.Audit.AuditLog> AuditLogs { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>

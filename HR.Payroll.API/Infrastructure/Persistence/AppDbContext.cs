@@ -70,9 +70,20 @@ public sealed class AppDbContext(
     public DbSet<LoanRepayment> LoanRepayments => Set<LoanRepayment>();
 
     public DbSet<PaymentBatch> PaymentBatches => Set<PaymentBatch>();
+    public DbSet<Domain.Audit.AuditLog> AuditLogs => Set<Domain.Audit.AuditLog>();
     public DbSet<Payment> Payments => Set<Payment>();
 
     private readonly TenantScope _tenant = new(() => currentUser.TenantId);
+
+    /// <summary>Ek request (scope) ke saare audit rows isi id ke saath — Activity mein ek line.</summary>
+    private readonly Guid _correlationId = Guid.NewGuid();
+
+    /// <summary>
+    /// Run ka hisaab (payslips, lines, payments, qist ki wasooli) aur Employee API se sync hui chhuttiyan audit mein nahi —
+    /// har calculation pe hazaron rows. Run khud (status, approve, paid) audit hota hai.
+    /// </summary>
+    private static readonly HashSet<Type> NotAudited =
+        [typeof(Domain.Audit.AuditLog), typeof(Payslip), typeof(PayslipLine), typeof(Payment), typeof(LoanRepayment), typeof(UnpaidLeaveDay)];
 
     /// <summary>Is scope ka tenant (JWT ya consumer message) — RLS interceptor bhi yahi padhta hai.</summary>
     public Guid? SessionTenantId => _tenant.TenantId;
@@ -189,6 +200,11 @@ public sealed class AppDbContext(
         var userId = currentUser.UserId;
         var tenantId = SessionTenantId;
 
+        // Pehle badlaav padh lo (soft delete abhi Deleted state mein hai), phir audit fields lagao
+        var captured = tenantId is null
+            ? new List<AuditCapture>()
+            : AuditTrail.Capture(ChangeTracker, t => typeof(Entity).IsAssignableFrom(t) && !NotAudited.Contains(t), t => t == typeof(PayrollEmployee));
+
         foreach (var entry in ChangeTracker.Entries<AuditableBase>().ToList())
         {
             var entity = entry.Entity;
@@ -219,6 +235,12 @@ public sealed class AppDbContext(
         }
 
         _tenant.StampAdded<TenantChildEntity>(ChangeTracker, c => c.TenantId, (c, t) => c.TenantId = t);
+
+        if (tenantId is { } tid && captured.Count > 0)
+        {
+            var who = userId is null ? "System" : currentUser.Name;
+            AuditLogs.AddRange(captured.Select(c => Domain.Audit.AuditLog.From(tid, c, now, userId, who, currentUser.Operation, _correlationId)));
+        }
     }
 
     /// <summary>

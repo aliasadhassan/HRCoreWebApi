@@ -48,6 +48,9 @@ var kvHelper = new KeyVaultHelper(vaultUri!);
 // IdentityDbConnectionString (hr_identity_app) ho to woh, warna shared SupabaseConnectionString
 var connectionString = await kvHelper.GetDbConnectionStringAsync("IdentityDbConnectionString");
 
+// AppDbContext audit ke liye (kisne, kis request se)
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString, sql =>
     {
