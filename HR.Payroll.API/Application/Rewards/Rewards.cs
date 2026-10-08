@@ -329,7 +329,8 @@ public sealed class RewardHandlers(IAppDbContext db, ICurrentUser currentUser) :
 
     public async Task<RewardsLookupsDto> Handle(GetRewardsLookupsQuery q, CancellationToken ct)
     {
-        EnsureView();
+        // Plans tab (settings.manage) ko deduction components chahiye
+        if (!CanView && !CanConfigure) EnsureView();
         var employees = await db.PayrollEmployees.AsNoTracking().Where(e => e.IsActive)
             .OrderBy(e => e.FullName)
             .Select(e => new { e.Id, e.FullName, e.EmployeeCode, e.DepartmentId, e.DepartmentName })
