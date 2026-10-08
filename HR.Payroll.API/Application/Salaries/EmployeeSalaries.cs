@@ -166,7 +166,7 @@ public sealed class EmployeeSalaryHandlers(IAppDbContext db, ICurrentUser curren
             throw new NotFoundException("Pay component", componentId);
     }
 
-    private static void CopyOverrides(EmployeeSalary from, EmployeeSalary to)
+    internal static void CopyOverrides(EmployeeSalary from, EmployeeSalary to)
     {
         foreach (var item in from.Overrides)
         {
