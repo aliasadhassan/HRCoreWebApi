@@ -3,6 +3,7 @@ namespace HR.Employee.API.Infrastructure.Persistence;
 using System.Reflection;
 using HR.Employee.API.Application.Common.Interfaces;
 using HR.Employee.API.Domain.Assets;
+using HR.Employee.API.Domain.Performance;
 using HR.Employee.API.Domain.Attendance;
 using HR.Employee.API.Domain.Common;
 using HR.Employee.API.Domain.Employees;
@@ -59,6 +60,10 @@ public sealed class AppDbContext(
     public DbSet<Asset> Assets => Set<Asset>();
     public DbSet<AssetAssignment> AssetAssignments => Set<AssetAssignment>();
     public DbSet<AssetEvent> AssetEvents => Set<AssetEvent>();
+    public DbSet<ReviewCycle> ReviewCycles => Set<ReviewCycle>();
+    public DbSet<PerformanceReview> PerformanceReviews => Set<PerformanceReview>();
+    public DbSet<Goal> Goals => Set<Goal>();
+    public DbSet<GoalCheckIn> GoalCheckIns => Set<GoalCheckIn>();
 
     private readonly TenantScope _tenant = new(() => currentUser.TenantId);
 
