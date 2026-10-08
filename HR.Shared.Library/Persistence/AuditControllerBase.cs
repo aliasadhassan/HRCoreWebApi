@@ -2,6 +2,14 @@ namespace HR.Shared.Library.Persistence;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+/// <summary>Employee id → "Naam · Code" (audit list mein "kis employee ka record").</summary>
+public sealed class AuditSubject
+{
+    public Guid Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+}
 
 /// <summary>Query string ke filters (/entries?before=..&amp;action=Updated).</summary>
 public sealed class AuditEntriesRequest
@@ -29,11 +37,31 @@ public sealed class AuditEntriesRequest
 [Authorize]
 public abstract class AuditControllerBase : ControllerBase
 {
-    /// <summary>Is tenant ki AuditLogs (Identity pe RLS nahi, isliye filter yahin zaroori).</summary>
-    protected abstract IQueryable<AuditLog> Logs();
+    /// <summary>Service ki AuditLogs table (abhi tenant filter ke baghair).</summary>
+    protected abstract IQueryable<AuditLog> Source { get; }
 
-    /// <summary>Employee ids → "Naam · Code". Null = service ke paas employees nahi (Identity).</summary>
-    protected virtual Func<IReadOnlyCollection<Guid>, CancellationToken, Task<Dictionary<Guid, string>>>? SubjectNames => null;
+    /// <summary>Token ka tenant. Identity pe RLS nahi, isliye filter har query mein yahin se.</summary>
+    protected abstract Guid CurrentTenantId();
+
+    /// <summary>Is tenant ke employees (soft delete samet) — null = service ke paas employees nahi (Identity).</summary>
+    protected virtual IQueryable<AuditSubject>? Subjects => null;
+
+    /// <summary>Extra permission check (Payroll: tankhwah ka itihaas). Default: class ki [HasPermission] kaafi.</summary>
+    protected virtual void EnsureAllowed()
+    {
+    }
+
+    private IQueryable<AuditLog> Logs()
+    {
+        EnsureAllowed();
+        var tenantId = CurrentTenantId();
+        return Source.AsNoTracking().Where(x => x.TenantId == tenantId);
+    }
+
+    private Func<IReadOnlyCollection<Guid>, CancellationToken, Task<Dictionary<Guid, string>>>? SubjectNames
+        => Subjects is { } subjects
+            ? (ids, ct) => subjects.Where(s => ids.Contains(s.Id)).ToDictionaryAsync(s => s.Id, s => s.Name, ct)
+            : null;
 
     [HttpGet("entries")]
     public async Task<ActionResult<AuditPageDto>> Entries([FromQuery] AuditEntriesRequest request, CancellationToken cancellationToken)

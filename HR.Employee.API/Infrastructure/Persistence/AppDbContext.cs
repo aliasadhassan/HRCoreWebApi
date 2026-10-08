@@ -171,14 +171,6 @@ public sealed class AppDbContext(
     private List<AuditCapture> CaptureAudit(Guid? tenantId)
         => tenantId is null ? [] : AuditTrail.Capture(ChangeTracker, t => typeof(Domain.Common.Entity).IsAssignableFrom(t), t => t == typeof(Domain.Employees.Employee));
 
-    /// <summary>Audit rows isi SaveChanges mein — badlaav aur uska record ek saath commit ya rollback.</summary>
-    private void WriteAudit(Guid? tenantId, List<AuditCapture> captured, DateTime now, Guid? userId)
-    {
-        if (tenantId is not { } tid || captured.Count == 0)
-            return;
-        var who = new AuditContext(now, userId, userId is null ? "System" : currentUser.Name, currentUser.Operation, _correlationId);
-        AuditLogs.AddRange(captured.Select(c => AuditLog.From(tid, c, who)));
-    }
 
     private void ApplyAuditRules()
     {
@@ -227,7 +219,8 @@ public sealed class AppDbContext(
 
         _tenant.StampAdded<TenantChildEntity>(ChangeTracker, c => c.TenantId, (c, t) => c.TenantId = t);
 
-        WriteAudit(tenantId, captured, now, userId);
+        AuditLogs.Record(tenantId, captured,
+            new AuditContext(now, userId, userId is null ? "System" : currentUser.Name, currentUser.Operation, _correlationId));
     }
 
     /// <summary>Defense in depth: query filter ke bawajood doosre tenant ka row kabhi update na ho.</summary>

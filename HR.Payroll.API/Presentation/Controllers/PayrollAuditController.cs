@@ -13,23 +13,24 @@ using Microsoft.EntityFrameworkCore;
 [Route("api/payroll/audit")]
 public sealed class PayrollAuditController(IAppDbContext db, ICurrentUser currentUser) : AuditControllerBase
 {
-    protected override IQueryable<AuditLog> Logs()
+    protected override IQueryable<AuditLog> Source => db.AuditLogs;
+
+    protected override Guid CurrentTenantId() => currentUser.RequireTenantId();
+
+    protected override void EnsureAllowed()
     {
         if (!currentUser.HasPermission(Permissions.PayrollViewAll) && !currentUser.HasPermission(Permissions.PayrollApprove))
             throw new UnauthorizedAccessException("You do not have permission to see the payroll audit trail.");
-        var tenantId = currentUser.RequireTenantId();
-        return db.AuditLogs.AsNoTracking().Where(x => x.TenantId == tenantId);
     }
 
-    protected override Func<IReadOnlyCollection<Guid>, CancellationToken, Task<Dictionary<Guid, string>>> SubjectNames => SubjectNamesAsync;
-
-    private async Task<Dictionary<Guid, string>> SubjectNamesAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken)
+    protected override IQueryable<AuditSubject> Subjects
     {
-        var tenantId = currentUser.RequireTenantId();
-        return (await db.PayrollEmployees.IgnoreQueryFilters().AsNoTracking()
-                .Where(e => e.TenantId == tenantId && ids.Contains(e.Id))
-                .Select(e => new { e.Id, e.FullName, e.EmployeeCode })
-                .ToListAsync(cancellationToken))
-            .ToDictionary(e => e.Id, e => $"{e.FullName} · {e.EmployeeCode}");
+        get
+        {
+            var tenantId = currentUser.RequireTenantId();
+            return db.PayrollEmployees.IgnoreQueryFilters().AsNoTracking()
+                .Where(e => e.TenantId == tenantId)
+                .Select(e => new AuditSubject { Id = e.Id, Name = e.FullName + " · " + e.EmployeeCode });
+        }
     }
 }

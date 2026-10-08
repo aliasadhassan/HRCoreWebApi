@@ -54,6 +54,17 @@ public sealed class AuditLog
     }
 }
 
+public static class AuditLogSetExtensions
+{
+    /// <summary>Captured badlaav AuditLogs mein — isi SaveChanges mein, taake badlaav aur uska record ek saath commit / rollback hon.</summary>
+    public static void Record(this DbSet<AuditLog> set, Guid? tenantId, IReadOnlyCollection<AuditCapture> captured, AuditContext who)
+    {
+        if (tenantId is not { } tid || captured.Count == 0)
+            return;
+        set.AddRange(captured.Select(c => AuditLog.From(tid, c, who)));
+    }
+}
+
 /// <summary>Ek SaveChanges ka "kisne / kab / kis request se" — har captured row pe yahi lagta hai.</summary>
 public sealed record AuditContext(DateTime At, Guid? UserId, string? UserName, string? Operation, Guid CorrelationId);
 

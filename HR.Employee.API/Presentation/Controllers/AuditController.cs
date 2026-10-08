@@ -14,22 +14,19 @@ using Microsoft.EntityFrameworkCore;
 [HasPermission(Permissions.SettingsView)]
 public sealed class AuditController(IAppDbContext db, ICurrentUser currentUser) : AuditControllerBase
 {
-    protected override IQueryable<AuditLog> Logs()
-    {
-        var tenantId = currentUser.RequireTenantId();
-        return db.AuditLogs.AsNoTracking().Where(x => x.TenantId == tenantId);
-    }
+    protected override IQueryable<AuditLog> Source => db.AuditLogs;
 
-    protected override Func<IReadOnlyCollection<Guid>, CancellationToken, Task<Dictionary<Guid, string>>> SubjectNames => SubjectNamesAsync;
+    protected override Guid CurrentTenantId() => currentUser.RequireTenantId();
 
     // Hataye gaye (soft delete) employees ka naam bhi chahiye — audit mein wohi to dikhte hain
-    private async Task<Dictionary<Guid, string>> SubjectNamesAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken)
+    protected override IQueryable<AuditSubject> Subjects
     {
-        var tenantId = currentUser.RequireTenantId();
-        return (await db.Employees.IgnoreQueryFilters().AsNoTracking()
-                .Where(e => e.TenantId == tenantId && ids.Contains(e.Id))
-                .Select(e => new { e.Id, e.FirstName, e.LastName, e.EmployeeCode })
-                .ToListAsync(cancellationToken))
-            .ToDictionary(e => e.Id, e => $"{e.FirstName} {e.LastName} · {e.EmployeeCode}");
+        get
+        {
+            var tenantId = currentUser.RequireTenantId();
+            return db.Employees.IgnoreQueryFilters().AsNoTracking()
+                .Where(e => e.TenantId == tenantId)
+                .Select(e => new AuditSubject { Id = e.Id, Name = e.FirstName + " " + e.LastName + " · " + e.EmployeeCode });
+        }
     }
 }

@@ -2,7 +2,6 @@ using HR.Identity.API.Data;
 using HR.Shared.Library.Authorization;
 using HR.Shared.Library.Persistence;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace HR.Identity.API.Controllers;
 
@@ -14,9 +13,8 @@ namespace HR.Identity.API.Controllers;
 [HasPermission(Permissions.SettingsView)]
 public sealed class AuditController(AppDbContext db) : AuditControllerBase
 {
-    protected override IQueryable<AuditLog> Logs()
-    {
-        var tenantId = User.GetTenantId() ?? throw new UnauthorizedAccessException("Tenant missing in token.");
-        return db.AuditLogs.AsNoTracking().Where(x => x.TenantId == tenantId);
-    }
+    protected override IQueryable<AuditLog> Source => db.AuditLogs;
+
+    protected override Guid CurrentTenantId()
+        => User.GetTenantId() ?? throw new UnauthorizedAccessException("Tenant missing in token.");
 }

@@ -1,4 +1,4 @@
-﻿using System;
+﻿using HR.Shared.Library.Persistence;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -11,72 +11,8 @@ namespace HR.Employee.API.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.CreateTable(
-                name: "AuditLogs",
-                schema: "employee",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
-                    At = table.Column<DateTime>(type: "timestamp(3) with time zone", precision: 3, nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: true),
-                    UserName = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: true),
-                    Action = table.Column<byte>(type: "smallint", nullable: false),
-                    EntityType = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: false),
-                    EntityId = table.Column<Guid>(type: "uuid", nullable: false),
-                    EntityLabel = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
-                    SubjectEmployeeId = table.Column<Guid>(type: "uuid", nullable: true),
-                    Operation = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
-                    CorrelationId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Changes = table.Column<string>(type: "jsonb", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AuditLogs", x => x.Id);
-                    table.CheckConstraint("CK_AuditLogs_Action", "\"Action\" BETWEEN 1 AND 3");
-                });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AuditLogs_TenantId_At",
-                schema: "employee",
-                table: "AuditLogs",
-                columns: new[] { "TenantId", "At" },
-                descending: new[] { false, true });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AuditLogs_TenantId_CorrelationId",
-                schema: "employee",
-                table: "AuditLogs",
-                columns: new[] { "TenantId", "CorrelationId" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AuditLogs_TenantId_Entity",
-                schema: "employee",
-                table: "AuditLogs",
-                columns: new[] { "TenantId", "EntityType", "EntityId" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AuditLogs_TenantId_Subject",
-                schema: "employee",
-                table: "AuditLogs",
-                columns: new[] { "TenantId", "SubjectEmployeeId" },
-                filter: "\"SubjectEmployeeId\" IS NOT NULL");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AuditLogs_TenantId_UserId_At",
-                schema: "employee",
-                table: "AuditLogs",
-                columns: new[] { "TenantId", "UserId", "At" });
-
-            // Audit sirf likha / parha jata hai: app role ke paas UPDATE / DELETE nahi
-            migrationBuilder.Sql(@"
-    REVOKE ALL ON employee.""AuditLogs"" FROM PUBLIC;
-    GRANT SELECT, INSERT ON employee.""AuditLogs"" TO hr_employee_app;
-    REVOKE UPDATE, DELETE, TRUNCATE ON employee.""AuditLogs"" FROM hr_employee_app;
-    ALTER TABLE employee.""AuditLogs"" ENABLE ROW LEVEL SECURITY;
-    DROP POLICY IF EXISTS tenant_isolation ON employee.""AuditLogs"";
-    CREATE POLICY tenant_isolation ON employee.""AuditLogs"" TO hr_employee_app USING (""TenantId"" = tenancy.current_tenant_id()) WITH CHECK (""TenantId"" = tenancy.current_tenant_id());
-");
+            // Table, indexes, grants (SELECT + INSERT only) + RLS — HR.Shared.Library AuditLogMigrations
+            migrationBuilder.CreateAuditLogs("employee", "hr_employee_app", rowLevelSecurity: true);
         }
 
         /// <inheritdoc />

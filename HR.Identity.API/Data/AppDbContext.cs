@@ -23,7 +23,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IHttpContextAc
     public DbSet<UserToken> UserTokens => Set<UserToken>();
     public DbSet<LoginAudit> LoginAudits => Set<LoginAudit>();
     public DbSet<TenantSubscription> TenantSubscriptions => Set<TenantSubscription>();
-    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    /// <summary>EF khud bharta hai (auto-property) — har context instance ka apna set.</summary>
+    public DbSet<AuditLog> AuditLogs { get; set; } = null!;
 
     /// <summary>Ek request (scope) ke saare audit rows isi id ke saath — Activity mein ek line.</summary>
     private readonly Guid _correlationId = Guid.NewGuid();
@@ -78,11 +79,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IHttpContextAc
 
     private void WriteAudit(List<AuditCapture>? audit, DateTime now)
     {
-        if (audit is not { Count: > 0 } || http?.HttpContext?.User is not { } principal || principal.GetTenantId() is not { } tenantId)
+        if (audit is null || http?.HttpContext?.User is not { } principal)
             return;
         var userName = principal.FindFirst(JwtTokenHelper.DisplayNameClaim)?.Value ?? principal.Identity?.Name;
-        var who = new AuditContext(now, principal.GetUserId(), userName, Operation(), _correlationId);
-        AuditLogs.AddRange(audit.Select(c => AuditLog.From(tenantId, c, who)));
+        AuditLogs.Record(principal.GetTenantId(), audit, new AuditContext(now, principal.GetUserId(), userName, Operation(), _correlationId));
     }
 
     /// <summary>
