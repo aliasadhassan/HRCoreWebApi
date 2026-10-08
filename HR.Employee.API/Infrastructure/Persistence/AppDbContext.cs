@@ -2,6 +2,7 @@ namespace HR.Employee.API.Infrastructure.Persistence;
 
 using System.Reflection;
 using HR.Employee.API.Application.Common.Interfaces;
+using HR.Employee.API.Domain.Assets;
 using HR.Employee.API.Domain.Attendance;
 using HR.Employee.API.Domain.Common;
 using HR.Employee.API.Domain.Employees;
@@ -53,6 +54,11 @@ public sealed class AppDbContext(
 
     public DbSet<ChecklistTemplate> ChecklistTemplates => Set<ChecklistTemplate>();
     public DbSet<LifecycleCase> LifecycleCases => Set<LifecycleCase>();
+
+    public DbSet<AssetCategory> AssetCategories => Set<AssetCategory>();
+    public DbSet<Asset> Assets => Set<Asset>();
+    public DbSet<AssetAssignment> AssetAssignments => Set<AssetAssignment>();
+    public DbSet<AssetEvent> AssetEvents => Set<AssetEvent>();
 
     private readonly TenantScope _tenant = new(() => currentUser.TenantId);
 
