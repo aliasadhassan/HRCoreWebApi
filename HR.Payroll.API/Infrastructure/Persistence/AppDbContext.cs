@@ -4,6 +4,7 @@ using System.Reflection;
 using HR.Payroll.API.Application.Common.Interfaces;
 using HR.Payroll.API.Domain.Common;
 using HR.Payroll.API.Domain.Employees;
+using HR.Payroll.API.Domain.Rewards;
 using HR.Payroll.API.Domain.Expenses;
 using HR.Payroll.API.Domain.Inputs;
 using HR.Payroll.API.Domain.Payments;
@@ -59,6 +60,10 @@ public sealed class AppDbContext(
     public DbSet<ExpenseCategory> ExpenseCategories => Set<ExpenseCategory>();
     public DbSet<ExpenseClaim> ExpenseClaims => Set<ExpenseClaim>();
     public DbSet<TravelRequest> TravelRequests => Set<TravelRequest>();
+    public DbSet<BenefitPlan> BenefitPlans => Set<BenefitPlan>();
+    public DbSet<BenefitEnrolment> BenefitEnrolments => Set<BenefitEnrolment>();
+    public DbSet<SalaryRevision> SalaryRevisions => Set<SalaryRevision>();
+    public DbSet<BonusAward> BonusAwards => Set<BonusAward>();
 
     public DbSet<PayrollRun> PayrollRuns => Set<PayrollRun>();
     public DbSet<Payslip> Payslips => Set<Payslip>();

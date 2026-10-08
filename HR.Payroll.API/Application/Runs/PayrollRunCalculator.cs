@@ -80,6 +80,19 @@ public sealed class PayrollRunCalculator(IAppDbContext db)
             .Where(l => employeeIds.Contains(l.EmployeeId) && l.Status == LoanStatus.Active)
             .ToListAsync(ct);
 
+        // ── Benefits: employee ka hissa jahan plan pe deduction component laga ho (period ke aakhri din coverage) ──
+        var periodEnd = period.PeriodEnd;
+        var benefitDeductions = await (
+                from e in db.BenefitEnrolments.AsNoTracking()
+                join p in db.BenefitPlans.AsNoTracking() on e.BenefitPlanId equals p.Id
+                where employeeIds.Contains(e.EmployeeId)
+                      && (e.Status == EnrolmentStatus.Active || e.Status == EnrolmentStatus.Ended)
+                      && e.StartDate <= periodEnd && (e.EndDate == null || e.EndDate >= periodEnd)
+                      && e.EmployeeMonthlyCost > 0 && p.DeductionComponentId != null
+                select new { e.Id, e.EmployeeId, e.EmployeeMonthlyCost, ComponentId = p.DeductionComponentId!.Value })
+            .ToListAsync(ct);
+        var perPeriod = 12m / group.PayFrequency.PeriodsPerYear();
+
         // ── Tax: tenant ki apni regime pehle, warna platform wali ──
         var regime = await db.TaxRegimes.AsNoTracking().Include(r => r.Slabs)
             .Where(r => r.CountryCode == group.CountryCode && r.IsActive
@@ -151,6 +164,10 @@ public sealed class PayrollRunCalculator(IAppDbContext db)
                     if (due > 0)
                         adHoc.Add(new AdHocLine(loan.DeductionComponentId, due, LineSource.Loan, loan.Id));
                 }
+
+                foreach (var benefit in benefitDeductions.Where(b => b.EmployeeId == employee.Id))
+                    adHoc.Add(new AdHocLine(benefit.ComponentId, Math.Round(benefit.EmployeeMonthlyCost * perPeriod, decimals),
+                                            LineSource.Benefit, benefit.Id));
 
                 TaxInput? tax = null;
                 if (regime is not null && !employee.IsTaxExempt)
