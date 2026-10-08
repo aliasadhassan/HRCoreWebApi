@@ -4,6 +4,7 @@ using System.Reflection;
 using HR.Employee.API.Application.Common.Interfaces;
 using HR.Employee.API.Domain.Assets;
 using HR.Employee.API.Domain.Performance;
+using HR.Employee.API.Domain.Recruitment;
 using HR.Employee.API.Domain.Attendance;
 using HR.Employee.API.Domain.Common;
 using HR.Employee.API.Domain.Employees;
@@ -64,6 +65,11 @@ public sealed class AppDbContext(
     public DbSet<PerformanceReview> PerformanceReviews => Set<PerformanceReview>();
     public DbSet<Goal> Goals => Set<Goal>();
     public DbSet<GoalCheckIn> GoalCheckIns => Set<GoalCheckIn>();
+    public DbSet<JobOpening> JobOpenings => Set<JobOpening>();
+    public DbSet<Candidate> Candidates => Set<Candidate>();
+    public DbSet<JobApplication> JobApplications => Set<JobApplication>();
+    public DbSet<ApplicationEvent> ApplicationEvents => Set<ApplicationEvent>();
+    public DbSet<Interview> Interviews => Set<Interview>();
 
     private readonly TenantScope _tenant = new(() => currentUser.TenantId);
 

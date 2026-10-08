@@ -131,6 +131,28 @@
       }
     },
     {
+      "DownstreamPathTemplate": "/api/recruitment/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "127.0.0.1",
+          "Port": 7259
+        }
+      ],
+      "UpstreamPathTemplate": "/recruitment/{everything}",
+      "UpstreamHttpMethod": [
+        "Get",
+        "Post",
+        "Put",
+        "Delete",
+        "Options"
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "ApiGatewayKey",
+        "AllowedScopes": []
+      }
+    },
+    {
       "DownstreamPathTemplate": "/api/leave/{everything}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [

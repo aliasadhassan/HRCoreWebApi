@@ -2,6 +2,7 @@ namespace HR.Employee.API.Application.Common.Interfaces;
 
 using HR.Employee.API.Domain.Assets;
 using HR.Employee.API.Domain.Performance;
+using HR.Employee.API.Domain.Recruitment;
 using HR.Employee.API.Domain.Attendance;
 using HR.Employee.API.Domain.Employees;
 using HR.Employee.API.Domain.Leaves;
@@ -49,6 +50,11 @@ public interface IAppDbContext
     DbSet<PerformanceReview> PerformanceReviews { get; }
     DbSet<Goal> Goals { get; }
     DbSet<GoalCheckIn> GoalCheckIns { get; }
+    DbSet<JobOpening> JobOpenings { get; }
+    DbSet<Candidate> Candidates { get; }
+    DbSet<JobApplication> JobApplications { get; }
+    DbSet<ApplicationEvent> ApplicationEvents { get; }
+    DbSet<Interview> Interviews { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

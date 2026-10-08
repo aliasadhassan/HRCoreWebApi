@@ -54,7 +54,7 @@ public sealed class CreateEmployeeHandler(IAppDbContext db, ICurrentUser current
             throw new ConflictException($"An employee with work email '{workEmail}' already exists.");
 
         var code = string.IsNullOrWhiteSpace(request.EmployeeCode)
-            ? await GenerateCodeAsync(tenantId, ct)
+            ? await GenerateCodeAsync(db, tenantId, ct)
             : request.EmployeeCode.Trim().ToUpperInvariant();
 
         if (await db.Employees.AnyAsync(e => e.EmployeeCode == code, ct))
@@ -71,7 +71,7 @@ public sealed class CreateEmployeeHandler(IAppDbContext db, ICurrentUser current
         return employee.Id;
     }
 
-    private async Task<string> GenerateCodeAsync(Guid tenantId, CancellationToken ct)
+    internal static async Task<string> GenerateCodeAsync(IAppDbContext db, Guid tenantId, CancellationToken ct)
     {
         // Soft-deleted bhi gino, taake purana code dobara na mile. Race pe unique index 409 de dega.
         var count = await db.Employees.IgnoreQueryFilters().CountAsync(e => e.TenantId == tenantId, ct);
