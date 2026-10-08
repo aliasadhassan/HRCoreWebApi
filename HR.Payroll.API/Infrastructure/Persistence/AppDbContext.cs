@@ -70,9 +70,20 @@ public sealed class AppDbContext(
     public DbSet<LoanRepayment> LoanRepayments => Set<LoanRepayment>();
 
     public DbSet<PaymentBatch> PaymentBatches => Set<PaymentBatch>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<Payment> Payments => Set<Payment>();
 
     private readonly TenantScope _tenant = new(() => currentUser.TenantId);
+
+    /// <summary>Ek request (scope) ke saare audit rows isi id ke saath — Activity mein ek line.</summary>
+    private readonly Guid _correlationId = Guid.NewGuid();
+
+    /// <summary>
+    /// Run ka hisaab (payslips, lines, payments, qist ki wasooli) aur Employee API se sync hui chhuttiyan audit mein nahi —
+    /// har calculation pe hazaron rows. Run khud (status, approve, paid) audit hota hai.
+    /// </summary>
+    private static readonly HashSet<Type> NotAudited =
+        [typeof(Payslip), typeof(PayslipLine), typeof(Payment), typeof(LoanRepayment), typeof(UnpaidLeaveDay)];
 
     /// <summary>Is scope ka tenant (JWT ya consumer message) — RLS interceptor bhi yahi padhta hai.</summary>
     public Guid? SessionTenantId => _tenant.TenantId;
@@ -98,6 +109,7 @@ public sealed class AppDbContext(
         modelBuilder.HasDefaultSchema("payroll");
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+        modelBuilder.ApplyConfiguration(new AuditLogConfiguration());
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes().ToList())
         {
@@ -183,11 +195,18 @@ public sealed class AppDbContext(
         throw new InvalidOperationException("Domain events did not settle after 10 dispatch rounds.");
     }
 
+    private List<AuditCapture> CaptureAudit(Guid? tenantId)
+        => tenantId is null ? [] : AuditTrail.Capture(ChangeTracker, t => typeof(Entity).IsAssignableFrom(t) && !NotAudited.Contains(t), t => t == typeof(PayrollEmployee));
+
+
     private void ApplyAuditRules()
     {
         var now = DateTime.UtcNow;
         var userId = currentUser.UserId;
         var tenantId = SessionTenantId;
+
+        // Pehle badlaav padh lo (soft delete abhi Deleted state mein hai), phir audit fields lagao
+        var captured = CaptureAudit(tenantId);
 
         foreach (var entry in ChangeTracker.Entries<AuditableBase>().ToList())
         {
@@ -219,6 +238,9 @@ public sealed class AppDbContext(
         }
 
         _tenant.StampAdded<TenantChildEntity>(ChangeTracker, c => c.TenantId, (c, t) => c.TenantId = t);
+
+        AuditLogs.Record(tenantId, captured,
+            new AuditContext(now, userId, userId is null ? "System" : currentUser.Name, currentUser.Operation, _correlationId));
     }
 
     /// <summary>

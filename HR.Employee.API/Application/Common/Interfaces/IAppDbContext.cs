@@ -58,6 +58,7 @@ public interface IAppDbContext
     DbSet<Interview> Interviews { get; }
     DbSet<HelpdeskCategory> HelpdeskCategories { get; }
     DbSet<HelpdeskTicket> HelpdeskTickets { get; }
+    DbSet<HR.Shared.Library.Persistence.AuditLog> AuditLogs { get; }
     DbSet<TicketActivity> TicketActivities { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

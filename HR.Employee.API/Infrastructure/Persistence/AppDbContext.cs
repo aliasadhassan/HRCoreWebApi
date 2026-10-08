@@ -74,8 +74,12 @@ public sealed class AppDbContext(
     public DbSet<HelpdeskCategory> HelpdeskCategories => Set<HelpdeskCategory>();
     public DbSet<HelpdeskTicket> HelpdeskTickets => Set<HelpdeskTicket>();
     public DbSet<TicketActivity> TicketActivities => Set<TicketActivity>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     private readonly TenantScope _tenant = new(() => currentUser.TenantId);
+
+    /// <summary>Ek request (scope) ke saare audit rows isi id ke saath — Activity mein ek line.</summary>
+    private readonly Guid _correlationId = Guid.NewGuid();
 
     /// <summary>Is scope ka tenant (JWT ya consumer message) — RLS interceptor bhi yahi padhta hai.</summary>
     public Guid? SessionTenantId => _tenant.TenantId;
@@ -101,6 +105,7 @@ public sealed class AppDbContext(
     {
         modelBuilder.HasDefaultSchema("employee");
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+        modelBuilder.ApplyConfiguration(new AuditLogConfiguration());
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes().ToList())
         {
@@ -163,11 +168,18 @@ public sealed class AppDbContext(
         throw new InvalidOperationException("Domain events did not settle after 10 dispatch rounds.");
     }
 
+    private List<AuditCapture> CaptureAudit(Guid? tenantId)
+        => tenantId is null ? [] : AuditTrail.Capture(ChangeTracker, t => typeof(Domain.Common.Entity).IsAssignableFrom(t), t => t == typeof(Domain.Employees.Employee));
+
+
     private void ApplyAuditRules()
     {
         var now = DateTime.UtcNow;
         var userId = currentUser.UserId;
         var tenantId = SessionTenantId;
+
+        // Pehle badlaav padh lo (soft delete abhi Deleted state mein hai), phir audit fields lagao
+        var captured = CaptureAudit(tenantId);
 
         foreach (var entry in ChangeTracker.Entries<AuditableEntity>().ToList())
         {
@@ -206,6 +218,9 @@ public sealed class AppDbContext(
         }
 
         _tenant.StampAdded<TenantChildEntity>(ChangeTracker, c => c.TenantId, (c, t) => c.TenantId = t);
+
+        AuditLogs.Record(tenantId, captured,
+            new AuditContext(now, userId, userId is null ? "System" : currentUser.Name, currentUser.Operation, _correlationId));
     }
 
     /// <summary>Defense in depth: query filter ke bawajood doosre tenant ka row kabhi update na ho.</summary>

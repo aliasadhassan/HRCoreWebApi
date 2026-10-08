@@ -173,6 +173,39 @@
       }
     },
     {
+      "DownstreamPathTemplate": "/api/audit/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "hr-identity",
+          "Port": 80
+        }
+      ],
+      "UpstreamPathTemplate": "/audit/access/{everything}",
+      "Priority": 1,
+      "UpstreamHttpMethod": [ "Get", "Options" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "ApiGatewayKey",
+        "AllowedScopes": []
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/audit/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "hr-employee",
+          "Port": 80
+        }
+      ],
+      "UpstreamPathTemplate": "/audit/{everything}",
+      "UpstreamHttpMethod": [ "Get", "Options" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "ApiGatewayKey",
+        "AllowedScopes": []
+      }
+    },
+    {
       "DownstreamPathTemplate": "/api/reports/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
