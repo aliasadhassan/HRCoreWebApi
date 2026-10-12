@@ -5,6 +5,7 @@ using HR.Employee.API.Application.Common.Interfaces;
 using HR.Employee.API.Domain.Assets;
 using HR.Employee.API.Domain.Performance;
 using HR.Employee.API.Domain.Helpdesk;
+using HR.Employee.API.Domain.Policies;
 using HR.Employee.API.Domain.Recruitment;
 using HR.Employee.API.Domain.Attendance;
 using HR.Employee.API.Domain.Common;
@@ -74,6 +75,11 @@ public sealed class AppDbContext(
     public DbSet<HelpdeskCategory> HelpdeskCategories => Set<HelpdeskCategory>();
     public DbSet<HelpdeskTicket> HelpdeskTickets => Set<HelpdeskTicket>();
     public DbSet<TicketActivity> TicketActivities => Set<TicketActivity>();
+    public DbSet<Policy> Policies => Set<Policy>();
+    public DbSet<PolicyVersion> PolicyVersions => Set<PolicyVersion>();
+    public DbSet<PolicyAcknowledgement> PolicyAcknowledgements => Set<PolicyAcknowledgement>();
+    public DbSet<ComplianceObligation> ComplianceObligations => Set<ComplianceObligation>();
+    public DbSet<ComplianceFiling> ComplianceFilings => Set<ComplianceFiling>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     private readonly TenantScope _tenant = new(() => currentUser.TenantId);

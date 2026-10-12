@@ -3,6 +3,7 @@ namespace HR.Employee.API.Application.Common.Interfaces;
 using HR.Employee.API.Domain.Assets;
 using HR.Employee.API.Domain.Performance;
 using HR.Employee.API.Domain.Helpdesk;
+using HR.Employee.API.Domain.Policies;
 using HR.Employee.API.Domain.Recruitment;
 using HR.Employee.API.Domain.Attendance;
 using HR.Employee.API.Domain.Employees;
@@ -60,6 +61,11 @@ public interface IAppDbContext
     DbSet<HelpdeskTicket> HelpdeskTickets { get; }
     DbSet<HR.Shared.Library.Persistence.AuditLog> AuditLogs { get; }
     DbSet<TicketActivity> TicketActivities { get; }
+    DbSet<Policy> Policies { get; }
+    DbSet<PolicyVersion> PolicyVersions { get; }
+    DbSet<PolicyAcknowledgement> PolicyAcknowledgements { get; }
+    DbSet<ComplianceObligation> ComplianceObligations { get; }
+    DbSet<ComplianceFiling> ComplianceFilings { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
