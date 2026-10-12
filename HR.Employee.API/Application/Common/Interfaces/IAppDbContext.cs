@@ -7,6 +7,7 @@ using HR.Employee.API.Domain.Policies;
 using HR.Employee.API.Domain.Recruitment;
 using HR.Employee.API.Domain.Attendance;
 using HR.Employee.API.Domain.Employees;
+using HR.Employee.API.Domain.Engagement;
 using HR.Employee.API.Domain.Learning;
 using HR.Employee.API.Domain.Leaves;
 using HR.Employee.API.Domain.Lifecycle;
@@ -73,6 +74,13 @@ public interface IAppDbContext
     DbSet<EmployeeSkill> EmployeeSkills { get; }
     DbSet<RoleSkill> RoleSkills { get; }
     DbSet<CareerGoal> CareerGoals { get; }
+    DbSet<Survey> Surveys { get; }
+    DbSet<SurveyQuestion> SurveyQuestions { get; }
+    DbSet<SurveyParticipation> SurveyParticipations { get; }
+    DbSet<SurveyResponse> SurveyResponses { get; }
+    DbSet<SurveyAnswer> SurveyAnswers { get; }
+    DbSet<Recognition> Recognitions { get; }
+    DbSet<RecognitionCheer> RecognitionCheers { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

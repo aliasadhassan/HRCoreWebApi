@@ -1371,6 +1371,333 @@ namespace HR.Employee.API.Migrations
                     b.ToTable("EmployeeJobHistory", "employee");
                 });
 
+            modelBuilder.Entity("HR.Employee.API.Domain.Engagement.Recognition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("FromEmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ToEmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte>("Value")
+                        .HasColumnType("smallint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromEmployeeId")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.HasIndex("ToEmployeeId")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.HasIndex("TenantId", "CreatedAt")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.ToTable("Recognitions", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_Recognitions_NotSelf", "\"FromEmployeeId\" <> \"ToEmployeeId\"");
+
+                            t.HasCheckConstraint("CK_Recognitions_Value", "\"Value\" BETWEEN 1 AND 7");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Engagement.RecognitionCheer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RecognitionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("RecognitionId", "EmployeeId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_RecognitionCheers_Recognition_Employee");
+
+                    b.ToTable("RecognitionCheers", "employee");
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Engagement.Survey", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<byte>("Audience")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<DateOnly?>("ClosesOn")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<bool>("IsAnonymous")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("PublishedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("smallint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId")
+                        .HasFilter("\"DepartmentId\" IS NOT NULL");
+
+                    b.HasIndex("TenantId", "Status")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.ToTable("Surveys", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_Surveys_Audience", "(\"Audience\" = 1 AND \"DepartmentId\" IS NULL) OR (\"Audience\" = 2 AND \"DepartmentId\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_Surveys_Published", "\"Status\" = 1 OR \"PublishedAt\" IS NOT NULL");
+
+                            t.HasCheckConstraint("CK_Surveys_Status", "\"Status\" BETWEEN 1 AND 3");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Engagement.SurveyAnswer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ResponseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Text")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<short?>("Value")
+                        .HasColumnType("smallint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId");
+
+                    b.HasIndex("ResponseId", "QuestionId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_SurveyAnswers_Response_Question");
+
+                    b.ToTable("SurveyAnswers", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_SurveyAnswers_Present", "\"Value\" IS NOT NULL OR \"Text\" IS NOT NULL");
+
+                            t.HasCheckConstraint("CK_SurveyAnswers_Value", "\"Value\" IS NULL OR \"Value\" BETWEEN 0 AND 10");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Engagement.SurveyParticipation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid>("SurveyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("SurveyId", "EmployeeId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_SurveyParticipations_Survey_Employee");
+
+                    b.ToTable("SurveyParticipations", "employee");
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Engagement.SurveyQuestion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Options")
+                        .HasMaxLength(1100)
+                        .HasColumnType("character varying(1100)");
+
+                    b.Property<short>("Order")
+                        .HasColumnType("smallint");
+
+                    b.Property<Guid>("SurveyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<byte>("Type")
+                        .HasColumnType("smallint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SurveyId", "Order")
+                        .IsUnique()
+                        .HasDatabaseName("UX_SurveyQuestions_Survey_Order");
+
+                    b.ToTable("SurveyQuestions", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_SurveyQuestions_Options", "(\"Type\" = 4) = (\"Options\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_SurveyQuestions_Type", "\"Type\" BETWEEN 1 AND 5");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Engagement.SurveyResponse", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("SubmittedOn")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("SurveyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId")
+                        .HasFilter("\"DepartmentId\" IS NOT NULL");
+
+                    b.HasIndex("EmployeeId")
+                        .HasFilter("\"EmployeeId\" IS NOT NULL");
+
+                    b.HasIndex("SurveyId");
+
+                    b.ToTable("SurveyResponses", "employee");
+                });
+
             modelBuilder.Entity("HR.Employee.API.Domain.Helpdesk.HelpdeskCategory", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4790,6 +5117,102 @@ namespace HR.Employee.API.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("HR.Employee.API.Domain.Engagement.Recognition", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("FromEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("ToEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Engagement.RecognitionCheer", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HR.Employee.API.Domain.Engagement.Recognition", null)
+                        .WithMany()
+                        .HasForeignKey("RecognitionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Engagement.Survey", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Organization.Department", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Engagement.SurveyAnswer", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Engagement.SurveyQuestion", null)
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HR.Employee.API.Domain.Engagement.SurveyResponse", null)
+                        .WithMany("Answers")
+                        .HasForeignKey("ResponseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Engagement.SurveyParticipation", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HR.Employee.API.Domain.Engagement.Survey", null)
+                        .WithMany()
+                        .HasForeignKey("SurveyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Engagement.SurveyQuestion", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Engagement.Survey", null)
+                        .WithMany("Questions")
+                        .HasForeignKey("SurveyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Engagement.SurveyResponse", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Organization.Department", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("HR.Employee.API.Domain.Engagement.Survey", null)
+                        .WithMany()
+                        .HasForeignKey("SurveyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("HR.Employee.API.Domain.Helpdesk.HelpdeskCategory", b =>
                 {
                     b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
@@ -5234,6 +5657,16 @@ namespace HR.Employee.API.Migrations
                     b.Navigation("EmergencyContacts");
 
                     b.Navigation("JobHistory");
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Engagement.Survey", b =>
+                {
+                    b.Navigation("Questions");
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Engagement.SurveyResponse", b =>
+                {
+                    b.Navigation("Answers");
                 });
 
             modelBuilder.Entity("HR.Employee.API.Domain.Helpdesk.HelpdeskTicket", b =>
