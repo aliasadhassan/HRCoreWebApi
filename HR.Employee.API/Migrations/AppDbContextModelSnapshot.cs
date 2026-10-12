@@ -1647,6 +1647,404 @@ namespace HR.Employee.API.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HR.Employee.API.Domain.Learning.CareerGoal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly?>("AchievedOn")
+                        .HasColumnType("date");
+
+                    b.Property<Guid?>("ByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateOnly?>("TargetDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("TargetDesignationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_CareerGoals_EmployeeId");
+
+                    b.HasIndex("TargetDesignationId");
+
+                    b.ToTable("CareerGoals", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_CareerGoals_Achieved", "\"Status\" <> 2 OR \"AchievedOn\" IS NOT NULL");
+
+                            t.HasCheckConstraint("CK_CareerGoals_Status", "\"Status\" BETWEEN 1 AND 2");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Learning.Course", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("AllowSelfEnrol")
+                        .HasColumnType("boolean");
+
+                    b.Property<byte>("Category")
+                        .HasColumnType("smallint");
+
+                    b.Property<short?>("CompleteWithinDays")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<decimal?>("DurationHours")
+                        .HasPrecision(6, 1)
+                        .HasColumnType("numeric(6,1)");
+
+                    b.Property<byte>("Format")
+                        .HasColumnType("smallint");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LinkUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Provider")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<Guid?>("SkillId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte?>("SkillLevel")
+                        .HasColumnType("smallint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SkillId")
+                        .HasFilter("\"SkillId\" IS NOT NULL");
+
+                    b.HasIndex("TenantId", "Title")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Courses_TenantId_Title")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.ToTable("Courses", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_Courses_Category", "\"Category\" BETWEEN 1 AND 8");
+
+                            t.HasCheckConstraint("CK_Courses_CompleteWithin", "\"CompleteWithinDays\" IS NULL OR \"CompleteWithinDays\" BETWEEN 1 AND 365");
+
+                            t.HasCheckConstraint("CK_Courses_Duration", "\"DurationHours\" IS NULL OR (\"DurationHours\" > 0 AND \"DurationHours\" <= 1000)");
+
+                            t.HasCheckConstraint("CK_Courses_Format", "\"Format\" BETWEEN 1 AND 6");
+
+                            t.HasCheckConstraint("CK_Courses_SkillLevel", "\"SkillLevel\" IS NULL OR (\"SkillId\" IS NOT NULL AND \"SkillLevel\" BETWEEN 1 AND 5)");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Learning.CourseEnrollment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AssignedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<string>("CertificateUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateOnly?>("CompletedOn")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly?>("DueOn")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Feedback")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<byte>("Progress")
+                        .HasColumnType("smallint");
+
+                    b.Property<byte?>("Rating")
+                        .HasColumnType("smallint");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<byte?>("Score")
+                        .HasColumnType("smallint");
+
+                    b.Property<byte>("Source")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("smallint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId", "EmployeeId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_CourseEnrollments_Open")
+                        .HasFilter("\"IsDeleted\" = false AND \"Status\" IN (1, 2)");
+
+                    b.HasIndex("EmployeeId", "Status")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.HasIndex("TenantId", "Status", "DueOn")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.ToTable("CourseEnrollments", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_CourseEnrollments_Completed", "\"Status\" <> 3 OR \"CompletedOn\" IS NOT NULL");
+
+                            t.HasCheckConstraint("CK_CourseEnrollments_Progress", "\"Progress\" BETWEEN 0 AND 100");
+
+                            t.HasCheckConstraint("CK_CourseEnrollments_Rating", "\"Rating\" IS NULL OR \"Rating\" BETWEEN 1 AND 5");
+
+                            t.HasCheckConstraint("CK_CourseEnrollments_Score", "\"Score\" IS NULL OR \"Score\" BETWEEN 0 AND 100");
+
+                            t.HasCheckConstraint("CK_CourseEnrollments_Source", "\"Source\" BETWEEN 1 AND 2");
+
+                            t.HasCheckConstraint("CK_CourseEnrollments_Status", "\"Status\" BETWEEN 1 AND 4");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Learning.EmployeeSkill", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte>("Level")
+                        .HasColumnType("smallint");
+
+                    b.Property<Guid>("SkillId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte>("Source")
+                        .HasColumnType("smallint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SkillId");
+
+                    b.HasIndex("EmployeeId", "SkillId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_EmployeeSkills_Employee_Skill");
+
+                    b.ToTable("EmployeeSkills", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_EmployeeSkills_Level", "\"Level\" BETWEEN 1 AND 5");
+
+                            t.HasCheckConstraint("CK_EmployeeSkills_Source", "\"Source\" BETWEEN 1 AND 3");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Learning.RoleSkill", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DesignationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte>("RequiredLevel")
+                        .HasColumnType("smallint");
+
+                    b.Property<Guid>("SkillId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SkillId");
+
+                    b.HasIndex("DesignationId", "SkillId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_RoleSkills_Designation_Skill");
+
+                    b.ToTable("RoleSkills", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_RoleSkills_Level", "\"RequiredLevel\" BETWEEN 1 AND 5");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Learning.Skill", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<byte>("Category")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Skills_TenantId_Name")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.ToTable("Skills", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_Skills_Category", "\"Category\" BETWEEN 1 AND 7");
+                        });
+                });
+
             modelBuilder.Entity("HR.Employee.API.Domain.Leaves.Holiday", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4431,6 +4829,74 @@ namespace HR.Employee.API.Migrations
                         .WithMany("Activities")
                         .HasForeignKey("TicketId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Learning.CareerGoal", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HR.Employee.API.Domain.Organization.Designation", null)
+                        .WithMany()
+                        .HasForeignKey("TargetDesignationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Learning.Course", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Learning.Skill", null)
+                        .WithMany()
+                        .HasForeignKey("SkillId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Learning.CourseEnrollment", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Learning.Course", null)
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Learning.EmployeeSkill", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HR.Employee.API.Domain.Learning.Skill", null)
+                        .WithMany()
+                        .HasForeignKey("SkillId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Learning.RoleSkill", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Organization.Designation", null)
+                        .WithMany()
+                        .HasForeignKey("DesignationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HR.Employee.API.Domain.Learning.Skill", null)
+                        .WithMany()
+                        .HasForeignKey("SkillId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
