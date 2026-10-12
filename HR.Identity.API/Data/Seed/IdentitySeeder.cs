@@ -20,6 +20,7 @@ public static class IdentitySeeder
         ("payroll.view.all", "Payroll",   "View all payroll"),
         ("payroll.run",      "Payroll",   "Process payroll runs"),
         ("payroll.approve",  "Payroll",   "Approve/lock payroll runs"),
+        ("relations.manage", "Relations", "Manage employee relations cases"),
         ("settings.view",    "Settings",  "View settings"),
         ("settings.manage",  "Settings",  "Change company settings"),
         ("users.manage",     "Settings",  "Invite/deactivate users"),
@@ -31,7 +32,8 @@ public static class IdentitySeeder
     static readonly (string Name, string Description, Func<string, bool> Includes)[] SystemRoles =
     [
         ("Tenant Admin", "Full access within the company",        _ => true),
-        ("HR Manager",   "Employees, leaves and payroll",         c => !AdminOnly.Contains(c)),
+        // relations.manage kisi bhi role mein khud nahi (Tenant Admin ke ilawa): confidential cases ke liye role soch kar banaya jaye
+        ("HR Manager",   "Employees, leaves and payroll",         c => !AdminOnly.Contains(c) && c != "relations.manage"),
         ("Line Manager", "Team view + leave approvals",           c => c is "dashboard.view" or "employees.view"
                                                                      or "leaves.view.own" or "leaves.apply"
                                                                      or "leaves.view.all" or "leaves.approve"
@@ -80,6 +82,17 @@ public static class IdentitySeeder
             });
         }
         await db.SaveChangesAsync();
+
+        // 2b) Tenant Admin = sab kuch: naye permission codes (e.g. relations.manage) purane DB ke admin role ko bhi milein
+        var tenantAdmin = await db.Roles.Include(r => r.RolePermissions)
+            .FirstOrDefaultAsync(r => r.TenantId == null && r.NormalizedName == "TENANT ADMIN");
+        if (tenantAdmin is not null)
+        {
+            var granted = tenantAdmin.RolePermissions.Select(rp => rp.PermissionId).ToHashSet();
+            foreach (var permission in allPermissions.Where(p => !granted.Contains(p.Id)))
+                tenantAdmin.RolePermissions.Add(new RolePermission { Permission = permission });
+            await db.SaveChangesAsync();
+        }
 
         // 3) Default tenant + admin user (credentials config/user-secrets se)
         var email = config["Seed:AdminEmail"];

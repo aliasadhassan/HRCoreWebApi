@@ -23,6 +23,9 @@ public static class Permissions
     public const string PayrollRun = "payroll.run";
     public const string PayrollApprove = "payroll.approve";
 
+    /// <summary>Employee relations cases (complaints, grievances, disciplinary). HR Manager ko khud nahi milta — har shakhs ko soch kar diya jaye.</summary>
+    public const string RelationsManage = "relations.manage";
+
     public const string SettingsView = "settings.view";
     public const string SettingsManage = "settings.manage";
     public const string UsersManage = "users.manage";
