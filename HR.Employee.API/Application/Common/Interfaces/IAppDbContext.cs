@@ -8,6 +8,7 @@ using HR.Employee.API.Domain.Recruitment;
 using HR.Employee.API.Domain.Attendance;
 using HR.Employee.API.Domain.Employees;
 using HR.Employee.API.Domain.Engagement;
+using HR.Employee.API.Domain.Relations;
 using HR.Employee.API.Domain.Learning;
 using HR.Employee.API.Domain.Leaves;
 using HR.Employee.API.Domain.Lifecycle;
@@ -81,6 +82,13 @@ public interface IAppDbContext
     DbSet<SurveyAnswer> SurveyAnswers { get; }
     DbSet<Recognition> Recognitions { get; }
     DbSet<RecognitionCheer> RecognitionCheers { get; }
+    DbSet<CaseStage> CaseStages { get; }
+    DbSet<ErCase> ErCases { get; }
+    DbSet<CaseMember> CaseMembers { get; }
+    DbSet<CaseParty> CaseParties { get; }
+    DbSet<CaseEntry> CaseEntries { get; }
+    DbSet<CaseEvidence> CaseEvidence { get; }
+    DbSet<CaseAccessLog> CaseAccessLogs { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -189,6 +189,22 @@
       }
     },
     {
+      "DownstreamPathTemplate": "/api/relations/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "hr-employee",
+          "Port": 80
+        }
+      ],
+      "UpstreamPathTemplate": "/relations/{everything}",
+      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete", "Options" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "ApiGatewayKey",
+        "AllowedScopes": []
+      }
+    },
+    {
       "DownstreamPathTemplate": "/api/leave/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [

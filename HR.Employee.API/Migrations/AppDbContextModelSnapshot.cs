@@ -4623,6 +4623,447 @@ namespace HR.Employee.API.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HR.Employee.API.Domain.Relations.CaseAccessLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<byte>("Action")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime>("At")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid>("CaseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId")
+                        .HasFilter("\"EmployeeId\" IS NOT NULL");
+
+                    b.HasIndex("CaseId", "At");
+
+                    b.ToTable("ErCaseAccessLogs", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_ErCaseAccessLogs_Action", "\"Action\" BETWEEN 1 AND 3");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Relations.CaseEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("At")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("ByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CaseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte>("Kind")
+                        .HasColumnType("smallint");
+
+                    b.Property<bool>("Shared")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("StageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Text")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CaseId", "At");
+
+                    b.ToTable("ErCaseEntries", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_ErCaseEntries_Kind", "\"Kind\" BETWEEN 1 AND 18");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Relations.CaseEvidence", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AddedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("AddedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CaseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("FromReporter")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsRestricted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CaseId");
+
+                    b.ToTable("ErCaseEvidence", "employee");
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Relations.CaseMember", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AddedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid>("CaseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte>("Role")
+                        .HasColumnType("smallint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("CaseId", "EmployeeId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_ErCaseMembers_Case_Employee");
+
+                    b.ToTable("ErCaseMembers", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_ErCaseMembers_Role", "\"Role\" BETWEEN 1 AND 3");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Relations.CaseParty", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AddedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid>("CaseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ExternalName")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<byte>("Role")
+                        .HasColumnType("smallint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId")
+                        .HasFilter("\"EmployeeId\" IS NOT NULL");
+
+                    b.HasIndex("CaseId", "EmployeeId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_ErCaseParties_Case_Employee")
+                        .HasFilter("\"EmployeeId\" IS NOT NULL");
+
+                    b.ToTable("ErCaseParties", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_ErCaseParties_Role", "\"Role\" BETWEEN 1 AND 4");
+
+                            t.HasCheckConstraint("CK_ErCaseParties_Who", "(\"EmployeeId\" IS NULL) <> (\"ExternalName\" IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Relations.CaseStage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<byte>("Phase")
+                        .HasColumnType("smallint");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<short>("SortOrder")
+                        .HasColumnType("smallint");
+
+                    b.Property<short?>("TargetDays")
+                        .HasColumnType("smallint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("UX_ErCaseStages_TenantId_Name")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.ToTable("ErCaseStages", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_ErCaseStages_Phase", "\"Phase\" BETWEEN 1 AND 5");
+
+                            t.HasCheckConstraint("CK_ErCaseStages_TargetDays", "\"TargetDays\" IS NULL OR (\"TargetDays\" BETWEEN 1 AND 365 AND \"Phase\" <> 5)");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Relations.ErCase", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<byte?>("ActionTaken")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<byte>("Confidentiality")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateOnly?>("DueOn")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("EscalatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<byte>("EscalationLevel")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateOnly?>("IncidentOn")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("LastActivityAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<byte?>("Outcome")
+                        .HasColumnType("smallint");
+
+                    b.Property<Guid?>("OwnerEmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte>("Phase")
+                        .HasColumnType("smallint");
+
+                    b.Property<short>("ReopenCount")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateOnly>("ReportedOn")
+                        .HasColumnType("date");
+
+                    b.Property<Guid?>("ReporterEmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("ReporterHidden")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ResolutionSummary")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<byte>("Severity")
+                        .HasColumnType("smallint");
+
+                    b.Property<byte>("Source")
+                        .HasColumnType("smallint");
+
+                    b.Property<Guid>("StageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<byte>("Type")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerEmployeeId")
+                        .HasFilter("\"OwnerEmployeeId\" IS NOT NULL");
+
+                    b.HasIndex("ReporterEmployeeId")
+                        .HasFilter("\"ReporterEmployeeId\" IS NOT NULL");
+
+                    b.HasIndex("StageId");
+
+                    b.HasIndex("TenantId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("UX_ErCases_TenantId_Code");
+
+                    b.HasIndex("TenantId", "Phase")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.ToTable("ErCases", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_ErCases_Closed", "(\"Phase\" = 5) = (\"ClosedAt\" IS NOT NULL AND \"Outcome\" IS NOT NULL AND \"ActionTaken\" IS NOT NULL AND \"ResolutionSummary\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_ErCases_Confidentiality", "\"Confidentiality\" IN (1, 2)");
+
+                            t.HasCheckConstraint("CK_ErCases_Escalation", "\"EscalationLevel\" BETWEEN 0 AND 3");
+
+                            t.HasCheckConstraint("CK_ErCases_Hidden", "NOT \"ReporterHidden\" OR \"ReporterEmployeeId\" IS NOT NULL");
+
+                            t.HasCheckConstraint("CK_ErCases_Phase", "\"Phase\" BETWEEN 1 AND 5");
+
+                            t.HasCheckConstraint("CK_ErCases_Severity", "\"Severity\" BETWEEN 1 AND 4");
+
+                            t.HasCheckConstraint("CK_ErCases_Source", "\"Source\" BETWEEN 1 AND 5");
+
+                            t.HasCheckConstraint("CK_ErCases_Type", "\"Type\" BETWEEN 1 AND 8");
+                        });
+                });
+
             modelBuilder.Entity("HR.Shared.Library.Persistence.AuditLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5626,6 +6067,86 @@ namespace HR.Employee.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("HR.Employee.API.Domain.Relations.CaseAccessLog", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Relations.ErCase", null)
+                        .WithMany()
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Relations.CaseEntry", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Relations.ErCase", null)
+                        .WithMany("Entries")
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Relations.CaseEvidence", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Relations.ErCase", null)
+                        .WithMany("Evidence")
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Relations.CaseMember", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Relations.ErCase", null)
+                        .WithMany("Members")
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Relations.CaseParty", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Relations.ErCase", null)
+                        .WithMany("Parties")
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Relations.ErCase", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("ReporterEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HR.Employee.API.Domain.Relations.CaseStage", null)
+                        .WithMany()
+                        .HasForeignKey("StageId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.OutboxMessage", b =>
                 {
                     b.HasOne("MassTransit.EntityFrameworkCoreIntegration.OutboxState", null)
@@ -5712,6 +6233,17 @@ namespace HR.Employee.API.Migrations
             modelBuilder.Entity("HR.Employee.API.Domain.Recruitment.JobApplication", b =>
                 {
                     b.Navigation("Events");
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Relations.ErCase", b =>
+                {
+                    b.Navigation("Entries");
+
+                    b.Navigation("Evidence");
+
+                    b.Navigation("Members");
+
+                    b.Navigation("Parties");
                 });
 #pragma warning restore 612, 618
         }
