@@ -2999,6 +2999,380 @@ namespace HR.Employee.API.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HR.Employee.API.Domain.Policies.ComplianceFiling", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EvidenceUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateOnly>("FiledOn")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid>("ObligationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("PeriodDueOn")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ObligationId", "PeriodDueOn")
+                        .IsUnique()
+                        .HasDatabaseName("UX_ComplianceFilings_Obligation_Period");
+
+                    b.HasIndex("TenantId", "FiledOn");
+
+                    b.ToTable("ComplianceFilings", "employee");
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Policies.ComplianceObligation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Authority")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<byte>("Category")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<byte>("DueDay")
+                        .HasColumnType("smallint");
+
+                    b.Property<byte>("Frequency")
+                        .HasColumnType("smallint");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LinkUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateOnly?>("NextDueOn")
+                        .HasColumnType("date");
+
+                    b.Property<Guid?>("OwnerEmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<short>("RemindDaysBefore")
+                        .HasColumnType("smallint");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerEmployeeId")
+                        .HasFilter("\"OwnerEmployeeId\" IS NOT NULL");
+
+                    b.HasIndex("TenantId", "NextDueOn")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.HasIndex("TenantId", "Title")
+                        .IsUnique()
+                        .HasDatabaseName("UX_ComplianceObligations_TenantId_Title")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.ToTable("ComplianceObligations", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_ComplianceObligations_Category", "\"Category\" BETWEEN 1 AND 6");
+
+                            t.HasCheckConstraint("CK_ComplianceObligations_DueDay", "\"DueDay\" BETWEEN 1 AND 31");
+
+                            t.HasCheckConstraint("CK_ComplianceObligations_Frequency", "\"Frequency\" BETWEEN 1 AND 5");
+
+                            t.HasCheckConstraint("CK_ComplianceObligations_Remind", "\"RemindDaysBefore\" BETWEEN 0 AND 90");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Policies.Policy", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly?>("AckDueOn")
+                        .HasColumnType("date");
+
+                    b.Property<int?>("AckVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<short?>("AcknowledgeWithinDays")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime?>("ArchivedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<string>("Body")
+                        .HasMaxLength(20000)
+                        .HasColumnType("character varying(20000)");
+
+                    b.Property<byte>("Category")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("CurrentVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DocumentUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateOnly?>("EffectiveOn")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("HasUnpublishedChanges")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateOnly?>("LastReviewedOn")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("NextReviewOn")
+                        .HasColumnType("date");
+
+                    b.Property<Guid?>("OwnerEmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("PublishedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<bool>("RequiresAcknowledgement")
+                        .HasColumnType("boolean");
+
+                    b.Property<short?>("ReviewEveryMonths")
+                        .HasColumnType("smallint");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("smallint");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId")
+                        .HasFilter("\"DepartmentId\" IS NOT NULL");
+
+                    b.HasIndex("OwnerEmployeeId")
+                        .HasFilter("\"OwnerEmployeeId\" IS NOT NULL");
+
+                    b.HasIndex("TenantId", "Status")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.HasIndex("TenantId", "Title")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Policies_TenantId_Title")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.ToTable("Policies", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_Policies_AckDays", "\"AcknowledgeWithinDays\" IS NULL OR \"AcknowledgeWithinDays\" BETWEEN 1 AND 365");
+
+                            t.HasCheckConstraint("CK_Policies_Category", "\"Category\" BETWEEN 1 AND 8");
+
+                            t.HasCheckConstraint("CK_Policies_Published", "\"Status\" = 1 OR \"CurrentVersion\" > 0");
+
+                            t.HasCheckConstraint("CK_Policies_ReviewMonths", "\"ReviewEveryMonths\" IS NULL OR \"ReviewEveryMonths\" BETWEEN 1 AND 60");
+
+                            t.HasCheckConstraint("CK_Policies_Status", "\"Status\" BETWEEN 1 AND 3");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Policies.PolicyAcknowledgement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AcknowledgedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("ByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PolicyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("PolicyId", "EmployeeId", "VersionNumber")
+                        .IsUnique()
+                        .HasDatabaseName("UX_PolicyAcknowledgements_Policy_Employee_Version");
+
+                    b.ToTable("PolicyAcknowledgements", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_PolicyAcknowledgements_Version", "\"VersionNumber\" >= 1");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Policies.PolicyVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Body")
+                        .HasMaxLength(20000)
+                        .HasColumnType("character varying(20000)");
+
+                    b.Property<string>("ChangeSummary")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("DocumentUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateOnly>("EffectiveOn")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("PolicyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("PublishedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("PublishedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("RequiresAcknowledgement")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PolicyId", "Number")
+                        .IsUnique()
+                        .HasDatabaseName("UX_PolicyVersions_PolicyId_Number");
+
+                    b.HasIndex("TenantId", "PublishedAt");
+
+                    b.ToTable("PolicyVersions", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_PolicyVersions_Number", "\"Number\" >= 1");
+                        });
+                });
+
             modelBuilder.Entity("HR.Employee.API.Domain.Recruitment.ApplicationEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4228,6 +4602,60 @@ namespace HR.Employee.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("HR.Employee.API.Domain.Policies.ComplianceFiling", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Policies.ComplianceObligation", null)
+                        .WithMany("Filings")
+                        .HasForeignKey("ObligationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Policies.ComplianceObligation", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Policies.Policy", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Organization.Department", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Policies.PolicyAcknowledgement", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HR.Employee.API.Domain.Policies.Policy", null)
+                        .WithMany()
+                        .HasForeignKey("PolicyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Policies.PolicyVersion", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Policies.Policy", null)
+                        .WithMany("Versions")
+                        .HasForeignKey("PolicyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("HR.Employee.API.Domain.Recruitment.ApplicationEvent", b =>
                 {
                     b.HasOne("HR.Employee.API.Domain.Recruitment.JobApplication", null)
@@ -4370,6 +4798,16 @@ namespace HR.Employee.API.Migrations
             modelBuilder.Entity("HR.Employee.API.Domain.Performance.Goal", b =>
                 {
                     b.Navigation("CheckIns");
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Policies.ComplianceObligation", b =>
+                {
+                    b.Navigation("Filings");
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Policies.Policy", b =>
+                {
+                    b.Navigation("Versions");
                 });
 
             modelBuilder.Entity("HR.Employee.API.Domain.Recruitment.JobApplication", b =>

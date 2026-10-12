@@ -45,4 +45,13 @@ internal static class Guard
             throw new DomainException($"{field} must be a 2-letter ISO code (e.g. PK, AE).");
         return code;
     }
+
+    /// <summary>Optional http(s) link (document, portal, evidence).</summary>
+    public static string? OptionalUrl(string? value, string field, int maxLength = 1000)
+    {
+        var url = Optional(value, field, maxLength);
+        if (url is not null && !(Uri.TryCreate(url, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp)))
+            throw new DomainException($"{field} must be a full http(s) address.");
+        return url;
+    }
 }
