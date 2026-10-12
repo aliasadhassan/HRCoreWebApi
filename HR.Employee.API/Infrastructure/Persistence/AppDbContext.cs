@@ -10,6 +10,7 @@ using HR.Employee.API.Domain.Recruitment;
 using HR.Employee.API.Domain.Attendance;
 using HR.Employee.API.Domain.Common;
 using HR.Employee.API.Domain.Employees;
+using HR.Employee.API.Domain.Engagement;
 using HR.Employee.API.Domain.Learning;
 using HR.Employee.API.Domain.Leaves;
 using HR.Employee.API.Domain.Lifecycle;
@@ -87,6 +88,13 @@ public sealed class AppDbContext(
     public DbSet<EmployeeSkill> EmployeeSkills => Set<EmployeeSkill>();
     public DbSet<RoleSkill> RoleSkills => Set<RoleSkill>();
     public DbSet<CareerGoal> CareerGoals => Set<CareerGoal>();
+    public DbSet<Survey> Surveys => Set<Survey>();
+    public DbSet<SurveyQuestion> SurveyQuestions => Set<SurveyQuestion>();
+    public DbSet<SurveyParticipation> SurveyParticipations => Set<SurveyParticipation>();
+    public DbSet<SurveyResponse> SurveyResponses => Set<SurveyResponse>();
+    public DbSet<SurveyAnswer> SurveyAnswers => Set<SurveyAnswer>();
+    public DbSet<Recognition> Recognitions => Set<Recognition>();
+    public DbSet<RecognitionCheer> RecognitionCheers => Set<RecognitionCheer>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     private readonly TenantScope _tenant = new(() => currentUser.TenantId);
