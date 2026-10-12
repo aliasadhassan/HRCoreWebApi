@@ -7,6 +7,7 @@ using HR.Employee.API.Domain.Policies;
 using HR.Employee.API.Domain.Recruitment;
 using HR.Employee.API.Domain.Attendance;
 using HR.Employee.API.Domain.Employees;
+using HR.Employee.API.Domain.Learning;
 using HR.Employee.API.Domain.Leaves;
 using HR.Employee.API.Domain.Lifecycle;
 using HR.Employee.API.Domain.Organization;
@@ -66,6 +67,12 @@ public interface IAppDbContext
     DbSet<PolicyAcknowledgement> PolicyAcknowledgements { get; }
     DbSet<ComplianceObligation> ComplianceObligations { get; }
     DbSet<ComplianceFiling> ComplianceFilings { get; }
+    DbSet<Skill> Skills { get; }
+    DbSet<Course> Courses { get; }
+    DbSet<CourseEnrollment> CourseEnrollments { get; }
+    DbSet<EmployeeSkill> EmployeeSkills { get; }
+    DbSet<RoleSkill> RoleSkills { get; }
+    DbSet<CareerGoal> CareerGoals { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
