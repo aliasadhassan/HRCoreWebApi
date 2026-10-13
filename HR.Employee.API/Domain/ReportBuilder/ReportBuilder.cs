@@ -105,7 +105,7 @@ public sealed record ReportDetails(
 public sealed class LetterTemplate : AuditableEntity
 {
     public const int MaxHtml = 200_000;
-    private static readonly Regex PrefixRule = new("^[A-Z]{2,6}$", RegexOptions.Compiled);
+    private static readonly Regex PrefixRule = new("^[A-Z]{2,6}$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
 
     public string Name { get; private set; } = default!;
     public string? Description { get; private set; }

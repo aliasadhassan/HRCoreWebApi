@@ -375,7 +375,7 @@ public sealed class EmployeeReportSources(IAppDbContext db)
 
     /// <summary>"OnNotice" → "On notice", "FullTime, Contract" → "Full time, Contract".</summary>
     public static string? Words<TEnum>(TEnum? value) where TEnum : struct, Enum
-        => value is null ? null : Regex.Replace(value.Value.ToString(), "(?<=[a-z])(?=[A-Z])", m => " ").Replace(" ,", ",") is var s
+        => value is null ? null : Regex.Replace(value.Value.ToString(), "(?<=[a-z])(?=[A-Z])", " ", RegexOptions.None, TimeSpan.FromMilliseconds(100)).Replace(" ,", ",") is var s
             ? string.Join(", ", s.Split(", ").Select(p => p.Length > 1 ? p[0] + p[1..].ToLowerInvariant() : p))
             : null;
 

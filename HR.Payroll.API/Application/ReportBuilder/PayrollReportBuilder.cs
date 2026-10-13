@@ -91,7 +91,7 @@ public static class PayrollReportSources
 
     public static string? Words<TEnum>(TEnum value) where TEnum : struct, Enum
     {
-        var s = Regex.Replace(value.ToString(), "(?<=[a-z])(?=[A-Z])", " ");
+        var s = Regex.Replace(value.ToString(), "(?<=[a-z])(?=[A-Z])", " ", RegexOptions.None, TimeSpan.FromMilliseconds(100));
         return s.Length > 1 ? s[0] + s[1..].ToLowerInvariant() : s;
     }
 }
