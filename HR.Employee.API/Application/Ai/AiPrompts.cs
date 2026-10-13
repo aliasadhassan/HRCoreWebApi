@@ -61,7 +61,7 @@ public static class AiPrompts
 
     public static object InsightsSchema => new
     {
-        type = "object",
+        type = JsonType.Object,
         properties = new
         {
             insights = new
@@ -69,17 +69,17 @@ public static class AiPrompts
                 type = "array",
                 items = new
                 {
-                    type = "object",
+                    type = JsonType.Object,
                     properties = new
                     {
-                        area = new { type = "string" },
-                        level = new { type = "string", @enum = new[] { "attention", "look", "info" } },
-                        title = new { type = "string" },
-                        body = new { type = "string" },
-                        metric = new { type = "string" },
-                        metricLabel = new { type = "string" },
-                        source = new { type = "string" },
-                        link = new { type = "string" },
+                        area = new { type = JsonType.String },
+                        level = new { type = JsonType.String, @enum = new[] { "attention", "look", "info" } },
+                        title = new { type = JsonType.String },
+                        body = new { type = JsonType.String },
+                        metric = new { type = JsonType.String },
+                        metricLabel = new { type = JsonType.String },
+                        source = new { type = JsonType.String },
+                        link = new { type = JsonType.String },
                     },
                     required = new[] { "area", "level", "title", "body", "metric", "metricLabel", "source", "link" },
                     additionalProperties = false,
@@ -92,28 +92,28 @@ public static class AiPrompts
 
     public static object ScreeningSchema => new
     {
-        type = "object",
+        type = JsonType.Object,
         properties = new
         {
             score = new { type = "integer" },
-            summary = new { type = "string" },
+            summary = new { type = JsonType.String },
             requirements = new
             {
                 type = "array",
                 items = new
                 {
-                    type = "object",
+                    type = JsonType.Object,
                     properties = new
                     {
-                        requirement = new { type = "string" },
-                        met = new { type = "string", @enum = new[] { "yes", "partial", "no" } },
-                        evidence = new { type = "string" },
+                        requirement = new { type = JsonType.String },
+                        met = new { type = JsonType.String, @enum = new[] { "yes", "partial", "no" } },
+                        evidence = new { type = JsonType.String },
                     },
                     required = new[] { "requirement", "met", "evidence" },
                     additionalProperties = false,
                 },
             },
-            questions = new { type = "array", items = new { type = "string" } },
+            questions = new { type = "array", items = new { type = JsonType.String } },
         },
         required = new[] { "score", "summary", "requirements", "questions" },
         additionalProperties = false,

@@ -22,7 +22,7 @@ public sealed class AiAgent(ILlmClient llm, AiToolRunner runner, IOptions<AiOpti
 {
     public async Task<AgentResult> RunAsync(
         LlmRequest request, IReadOnlyList<LlmMessage> history, LlmMessage question,
-        IReadOnlyList<AiToolDef> tools, AiCallContext ctx, AiArea areas, CancellationToken ct)
+        IReadOnlyList<AiToolDef> tools, AiCallContext ctx, AiAreas areas, CancellationToken ct)
     {
         var turn = new List<LlmMessage> { question };
         var used = new List<string>();
@@ -30,8 +30,10 @@ public sealed class AiAgent(ILlmClient llm, AiToolRunner runner, IOptions<AiOpti
         var defs = tools.Select(t => new LlmTool(t.Name, t.Description, LlmJson.Schema(t.Schema))).ToList();
         var maxRounds = Math.Max(1, options.Value.MaxToolRounds);
 
-        for (var round = 0; ; round++)
+        var round = 0;
+        while (true)
         {
+            round++;
             var res = await llm.CompleteAsync(request with { Messages = [.. history, .. turn], Tools = defs }, ct);
             input += res.InputTokens;
             output += res.OutputTokens;
@@ -65,7 +67,7 @@ public sealed class AiAgent(ILlmClient llm, AiToolRunner runner, IOptions<AiOpti
             }));
 
             var blocks = new List<LlmBlock>(results);
-            if (round + 1 >= maxRounds)
+            if (round >= maxRounds)
                 blocks.Add(LlmBlock.FromText("Tool limit reached. Answer now with what you found, and say what is missing."));
             turn.Add(new LlmMessage("user", blocks));
         }

@@ -10,6 +10,9 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 /// </summary>
 public sealed class AiCallContextProvider(IHttpContextAccessor accessor, IServer server) : IAiCallContextProvider
 {
+    private const string Localhost = "://localhost";
+    private static readonly string[] Wildcards = ["://+", "://*", "://[::]", "://0.0.0.0"];
+
     public AiCallContext Get()
     {
         var header = accessor.HttpContext?.Request.Headers.Authorization.ToString() ?? "";
@@ -26,8 +29,9 @@ public sealed class AiCallContextProvider(IHttpContextAccessor accessor, IServer
         var address = addresses.FirstOrDefault(a => a.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
                       ?? addresses.FirstOrDefault()
                       ?? "http://localhost:8080";
-        var uri = new Uri(address.Replace("://+", "://localhost").Replace("://*", "://localhost")
-            .Replace("://[::]", "://localhost").Replace("://0.0.0.0", "://localhost"));
+        foreach (var wildcard in Wildcards)
+            address = address.Replace(wildcard, Localhost, StringComparison.Ordinal);
+        var uri = new Uri(address);
         return $"{uri.Scheme}://localhost:{uri.Port}";
     }
 }

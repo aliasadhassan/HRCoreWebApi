@@ -24,7 +24,7 @@ public class AiAssistantTests
     {
         var s = AiSettings.Create(Tenant);
         Assert.Equal(200, s.MonthlyLimit);
-        Assert.Equal(0, (int)(s.Areas & AiArea.RelationsSafety));
+        Assert.Equal(0, (int)(s.Areas & AiAreas.RelationsSafety));
         Assert.True(s.SelfService);
     }
 
@@ -37,14 +37,14 @@ public class AiAssistantTests
 
     [Fact]
     public void Settings_reject_unknown_area_bits()
-        => Assert.Throws<DomainException>(() => AiSettings.Create(Tenant).Update((AiArea)256, 200, 90, true));
+        => Assert.Throws<DomainException>(() => AiSettings.Create(Tenant).Update((AiAreas)256, 200, 90, true));
 
     [Fact]
     public void Turn_adds_question_and_answer_in_order()
     {
         var c = AiConversation.Start(Tenant, Guid.NewGuid(), "Who was late most this month?", Now);
-        c.AddTurn("Who was late most this month?", "Sara, 4 times.", "[]", "[]", new AiUsage(10, 5, 0), false, Now);
-        c.AddTurn("And last month?", "Omar.", "[]", null, default, false, Now.AddMinutes(1));
+        c.AddTurn("Who was late most this month?", new AiAnswer("Sara, 4 times.", "[]", "[]", new AiUsage(10, 5, 0), false), Now);
+        c.AddTurn("And last month?", new AiAnswer("Omar.", "[]", null, default, false), Now.AddMinutes(1));
         Assert.Equal(2, c.TurnCount);
         Assert.Equal([1, 2, 3, 4], c.Messages.Select(m => m.Seq));
         Assert.Equal(AiRole.Assistant, c.Messages[3].Role);
@@ -67,10 +67,10 @@ public class AiAssistantTests
     [Fact]
     public void Screening_score_sets_fit()
     {
-        Assert.Equal(ScreeningFit.Strong, AiScreening.Create(Tenant, Guid.NewGuid(), 75, "Good.", "{}", null, default, Now).Fit);
-        Assert.Equal(ScreeningFit.Partial, AiScreening.Create(Tenant, Guid.NewGuid(), 50, "Ok.", "{}", null, default, Now).Fit);
-        Assert.Equal(ScreeningFit.Weak, AiScreening.Create(Tenant, Guid.NewGuid(), 49, "Weak.", "{}", null, default, Now).Fit);
-        Assert.Throws<DomainException>(() => AiScreening.Create(Tenant, Guid.NewGuid(), 101, "x", "{}", null, default, Now));
+        Assert.Equal(ScreeningFit.Strong, AiScreening.Create(Tenant, Guid.NewGuid(), new AiScreeningResult(75, "Good.", "{}"), null, default, Now).Fit);
+        Assert.Equal(ScreeningFit.Partial, AiScreening.Create(Tenant, Guid.NewGuid(), new AiScreeningResult(50, "Ok.", "{}"), null, default, Now).Fit);
+        Assert.Equal(ScreeningFit.Weak, AiScreening.Create(Tenant, Guid.NewGuid(), new AiScreeningResult(49, "Weak.", "{}"), null, default, Now).Fit);
+        Assert.Throws<DomainException>(() => AiScreening.Create(Tenant, Guid.NewGuid(), new AiScreeningResult(101, "x", "{}"), null, default, Now));
     }
 
     // ---- Tools: permissions + areas ----
@@ -87,7 +87,7 @@ public class AiAssistantTests
 
         Assert.DoesNotContain("my_leave", AiToolCatalog.For(_ => true, AiSettings.DefaultAreas, false).Select(t => t.Name));
 
-        var noPayroll = AiToolCatalog.For(_ => true, AiSettings.DefaultAreas & ~AiArea.Payroll, false).Select(t => t.Name).ToList();
+        var noPayroll = AiToolCatalog.For(_ => true, AiSettings.DefaultAreas & ~AiAreas.Payroll, false).Select(t => t.Name).ToList();
         Assert.DoesNotContain("payroll_overview", noPayroll);
         Assert.Contains("find_employees", noPayroll);
 
@@ -104,12 +104,12 @@ public class AiAssistantTests
     }
 
     [Theory]
-    [InlineData("attendance", AiArea.TimeLeave)]
-    [InlineData("employee:employees", AiArea.People)]
-    [InlineData("payroll:salaries", AiArea.Payroll)]
-    [InlineData("payroll:loans", AiArea.LoansExpenses)]
-    [InlineData("something-new", AiArea.None)]
-    public void Report_sources_map_to_areas(string source, AiArea area)
+    [InlineData("attendance", AiAreas.TimeLeave)]
+    [InlineData("employee:employees", AiAreas.People)]
+    [InlineData("payroll:salaries", AiAreas.Payroll)]
+    [InlineData("payroll:loans", AiAreas.LoansExpenses)]
+    [InlineData("something-new", AiAreas.None)]
+    public void Report_sources_map_to_areas(string source, AiAreas area)
         => Assert.Equal(area, AiToolCatalog.SourceArea(source));
 
     // ---- PII scrub ----
@@ -159,7 +159,7 @@ public class AiAssistantTests
     {
         var http = new FakeHttp(_ => (HttpStatusCode.OK, "{}"));
         var (_, isError) = await Runner(http).RunAsync(AiToolCatalog.Find("run_report")!,
-            Json("""{"source":"payroll:salaries","columns":["employee"]}"""), Ctx, AiSettings.DefaultAreas & ~AiArea.Payroll, default);
+            Json("""{"source":"payroll:salaries","columns":["employee"]}"""), Ctx, AiSettings.DefaultAreas & ~AiAreas.Payroll, default);
         Assert.True(isError);
         Assert.Empty(http.Requests);
     }
@@ -215,7 +215,7 @@ public class AiAssistantTests
     {
         var llm = new FakeLlm(new LlmResponse([], "refusal", 1, 1, 0));
         var agent = new AiAgent(llm, Runner(new FakeHttp(_ => (HttpStatusCode.OK, "{}"))), Options.Create(new AiOptions()));
-        var result = await agent.RunAsync(new LlmRequest("sys", null, [], []), [], LlmMessage.User("q"), [], Ctx, AiArea.None, default);
+        var result = await agent.RunAsync(new LlmRequest("sys", null, [], []), [], LlmMessage.User("q"), [], Ctx, AiAreas.None, default);
         Assert.Equal("I can't help with that request.", result.Answer);
     }
 
@@ -238,7 +238,7 @@ public class AiAssistantTests
     [Fact]
     public void Insights_parse_and_skip_cards_without_title()
     {
-        var cards = AiHandlers.ParseInsights("""
+        var cards = AiParsing.Insights("""
             {"insights":[
               {"area":"Attendance","level":"attention","title":"Late arrivals up","body":"Up 35%.","metric":"+35%","metricLabel":"late","source":"Attendance","link":"/app/attendance"},
               {"area":"Leave","level":"look","body":"no title"}
@@ -246,19 +246,19 @@ public class AiAssistantTests
             """);
         var c = Assert.Single(cards);
         Assert.Equal(InsightLevel.Attention, c.Level);
-        Assert.Empty(AiHandlers.ParseInsights("oops"));
+        Assert.Empty(AiParsing.Insights("oops"));
     }
 
     [Fact]
     public void Screening_parse_clamps_score_and_unknown_met()
     {
-        var s = AiHandlers.ParseScreening("""
+        var s = AiParsing.Screening("""
             {"score":140,"summary":"Strong .NET.","requirements":[{"requirement":"5y .NET","met":"maybe","evidence":"6 years"}],"questions":["Q1","Q2","Q3"]}
             """)!;
         Assert.Equal(100, s.Score);
         Assert.Equal("no", s.Requirements[0].Met);
         Assert.Equal(3, s.Questions.Count);
-        Assert.Null(AiHandlers.ParseScreening("""{"score":10}"""));
+        Assert.Null(AiParsing.Screening("""{"score":10}"""));
     }
 
     // ---- helpers ----

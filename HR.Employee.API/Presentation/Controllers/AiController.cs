@@ -1,13 +1,14 @@
 namespace HR.Employee.API.Presentation.Controllers;
 
 using HR.Employee.API.Application.Ai;
+using System.Text.Json.Serialization;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 public sealed record AskBody(Guid? ConversationId, string Question, string? Language);
 public sealed record ScreenBody(string? CvText, string? CvPdfBase64);
-public sealed record InsightStatusBody(bool Dismissed);
+public sealed record InsightStatusBody([property: JsonRequired] bool Dismissed);
 
 /// <summary>
 /// AI assistant: chat, insights, CV screening, settings. Ijazatein AiAccess (ai.use / ai.insights / ai.screening / ai.manage).

@@ -32,6 +32,17 @@ public sealed class AnthropicLlmClient : ILlmClient
         if (client is null)
             throw new LlmException("The AI assistant is not set up yet.");
 
+        var m = await SendAsync(BuildParams(request), ct);
+        return new LlmResponse(
+            ToBlocks(m.Content),
+            m.StopReason?.Raw() ?? "end_turn",
+            (int)m.Usage.InputTokens + (int)(m.Usage.CacheCreationInputTokens ?? 0),
+            (int)m.Usage.OutputTokens,
+            (int)(m.Usage.CacheReadInputTokens ?? 0));
+    }
+
+    private MessageCreateParams BuildParams(LlmRequest request)
+    {
         var system = new List<TextBlockParam> { new() { Text = request.SystemStatic, CacheControl = new CacheControlEphemeral() } };
         if (!string.IsNullOrWhiteSpace(request.SystemDynamic))
             system.Add(new TextBlockParam { Text = request.SystemDynamic });
@@ -64,11 +75,15 @@ public sealed class AnthropicLlmClient : ILlmClient
         };
         if (tools.Count > 0)
             p = p with { Tools = tools };
+        return p;
 
-        Message m;
+    }
+
+    private async Task<Message> SendAsync(MessageCreateParams p, CancellationToken ct)
+    {
         try
         {
-            m = await client.Messages.Create(p, ct);
+            return await client!.Messages.Create(p, ct);
         }
         catch (AnthropicRateLimitException ex)
         {
@@ -90,8 +105,12 @@ public sealed class AnthropicLlmClient : ILlmClient
             throw new LlmException("The AI service could not be reached. Try again.", ex);
         }
 
+    }
+
+    private static List<LlmBlock> ToBlocks(IEnumerable<ContentBlock> content)
+    {
         var blocks = new List<LlmBlock>();
-        foreach (var b in m.Content)
+        foreach (var b in content)
         {
             if (b.TryPickText(out TextBlock? text))
                 blocks.Add(LlmBlock.FromText(text.Text));
@@ -103,12 +122,7 @@ public sealed class AnthropicLlmClient : ILlmClient
                 blocks.Add(new LlmBlock { Type = "tool_use", Id = tu.ID, Name = tu.Name, Input = JsonSerializer.SerializeToElement(tu.Input) });
         }
 
-        return new LlmResponse(
-            blocks,
-            m.StopReason?.Raw() ?? "end_turn",
-            (int)m.Usage.InputTokens + (int)(m.Usage.CacheCreationInputTokens ?? 0),
-            (int)m.Usage.OutputTokens,
-            (int)(m.Usage.CacheReadInputTokens ?? 0));
+        return blocks;
     }
 
     private static MessageParam ToParam(LlmMessage m, string? pdf)

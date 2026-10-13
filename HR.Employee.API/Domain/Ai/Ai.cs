@@ -4,7 +4,7 @@ using HR.Employee.API.Domain.Common;
 
 /// <summary>AI kaun sa data parh sakta hai (company setting). Har shakhs ki apni permissions upar se bhi lagti hain.</summary>
 [Flags]
-public enum AiArea
+public enum AiAreas
 {
     None = 0,
     People = 1,
@@ -30,13 +30,13 @@ public enum ScreeningFit : byte { Strong = 1, Partial = 2, Weak = 3 }
 /// </summary>
 public sealed class AiSettings : AuditableEntity
 {
-    public const AiArea DefaultAreas = AiArea.People | AiArea.TimeLeave | AiArea.Payroll | AiArea.LoansExpenses
-        | AiArea.Recruitment | AiArea.PoliciesLearning;
-    public const AiArea AllAreas = DefaultAreas | AiArea.RelationsSafety;
+    public const AiAreas DefaultAreas = AiAreas.People | AiAreas.TimeLeave | AiAreas.Payroll | AiAreas.LoansExpenses
+        | AiAreas.Recruitment | AiAreas.PoliciesLearning;
+    public const AiAreas AllAreas = DefaultAreas | AiAreas.RelationsSafety;
     public const int DefaultMonthlyLimit = 200;
     public const int MaxMonthlyLimit = 100_000;
 
-    public AiArea Areas { get; private set; }
+    public AiAreas Areas { get; private set; }
     public int MonthlyLimit { get; private set; }
     public short HistoryDays { get; private set; }
     /// <summary>Employee apne data (apni leave, apne payslips) ke liye AI istemal kar sakta hai.</summary>
@@ -54,7 +54,7 @@ public sealed class AiSettings : AuditableEntity
             SelfService = true,
         };
 
-    public void Update(AiArea areas, int monthlyLimit, short historyDays, bool selfService)
+    public void Update(AiAreas areas, int monthlyLimit, short historyDays, bool selfService)
     {
         if ((areas & ~AllAreas) != 0)
             throw new DomainException("Select valid data areas.");
@@ -95,11 +95,12 @@ public sealed class AiConversation : AuditableEntity
     /// Ek sawal-jawab. Payload = model ke saath poori guftagu ka JSON (tool calls, results, thinking) — agle sawal par
     /// bilkul isi tarah wapas jata hai (history sirf aage barhti hai, kabhi badli nahi jati).
     /// </summary>
-    public void AddTurn(string question, string answer, string? payload, string? tools, AiUsage usage, bool failed, DateTime now)
+    public void AddTurn(string question, AiAnswer answer, DateTime now)
     {
         var seq = messages.Count == 0 ? 0 : messages.Max(m => m.Seq);
-        messages.Add(AiMessage.Create(TenantId, Id, seq + 1, AiRole.User, Guard.Required(question, "Question", AiMessage.MaxQuestion), null, null, default, false, now));
-        messages.Add(AiMessage.Create(TenantId, Id, seq + 2, AiRole.Assistant, answer, payload, tools, usage, failed, now));
+        var asked = new AiAnswer(Guard.Required(question, "Question", AiMessage.MaxQuestion), null, null, default, false);
+        messages.Add(AiMessage.Create(TenantId, Id, seq + 1, AiRole.User, asked, now));
+        messages.Add(AiMessage.Create(TenantId, Id, seq + 2, AiRole.Assistant, answer, now));
         TurnCount++;
         LastMessageAt = now;
     }
@@ -116,6 +117,12 @@ public sealed class AiConversation : AuditableEntity
 }
 
 public readonly record struct AiUsage(int InputTokens, int OutputTokens, int CacheReadTokens);
+
+/// <summary>Ek message ka mawaad: text, model ki guftagu (payload), tools ke chips, tokens, nakaam hua ya nahi.</summary>
+public readonly record struct AiAnswer(string Text, string? Payload, string? Tools, AiUsage Usage, bool Failed);
+
+/// <summary>CV jaize ka nateeja: score, khulasa aur requirements/sawal ka JSON.</summary>
+public sealed record AiScreeningResult(byte Score, string Summary, string Json);
 
 /// <summary>Chat ki ek line. User: sawal. Assistant: jawab (markdown) + Payload (model ki asal guftagu) + Tools (UI ke chips).</summary>
 public sealed class AiMessage : TenantChildEntity
@@ -137,21 +144,20 @@ public sealed class AiMessage : TenantChildEntity
 
     private AiMessage() { }
 
-    internal static AiMessage Create(
-        Guid tenantId, Guid conversationId, int seq, AiRole role, string text, string? payload, string? tools, AiUsage usage, bool failed, DateTime at)
+    internal static AiMessage Create(Guid tenantId, Guid conversationId, int seq, AiRole role, AiAnswer content, DateTime at)
         => new()
         {
             TenantId = tenantId,
             ConversationId = conversationId,
             Seq = seq,
             Role = role,
-            Text = text.Length > MaxAnswer ? text[..MaxAnswer] : text,
-            Payload = payload,
-            Tools = tools,
-            InputTokens = usage.InputTokens,
-            OutputTokens = usage.OutputTokens,
-            CacheReadTokens = usage.CacheReadTokens,
-            Failed = failed,
+            Text = content.Text.Length > MaxAnswer ? content.Text[..MaxAnswer] : content.Text,
+            Payload = content.Payload,
+            Tools = content.Tools,
+            InputTokens = content.Usage.InputTokens,
+            OutputTokens = content.Usage.OutputTokens,
+            CacheReadTokens = content.Usage.CacheReadTokens,
+            Failed = content.Failed,
             At = at,
         };
 }
@@ -227,9 +233,9 @@ public sealed class AiScreening : AuditableEntity
 
     private AiScreening() { }
 
-    public static AiScreening Create(
-        Guid tenantId, Guid applicationId, byte score, string summary, string resultJson, string? byName, AiUsage usage, DateTime at)
+    public static AiScreening Create(Guid tenantId, Guid applicationId, AiScreeningResult result, string? byName, AiUsage usage, DateTime at)
     {
+        var (score, summary, resultJson) = result;
         if (score > 100)
             throw new DomainException("Score must be between 0 and 100.");
         return new AiScreening
@@ -247,5 +253,10 @@ public sealed class AiScreening : AuditableEntity
         };
     }
 
-    public static ScreeningFit FitFor(byte score) => score >= 75 ? ScreeningFit.Strong : score >= 50 ? ScreeningFit.Partial : ScreeningFit.Weak;
+    public static ScreeningFit FitFor(byte score) => score switch
+    {
+        >= 75 => ScreeningFit.Strong,
+        >= 50 => ScreeningFit.Partial,
+        _ => ScreeningFit.Weak,
+    };
 }

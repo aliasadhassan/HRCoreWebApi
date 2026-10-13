@@ -89,3 +89,10 @@ internal static class LlmJson
 
     public static JsonElement Schema(object shape) => JsonSerializer.SerializeToElement(shape, Options);
 }
+
+/// <summary>JSON schema ke type naam (tools aur structured output).</summary>
+public static class JsonType
+{
+    public const string String = "string";
+    public const string Object = "object";
+}
