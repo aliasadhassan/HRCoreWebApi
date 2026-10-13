@@ -1,5 +1,6 @@
 namespace HR.Employee.API.Application.Common.Interfaces;
 
+using HR.Employee.API.Domain.Ai;
 using HR.Employee.API.Domain.Assets;
 using HR.Employee.API.Domain.Performance;
 using HR.Employee.API.Domain.Helpdesk;
@@ -102,6 +103,11 @@ public interface IAppDbContext
     DbSet<LetterTemplate> LetterTemplates { get; }
     DbSet<LetterTemplateVersion> LetterTemplateVersions { get; }
     DbSet<IssuedLetter> IssuedLetters { get; }
+    DbSet<AiSettings> AiSettings { get; }
+    DbSet<AiConversation> AiConversations { get; }
+    DbSet<AiMessage> AiMessages { get; }
+    DbSet<AiInsight> AiInsights { get; }
+    DbSet<AiScreening> AiScreenings { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

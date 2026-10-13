@@ -24,13 +24,17 @@ public static class IdentitySeeder
         ("safety.manage",    "Safety",    "Manage health and safety"),
         ("reports.build",    "Reports",   "Build reports and letter templates"),
         ("letters.issue",    "Reports",   "Issue letters and certificates"),
+        ("ai.use",           "AI",        "Use the AI assistant chat"),
+        ("ai.insights",      "AI",        "Run and view AI insights"),
+        ("ai.screening",     "AI",        "Screen CVs with AI"),
+        ("ai.manage",        "AI",        "Change AI settings and limits"),
         ("settings.view",    "Settings",  "View settings"),
         ("settings.manage",  "Settings",  "Change company settings"),
         ("users.manage",     "Settings",  "Invite/deactivate users"),
         ("roles.manage",     "Settings",  "Create roles, assign permissions"),
     ];
 
-    static readonly string[] AdminOnly = ["settings.manage", "users.manage", "roles.manage"];
+    static readonly string[] AdminOnly = ["settings.manage", "users.manage", "roles.manage", "ai.manage"];
 
     static readonly (string Name, string Description, Func<string, bool> Includes)[] SystemRoles =
     [

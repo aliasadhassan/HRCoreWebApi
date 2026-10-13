@@ -35,6 +35,18 @@ public static class Permissions
     /// <summary>Published template se letter / certificate jari karna (aur jari shuda letters dekhna, void karna).</summary>
     public const string LettersIssue = "letters.issue";
 
+    /// <summary>AI assistant: chat (sirf wohi data jo user ki baqi permissions dikhati hain).</summary>
+    public const string AiUse = "ai.use";
+
+    /// <summary>AI insights: hafta war jaiza chalana aur cards dekhna.</summary>
+    public const string AiInsights = "ai.insights";
+
+    /// <summary>AI se CV screening (recruitment).</summary>
+    public const string AiScreening = "ai.screening";
+
+    /// <summary>AI settings: kaun sa data AI parhe, mahine ki had. Admin ka kaam.</summary>
+    public const string AiManage = "ai.manage";
+
     public const string SettingsView = "settings.view";
     public const string SettingsManage = "settings.manage";
     public const string UsersManage = "users.manage";

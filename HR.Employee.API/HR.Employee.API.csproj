@@ -25,6 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Anthropic" Version="12.55.0" />
     <PackageReference Include="Aspire.StackExchange.Redis" Version="13.3.0" />
     <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
@@ -52,6 +53,10 @@
   <ItemGroup>
     <ProjectReference Include="..\HR.Shared.Library\HR.Shared.Library.csproj" />
     <ProjectReference Include="..\LearningCoreWebApi.ServiceDefaults\LearningCoreWebApi.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="HR.Employee.API.Tests" />
   </ItemGroup>
 
 </Project>

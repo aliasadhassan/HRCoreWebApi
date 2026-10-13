@@ -35,6 +35,7 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
             DomainException => (StatusCodes.Status422UnprocessableEntity, "Business rule violation", exception.Message),
             HR.Shared.Library.Reporting.ReportSpecException => (StatusCodes.Status422UnprocessableEntity, "Report definition", exception.Message),
             NotFoundException => (StatusCodes.Status404NotFound, "Not found", exception.Message),
+            Application.Ai.LlmException => (StatusCodes.Status502BadGateway, "AI service", exception.Message),
             ConflictException => (StatusCodes.Status409Conflict, "Conflict", exception.Message),
             DbUpdateConcurrencyException => (StatusCodes.Status409Conflict, "Concurrency conflict",
                 "This record was changed by someone else. Reload and try again."),

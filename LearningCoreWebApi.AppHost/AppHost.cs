@@ -31,6 +31,9 @@ var payroll = builder.AddProject<HR_Payroll_API>("hr-payroll")
                      .WaitFor(redis)
                      .WaitFor(messaging);
 
+// AI assistant ke tools payroll ka data user ke token se padhte hain
+employee.WithReference(payroll);
+
 builder.AddProject<HR_Gateway>("hr-gateway")
        .WithEnvironment("VaultUri", vaultUri)
        .WithReference(identity)

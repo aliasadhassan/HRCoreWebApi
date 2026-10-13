@@ -263,6 +263,29 @@
       }
     },
     {
+      "DownstreamPathTemplate": "/api/ai/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "127.0.0.1",
+          "Port": 7259
+        }
+      ],
+      "UpstreamPathTemplate": "/ai/{everything}",
+      "Timeout": 300,
+      "UpstreamHttpMethod": [
+        "Get",
+        "Post",
+        "Put",
+        "Delete",
+        "Options"
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "ApiGatewayKey",
+        "AllowedScopes": []
+      }
+    },
+    {
       "DownstreamPathTemplate": "/api/report-builder/{everything}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [

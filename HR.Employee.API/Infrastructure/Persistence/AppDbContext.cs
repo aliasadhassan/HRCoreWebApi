@@ -2,6 +2,7 @@ namespace HR.Employee.API.Infrastructure.Persistence;
 
 using System.Reflection;
 using HR.Employee.API.Application.Common.Interfaces;
+using HR.Employee.API.Domain.Ai;
 using HR.Employee.API.Domain.Assets;
 using HR.Employee.API.Domain.Performance;
 using HR.Employee.API.Domain.Helpdesk;
@@ -116,6 +117,11 @@ public sealed class AppDbContext(
     public DbSet<LetterTemplate> LetterTemplates => Set<LetterTemplate>();
     public DbSet<LetterTemplateVersion> LetterTemplateVersions => Set<LetterTemplateVersion>();
     public DbSet<IssuedLetter> IssuedLetters => Set<IssuedLetter>();
+    public DbSet<AiSettings> AiSettings => Set<AiSettings>();
+    public DbSet<AiConversation> AiConversations => Set<AiConversation>();
+    public DbSet<AiMessage> AiMessages => Set<AiMessage>();
+    public DbSet<AiInsight> AiInsights => Set<AiInsight>();
+    public DbSet<AiScreening> AiScreenings => Set<AiScreening>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     private readonly TenantScope _tenant = new(() => currentUser.TenantId);
@@ -211,7 +217,12 @@ public sealed class AppDbContext(
     }
 
     private List<AuditCapture> CaptureAudit(Guid? tenantId)
-        => tenantId is null ? [] : AuditTrail.Capture(ChangeTracker, t => typeof(Domain.Common.Entity).IsAssignableFrom(t), t => t == typeof(Domain.Employees.Employee));
+        => tenantId is null ? [] : AuditTrail.Capture(ChangeTracker, IsAudited, t => t == typeof(Domain.Employees.Employee));
+
+    /// <summary>AI chats, insights aur screenings audit log mein nahi (har sawal ka shor + niji guftagu); AI settings ka badlaav haan.</summary>
+    private static bool IsAudited(Type t)
+        => typeof(Domain.Common.Entity).IsAssignableFrom(t)
+           && (t.Namespace != typeof(AiSettings).Namespace || t == typeof(AiSettings));
 
 
     private void ApplyAuditRules()

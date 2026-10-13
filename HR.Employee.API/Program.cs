@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using FluentValidation;
+using HR.Employee.API.Application.Ai;
 using HR.Employee.API.Application.Common.Behaviors;
 using HR.Employee.API.Application.Common.Interfaces;
 using HR.Employee.API.Consumers;
@@ -27,6 +28,9 @@ if (string.IsNullOrEmpty(jwtKey))
     throw new Exception("JWT Key 'JwtKey' not found in Azure Key Vault.");
 
 var connectionString = await kvHelper.GetDbConnectionStringAsync(KeyVaultSecrets.EmployeeDb);
+
+// AI assistant: key optional — na ho to AI band (koi call nahi, koi kharcha nahi)
+var anthropicKey = await kvHelper.TryGetSecretValueAsync("AnthropicApiKey");
 #endregion
 
 #region API + exception handling
@@ -52,6 +56,20 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         sql.EnableRetryOnFailure();
     }));
 builder.Services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+#endregion
+
+#region AI assistant
+builder.Services.Configure<AiOptions>(builder.Configuration.GetSection(AiOptions.Section));
+builder.Services.PostConfigure<AiOptions>(o =>
+{
+    if (!string.IsNullOrWhiteSpace(anthropicKey))
+        o.ApiKey = anthropicKey;
+});
+builder.Services.AddSingleton<ILlmClient, AnthropicLlmClient>();
+builder.Services.AddHttpClient(AiToolRunner.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(60));
+builder.Services.AddScoped<AiToolRunner>();
+builder.Services.AddScoped<AiAgent>();
+builder.Services.AddScoped<IAiCallContextProvider, AiCallContextProvider>();
 #endregion
 
 #region MediatR + FluentValidation
