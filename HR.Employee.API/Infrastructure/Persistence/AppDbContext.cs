@@ -12,6 +12,7 @@ using HR.Employee.API.Domain.Common;
 using HR.Employee.API.Domain.Employees;
 using HR.Employee.API.Domain.Engagement;
 using HR.Employee.API.Domain.Relations;
+using HR.Employee.API.Domain.Safety;
 using HR.Employee.API.Domain.Learning;
 using HR.Employee.API.Domain.Leaves;
 using HR.Employee.API.Domain.Lifecycle;
@@ -103,6 +104,13 @@ public sealed class AppDbContext(
     public DbSet<CaseEntry> CaseEntries => Set<CaseEntry>();
     public DbSet<CaseEvidence> CaseEvidence => Set<CaseEvidence>();
     public DbSet<CaseAccessLog> CaseAccessLogs => Set<CaseAccessLog>();
+    public DbSet<SafetyIncident> SafetyIncidents => Set<SafetyIncident>();
+    public DbSet<IncidentEntry> IncidentEntries => Set<IncidentEntry>();
+    public DbSet<SafetyAction> SafetyActions => Set<SafetyAction>();
+    public DbSet<SafetyChecklist> SafetyChecklists => Set<SafetyChecklist>();
+    public DbSet<ChecklistItem> ChecklistItems => Set<ChecklistItem>();
+    public DbSet<SafetyInspection> SafetyInspections => Set<SafetyInspection>();
+    public DbSet<InspectionLine> InspectionLines => Set<InspectionLine>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     private readonly TenantScope _tenant = new(() => currentUser.TenantId);

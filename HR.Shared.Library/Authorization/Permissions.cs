@@ -26,6 +26,9 @@ public static class Permissions
     /// <summary>Employee relations cases (complaints, grievances, disciplinary). HR Manager ko khud nahi milta — har shakhs ko soch kar diya jaye.</summary>
     public const string RelationsManage = "relations.manage";
 
+    /// <summary>Health &amp; safety: incidents, corrective actions, inspections aur checklists.</summary>
+    public const string SafetyManage = "safety.manage";
+
     public const string SettingsView = "settings.view";
     public const string SettingsManage = "settings.manage";
     public const string UsersManage = "users.manage";

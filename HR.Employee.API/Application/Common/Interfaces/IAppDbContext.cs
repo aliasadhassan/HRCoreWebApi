@@ -9,6 +9,7 @@ using HR.Employee.API.Domain.Attendance;
 using HR.Employee.API.Domain.Employees;
 using HR.Employee.API.Domain.Engagement;
 using HR.Employee.API.Domain.Relations;
+using HR.Employee.API.Domain.Safety;
 using HR.Employee.API.Domain.Learning;
 using HR.Employee.API.Domain.Leaves;
 using HR.Employee.API.Domain.Lifecycle;
@@ -89,6 +90,13 @@ public interface IAppDbContext
     DbSet<CaseEntry> CaseEntries { get; }
     DbSet<CaseEvidence> CaseEvidence { get; }
     DbSet<CaseAccessLog> CaseAccessLogs { get; }
+    DbSet<SafetyIncident> SafetyIncidents { get; }
+    DbSet<IncidentEntry> IncidentEntries { get; }
+    DbSet<SafetyAction> SafetyActions { get; }
+    DbSet<SafetyChecklist> SafetyChecklists { get; }
+    DbSet<ChecklistItem> ChecklistItems { get; }
+    DbSet<SafetyInspection> SafetyInspections { get; }
+    DbSet<InspectionLine> InspectionLines { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
