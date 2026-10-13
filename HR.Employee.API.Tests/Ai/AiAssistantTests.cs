@@ -164,6 +164,20 @@ public class AiAssistantTests
         Assert.Empty(http.Requests);
     }
 
+    [Fact]
+    public async Task Report_sources_keep_only_switched_on_areas()
+    {
+        var http = new FakeHttp(r => r.RequestUri!.AbsolutePath.Contains("/payroll/")
+            ? (HttpStatusCode.OK, """[{"key":"payroll:salaries","label":"Salaries","fields":[]}]""")
+            : (HttpStatusCode.OK, """{"sources":[{"key":"attendance","label":"Attendance","needsRange":true,"fields":[{"key":"date","type":"Date"}]},{"key":"employees","label":"Employees","fields":[]}]}"""));
+        var (content, isError) = await Runner(http).RunAsync(AiToolCatalog.Find("report_sources")!, Json("{}"), Ctx, AiAreas.TimeLeave | AiAreas.Payroll, default);
+        Assert.False(isError);
+        Assert.Contains("employee:attendance", content);
+        Assert.Contains("date (Date)", content);
+        Assert.Contains("payroll:salaries", content);
+        Assert.DoesNotContain("employee:employees", content);
+    }
+
     // ---- Agent loop ----
 
     [Fact]

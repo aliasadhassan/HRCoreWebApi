@@ -355,35 +355,38 @@ public sealed class AiToolRunner(IHttpClientFactory httpFactory, IOptions<AiOpti
 
     private async Task<string> SourcesAsync(AiCallContext ctx, AiAreas areas, CancellationToken ct)
     {
-        var result = new JsonArray();
+        var sources = new List<JsonNode>();
         var (status, home) = await SendAsync(new(AiService.Employee, HttpMethod.Get, "/api/report-builder/home"), ctx, ct);
         if (status == HttpStatusCode.OK && JsonNode.Parse(home) is JsonObject h && h["sources"] is JsonArray emp)
-            Add(emp);
+            sources.AddRange(Allowed(emp, areas));
         if ((areas & (AiAreas.Payroll | AiAreas.LoansExpenses)) != 0)
         {
             var (ps, pay) = await SendAsync(new(AiService.Payroll, HttpMethod.Get, "/api/payroll/report-builder/sources"), ctx, ct);
             if (ps == HttpStatusCode.OK && JsonNode.Parse(pay) is JsonArray p)
-                Add(p);
+                sources.AddRange(Allowed(p, areas));
         }
-        return result.Count == 0 ? "No report sources are available to this person." : Shorten(result.ToJsonString(), MaxResultChars);
+        return sources.Count > 0
+            ? Shorten(new JsonArray([.. sources]).ToJsonString(), MaxResultChars)
+            : "No report sources are available to this person.";
+    }
 
-        void Add(JsonArray sources)
+    /// <summary>Sirf on areas ke sources, model ke liye chhoti shakal mein (key, label, fields).</summary>
+    private static IEnumerable<JsonNode> Allowed(JsonArray sources, AiAreas areas)
+    {
+        foreach (var s in sources.OfType<JsonObject>())
         {
-            foreach (var s in sources.OfType<JsonObject>())
+            var key = AiToolCatalog.Key(s["key"]?.GetValue<string>() ?? "");
+            var area = AiToolCatalog.SourceArea(key);
+            if (area == AiAreas.None || (areas & area) == 0)
+                continue;
+            yield return new JsonObject
             {
-                var key = AiToolCatalog.Key(s["key"]?.GetValue<string>() ?? "");
-                var area = AiToolCatalog.SourceArea(key);
-                if (area == AiAreas.None || (areas & area) == 0)
-                    continue;
-                result.Add(new JsonObject
-                {
-                    ["source"] = key,
-                    ["label"] = s["label"]?.GetValue<string>(),
-                    ["needsPeriod"] = s["needsRange"]?.GetValue<bool>(),
-                    ["fields"] = new JsonArray(s["fields"]?.AsArray().OfType<JsonObject>()
-                        .Select(f => (JsonNode)$"{f["key"]} ({f["type"]})").ToArray() ?? []),
-                });
-            }
+                ["source"] = key,
+                ["label"] = s["label"]?.GetValue<string>(),
+                ["needsPeriod"] = s["needsRange"]?.GetValue<bool>(),
+                ["fields"] = new JsonArray(s["fields"]?.AsArray().OfType<JsonObject>()
+                    .Select(f => (JsonNode)$"{f["key"]} ({f["type"]})").ToArray() ?? []),
+            };
         }
     }
 
