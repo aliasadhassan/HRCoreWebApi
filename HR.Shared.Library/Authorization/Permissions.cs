@@ -29,6 +29,12 @@ public static class Permissions
     /// <summary>Health &amp; safety: incidents, corrective actions, inspections aur checklists.</summary>
     public const string SafetyManage = "safety.manage";
 
+    /// <summary>Report builder: table reports save karna aur letter templates banana / publish karna.</summary>
+    public const string ReportsBuild = "reports.build";
+
+    /// <summary>Published template se letter / certificate jari karna (aur jari shuda letters dekhna, void karna).</summary>
+    public const string LettersIssue = "letters.issue";
+
     public const string SettingsView = "settings.view";
     public const string SettingsManage = "settings.manage";
     public const string UsersManage = "users.manage";

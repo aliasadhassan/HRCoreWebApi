@@ -3,6 +3,7 @@ using HR.Identity.API.Models;
 using HR.Identity.API.Models.Admin;
 using HR.Identity.API.Services;
 using HR.Shared.Library.Authorization;
+using HR.Shared.Library.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,6 +30,22 @@ public sealed class CompanyController(AppDbContext db, SubscriptionService subsc
         var tenant = await LoadAsync(track: false, ct);
         if (tenant is null) return NotFound();
         return Ok(ToDto(tenant));
+    }
+
+    /// <summary>
+    /// Letter / certificate ka letterhead: naam, logo, contact aur currency. Report builder (reports.build) aur
+    /// letter jari karne wale (letters.issue) ke liye — inhein poori company settings (settings.view) nahi chahiye.
+    /// </summary>
+    [HttpGet("letterhead")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<ActionResult<LetterheadDto>> Letterhead(CancellationToken ct)
+    {
+        if (!User.HasClaim(JwtTokenHelper.PermissionClaim, Permissions.ReportsBuild)
+            && !User.HasClaim(JwtTokenHelper.PermissionClaim, Permissions.LettersIssue))
+            return Forbid();
+        var t = await LoadAsync(track: false, ct);
+        if (t is null) return NotFound();
+        return Ok(new LetterheadDto(t.Name, t.LegalName, t.LogoUrl, t.PrimaryEmail, t.Phone, (t.Settings ?? new TenantSettings()).Currency));
     }
 
     /// <summary>Plan / license (read-only). Badalna platform owner ka kaam hai, company admin ka nahi.</summary>

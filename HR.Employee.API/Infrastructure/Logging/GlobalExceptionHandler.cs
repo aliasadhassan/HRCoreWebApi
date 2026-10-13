@@ -33,6 +33,7 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
         var (status, title, detail) = exception switch
         {
             DomainException => (StatusCodes.Status422UnprocessableEntity, "Business rule violation", exception.Message),
+            HR.Shared.Library.Reporting.ReportSpecException => (StatusCodes.Status422UnprocessableEntity, "Report definition", exception.Message),
             NotFoundException => (StatusCodes.Status404NotFound, "Not found", exception.Message),
             ConflictException => (StatusCodes.Status409Conflict, "Conflict", exception.Message),
             DbUpdateConcurrencyException => (StatusCodes.Status409Conflict, "Concurrency conflict",

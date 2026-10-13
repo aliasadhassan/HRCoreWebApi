@@ -37,6 +37,9 @@ public sealed record SubscriptionDto(
     string CurrencyCode,
     bool AutoRenew);
 
+/// <summary>Letterhead ke liye company ki pehchan (GET api/company/letterhead).</summary>
+public sealed record LetterheadDto(string Name, string? LegalName, string? LogoUrl, string? Email, string? Phone, string Currency);
+
 public sealed record CompanyDto(CompanyProfileDto Profile, CompanySettingsDto Settings, DateTime? UpdatedAt);
 
 public sealed class UpdateCompanyProfileRequest
