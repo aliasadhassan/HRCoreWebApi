@@ -10,6 +10,7 @@ using HR.Employee.API.Domain.Employees;
 using HR.Employee.API.Domain.Engagement;
 using HR.Employee.API.Domain.Relations;
 using HR.Employee.API.Domain.Safety;
+using HR.Employee.API.Domain.ReportBuilder;
 using HR.Employee.API.Domain.Learning;
 using HR.Employee.API.Domain.Leaves;
 using HR.Employee.API.Domain.Lifecycle;
@@ -97,6 +98,10 @@ public interface IAppDbContext
     DbSet<ChecklistItem> ChecklistItems { get; }
     DbSet<SafetyInspection> SafetyInspections { get; }
     DbSet<InspectionLine> InspectionLines { get; }
+    DbSet<SavedReport> SavedReports { get; }
+    DbSet<LetterTemplate> LetterTemplates { get; }
+    DbSet<LetterTemplateVersion> LetterTemplateVersions { get; }
+    DbSet<IssuedLetter> IssuedLetters { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

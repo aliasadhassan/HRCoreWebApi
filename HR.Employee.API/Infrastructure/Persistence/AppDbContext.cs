@@ -13,6 +13,7 @@ using HR.Employee.API.Domain.Employees;
 using HR.Employee.API.Domain.Engagement;
 using HR.Employee.API.Domain.Relations;
 using HR.Employee.API.Domain.Safety;
+using HR.Employee.API.Domain.ReportBuilder;
 using HR.Employee.API.Domain.Learning;
 using HR.Employee.API.Domain.Leaves;
 using HR.Employee.API.Domain.Lifecycle;
@@ -111,6 +112,10 @@ public sealed class AppDbContext(
     public DbSet<ChecklistItem> ChecklistItems => Set<ChecklistItem>();
     public DbSet<SafetyInspection> SafetyInspections => Set<SafetyInspection>();
     public DbSet<InspectionLine> InspectionLines => Set<InspectionLine>();
+    public DbSet<SavedReport> SavedReports => Set<SavedReport>();
+    public DbSet<LetterTemplate> LetterTemplates => Set<LetterTemplate>();
+    public DbSet<LetterTemplateVersion> LetterTemplateVersions => Set<LetterTemplateVersion>();
+    public DbSet<IssuedLetter> IssuedLetters => Set<IssuedLetter>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     private readonly TenantScope _tenant = new(() => currentUser.TenantId);

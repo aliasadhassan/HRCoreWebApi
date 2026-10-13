@@ -5064,6 +5064,401 @@ namespace HR.Employee.API.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HR.Employee.API.Domain.ReportBuilder.IssuedLetter", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BatchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte>("Category")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EmployeeCode")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EmployeeName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Html")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsVoid")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("IssuedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<string>("IssuedByName")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<Guid?>("IssuedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character(2)")
+                        .IsFixedLength();
+
+                    b.Property<byte>("Paper")
+                        .HasColumnType("smallint");
+
+                    b.Property<string>("Purpose")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Ref")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<Guid>("TemplateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TemplateName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<int>("TemplateVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("VoidReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("VoidedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BatchId")
+                        .HasFilter("\"BatchId\" IS NOT NULL");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("TemplateId");
+
+                    b.HasIndex("TenantId", "IssuedAt")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.HasIndex("TenantId", "Ref")
+                        .IsUnique()
+                        .HasDatabaseName("UX_RbIssuedLetters_TenantId_Ref");
+
+                    b.ToTable("RbIssuedLetters", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_RbIssuedLetters_Category", "\"Category\" BETWEEN 1 AND 7");
+
+                            t.HasCheckConstraint("CK_RbIssuedLetters_Language", "\"Language\" IN ('en', 'ar')");
+
+                            t.HasCheckConstraint("CK_RbIssuedLetters_Paper", "\"Paper\" BETWEEN 1 AND 2");
+
+                            t.HasCheckConstraint("CK_RbIssuedLetters_Void", "\"IsVoid\" = (\"VoidedAt\" IS NOT NULL) AND \"IsVoid\" = (\"VoidReason\" IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.ReportBuilder.LetterTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<byte>("Category")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("DraftHtmlAr")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DraftHtmlEn")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("HasUnpublishedChanges")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<byte>("Languages")
+                        .HasColumnType("smallint");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<byte>("Paper")
+                        .HasColumnType("smallint");
+
+                    b.Property<int>("PublishedVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RefPrefix")
+                        .IsRequired()
+                        .HasMaxLength(6)
+                        .HasColumnType("character varying(6)");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<bool>("ShowLetterhead")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ShowPageNumbers")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SignatoryName")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("SignatoryTitle")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("smallint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "Status")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.ToTable("RbLetterTemplates", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_RbLetterTemplates_Category", "\"Category\" BETWEEN 1 AND 7");
+
+                            t.HasCheckConstraint("CK_RbLetterTemplates_Languages", "\"Languages\" BETWEEN 1 AND 3");
+
+                            t.HasCheckConstraint("CK_RbLetterTemplates_Paper", "\"Paper\" BETWEEN 1 AND 2");
+
+                            t.HasCheckConstraint("CK_RbLetterTemplates_Prefix", "\"RefPrefix\" ~ '^[A-Z]{2,6}$'");
+
+                            t.HasCheckConstraint("CK_RbLetterTemplates_Status", "\"Status\" BETWEEN 1 AND 3");
+
+                            t.HasCheckConstraint("CK_RbLetterTemplates_Version", "\"PublishedVersion\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.ReportBuilder.LetterTemplateVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("HtmlAr")
+                        .HasColumnType("text");
+
+                    b.Property<string>("HtmlEn")
+                        .HasColumnType("text");
+
+                    b.Property<byte>("Paper")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime>("PublishedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<string>("PublishedByName")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<Guid?>("PublishedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("ShowLetterhead")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ShowPageNumbers")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SignatoryName")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("SignatoryTitle")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<Guid>("TemplateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TemplateId", "Version")
+                        .IsUnique()
+                        .HasDatabaseName("UX_RbLetterTemplateVersions_Template_Version");
+
+                    b.ToTable("RbLetterTemplateVersions", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_RbLetterTemplateVersions_Html", "\"HtmlEn\" IS NOT NULL OR \"HtmlAr\" IS NOT NULL");
+
+                            t.HasCheckConstraint("CK_RbLetterTemplateVersions_Paper", "\"Paper\" BETWEEN 1 AND 2");
+
+                            t.HasCheckConstraint("CK_RbLetterTemplateVersions_Version", "\"Version\" >= 1");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.ReportBuilder.SavedReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<byte>("Chart")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateOnly?>("FromDate")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastRunAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("OwnerName")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<byte>("Period")
+                        .HasColumnType("smallint");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("Spec")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly?>("ToDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "Name")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.ToTable("RbReports", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_RbReports_Chart", "\"Chart\" BETWEEN 1 AND 4");
+
+                            t.HasCheckConstraint("CK_RbReports_Custom", "(\"Period\" = 8) = (\"FromDate\" IS NOT NULL AND \"ToDate\" IS NOT NULL) AND (\"ToDate\" IS NULL OR \"ToDate\" >= \"FromDate\")");
+
+                            t.HasCheckConstraint("CK_RbReports_Period", "\"Period\" BETWEEN 1 AND 8");
+                        });
+                });
+
             modelBuilder.Entity("HR.Employee.API.Domain.Safety.ChecklistItem", b =>
                 {
                     b.Property<Guid>("Id")
@@ -6700,6 +7095,30 @@ namespace HR.Employee.API.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("HR.Employee.API.Domain.ReportBuilder.IssuedLetter", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HR.Employee.API.Domain.ReportBuilder.LetterTemplate", null)
+                        .WithMany()
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.ReportBuilder.LetterTemplateVersion", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.ReportBuilder.LetterTemplate", null)
+                        .WithMany("Versions")
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("HR.Employee.API.Domain.Safety.ChecklistItem", b =>
                 {
                     b.HasOne("HR.Employee.API.Domain.Safety.SafetyChecklist", null)
@@ -6890,6 +7309,11 @@ namespace HR.Employee.API.Migrations
                     b.Navigation("Members");
 
                     b.Navigation("Parties");
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.ReportBuilder.LetterTemplate", b =>
+                {
+                    b.Navigation("Versions");
                 });
 
             modelBuilder.Entity("HR.Employee.API.Domain.Safety.SafetyChecklist", b =>
