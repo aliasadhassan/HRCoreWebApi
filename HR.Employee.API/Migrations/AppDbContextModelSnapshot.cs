@@ -5064,6 +5064,559 @@ namespace HR.Employee.API.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HR.Employee.API.Domain.Safety.ChecklistItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ChecklistId")
+                        .HasColumnType("uuid");
+
+                    b.Property<short>("SortOrder")
+                        .HasColumnType("smallint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChecklistId", "SortOrder");
+
+                    b.ToTable("HsChecklistItems", "employee");
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Safety.IncidentEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("At")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("ByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("IncidentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte>("Kind")
+                        .HasColumnType("smallint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Text")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IncidentId", "At");
+
+                    b.ToTable("HsIncidentEntries", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_HsIncidentEntries_Kind", "\"Kind\" BETWEEN 1 AND 10");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Safety.InspectionLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("InspectionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<byte?>("Result")
+                        .HasColumnType("smallint");
+
+                    b.Property<short>("SortOrder")
+                        .HasColumnType("smallint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InspectionId", "SortOrder");
+
+                    b.ToTable("HsInspectionLines", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_HsInspectionLines_Result", "\"Result\" IS NULL OR \"Result\" BETWEEN 1 AND 3");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Safety.SafetyAction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AssigneeEmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<string>("CompletionNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateOnly>("DueOn")
+                        .HasColumnType("date");
+
+                    b.Property<Guid?>("IncidentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("InspectionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<byte>("Priority")
+                        .HasColumnType("smallint");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("smallint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("VerifiedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssigneeEmployeeId");
+
+                    b.HasIndex("IncidentId")
+                        .HasFilter("\"IncidentId\" IS NOT NULL");
+
+                    b.HasIndex("InspectionId")
+                        .HasFilter("\"InspectionId\" IS NOT NULL");
+
+                    b.HasIndex("TenantId", "Status", "DueOn")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.ToTable("HsActions", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_HsActions_Done", "\"Status\" NOT IN (3, 4) OR \"CompletedAt\" IS NOT NULL");
+
+                            t.HasCheckConstraint("CK_HsActions_Priority", "\"Priority\" BETWEEN 1 AND 4");
+
+                            t.HasCheckConstraint("CK_HsActions_Source", "\"IncidentId\" IS NULL OR \"InspectionId\" IS NULL");
+
+                            t.HasCheckConstraint("CK_HsActions_Status", "\"Status\" BETWEEN 1 AND 5");
+
+                            t.HasCheckConstraint("CK_HsActions_Verified", "(\"Status\" = 4) = (\"VerifiedAt\" IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Safety.SafetyChecklist", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("UX_HsChecklists_TenantId_Name")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.ToTable("HsChecklists", "employee");
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Safety.SafetyIncident", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AffectedEmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AffectedName")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<bool>("Anonymous")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Area")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<DateOnly?>("AuthorityNotifiedOn")
+                        .HasColumnType("date");
+
+                    b.Property<string>("AuthorityReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("BodyPart")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<string>("ClosureNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("ImmediateAction")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("InjuryNature")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<Guid?>("InvestigatorEmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsReportable")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("LastActivityAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("LocationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<short>("LostDays")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("ReporterEmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RootCause")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<byte?>("RootCauseCategory")
+                        .HasColumnType("smallint");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<byte>("Severity")
+                        .HasColumnType("smallint");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("smallint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<byte?>("Treatment")
+                        .HasColumnType("smallint");
+
+                    b.Property<byte>("Type")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Witnesses")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AffectedEmployeeId")
+                        .HasFilter("\"AffectedEmployeeId\" IS NOT NULL");
+
+                    b.HasIndex("DepartmentId")
+                        .HasFilter("\"DepartmentId\" IS NOT NULL");
+
+                    b.HasIndex("InvestigatorEmployeeId")
+                        .HasFilter("\"InvestigatorEmployeeId\" IS NOT NULL");
+
+                    b.HasIndex("LocationId")
+                        .HasFilter("\"LocationId\" IS NOT NULL");
+
+                    b.HasIndex("ReporterEmployeeId")
+                        .HasFilter("\"ReporterEmployeeId\" IS NOT NULL");
+
+                    b.HasIndex("TenantId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("UX_HsIncidents_TenantId_Code");
+
+                    b.HasIndex("TenantId", "OccurredAt")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.HasIndex("TenantId", "Status")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.ToTable("HsIncidents", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_HsIncidents_Affected", "\"AffectedEmployeeId\" IS NULL OR \"AffectedName\" IS NULL");
+
+                            t.HasCheckConstraint("CK_HsIncidents_Anonymous", "NOT \"Anonymous\" OR \"ReporterEmployeeId\" IS NOT NULL");
+
+                            t.HasCheckConstraint("CK_HsIncidents_Closed", "(\"Status\" = 4) = (\"ClosedAt\" IS NOT NULL AND \"ClosureNote\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_HsIncidents_LostDays", "\"LostDays\" BETWEEN 0 AND 999");
+
+                            t.HasCheckConstraint("CK_HsIncidents_RootCause", "\"RootCauseCategory\" IS NULL OR \"RootCauseCategory\" BETWEEN 1 AND 7");
+
+                            t.HasCheckConstraint("CK_HsIncidents_Severity", "\"Severity\" BETWEEN 1 AND 4");
+
+                            t.HasCheckConstraint("CK_HsIncidents_Status", "\"Status\" BETWEEN 1 AND 4");
+
+                            t.HasCheckConstraint("CK_HsIncidents_Treatment", "\"Treatment\" IS NULL OR \"Treatment\" BETWEEN 1 AND 5");
+
+                            t.HasCheckConstraint("CK_HsIncidents_Type", "\"Type\" BETWEEN 1 AND 8");
+                        });
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Safety.SafetyInspection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Area")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<Guid?>("ChecklistId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("DueOn")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("InspectorEmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("LocationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<short?>("RepeatDays")
+                        .HasColumnType("smallint");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<decimal?>("ScorePercent")
+                        .HasPrecision(5, 1)
+                        .HasColumnType("numeric(5,1)");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("smallint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChecklistId")
+                        .HasFilter("\"ChecklistId\" IS NOT NULL");
+
+                    b.HasIndex("InspectorEmployeeId");
+
+                    b.HasIndex("LocationId")
+                        .HasFilter("\"LocationId\" IS NOT NULL");
+
+                    b.HasIndex("TenantId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("UX_HsInspections_TenantId_Code");
+
+                    b.HasIndex("TenantId", "Status", "DueOn")
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.ToTable("HsInspections", "employee", t =>
+                        {
+                            t.HasCheckConstraint("CK_HsInspections_Completed", "(\"Status\" = 2) = (\"CompletedAt\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_HsInspections_Repeat", "\"RepeatDays\" IS NULL OR \"RepeatDays\" BETWEEN 7 AND 365");
+
+                            t.HasCheckConstraint("CK_HsInspections_Score", "\"ScorePercent\" IS NULL OR \"ScorePercent\" BETWEEN 0 AND 100");
+
+                            t.HasCheckConstraint("CK_HsInspections_Status", "\"Status\" BETWEEN 1 AND 3");
+                        });
+                });
+
             modelBuilder.Entity("HR.Shared.Library.Persistence.AuditLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -6147,6 +6700,99 @@ namespace HR.Employee.API.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("HR.Employee.API.Domain.Safety.ChecklistItem", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Safety.SafetyChecklist", null)
+                        .WithMany("Items")
+                        .HasForeignKey("ChecklistId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Safety.IncidentEntry", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Safety.SafetyIncident", null)
+                        .WithMany("Entries")
+                        .HasForeignKey("IncidentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Safety.InspectionLine", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Safety.SafetyInspection", null)
+                        .WithMany("Lines")
+                        .HasForeignKey("InspectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Safety.SafetyAction", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("AssigneeEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HR.Employee.API.Domain.Safety.SafetyIncident", null)
+                        .WithMany()
+                        .HasForeignKey("IncidentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HR.Employee.API.Domain.Safety.SafetyInspection", null)
+                        .WithMany()
+                        .HasForeignKey("InspectionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Safety.SafetyIncident", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("AffectedEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HR.Employee.API.Domain.Organization.Department", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("InvestigatorEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HR.Employee.API.Domain.Organization.Location", null)
+                        .WithMany()
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("ReporterEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Safety.SafetyInspection", b =>
+                {
+                    b.HasOne("HR.Employee.API.Domain.Safety.SafetyChecklist", null)
+                        .WithMany()
+                        .HasForeignKey("ChecklistId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HR.Employee.API.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("InspectorEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HR.Employee.API.Domain.Organization.Location", null)
+                        .WithMany()
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.OutboxMessage", b =>
                 {
                     b.HasOne("MassTransit.EntityFrameworkCoreIntegration.OutboxState", null)
@@ -6244,6 +6890,21 @@ namespace HR.Employee.API.Migrations
                     b.Navigation("Members");
 
                     b.Navigation("Parties");
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Safety.SafetyChecklist", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Safety.SafetyIncident", b =>
+                {
+                    b.Navigation("Entries");
+                });
+
+            modelBuilder.Entity("HR.Employee.API.Domain.Safety.SafetyInspection", b =>
+                {
+                    b.Navigation("Lines");
                 });
 #pragma warning restore 612, 618
         }

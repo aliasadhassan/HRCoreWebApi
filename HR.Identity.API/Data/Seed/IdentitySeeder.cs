@@ -21,6 +21,7 @@ public static class IdentitySeeder
         ("payroll.run",      "Payroll",   "Process payroll runs"),
         ("payroll.approve",  "Payroll",   "Approve/lock payroll runs"),
         ("relations.manage", "Relations", "Manage employee relations cases"),
+        ("safety.manage",    "Safety",    "Manage health and safety"),
         ("settings.view",    "Settings",  "View settings"),
         ("settings.manage",  "Settings",  "Change company settings"),
         ("users.manage",     "Settings",  "Invite/deactivate users"),
