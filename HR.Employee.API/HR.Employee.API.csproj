@@ -27,6 +27,7 @@
   <ItemGroup>
     <PackageReference Include="Anthropic" Version="12.55.0" />
     <PackageReference Include="Aspire.StackExchange.Redis" Version="13.3.0" />
+    <PackageReference Include="ClosedXML" Version="0.105.0" />
     <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageReference Include="HtmlSanitizer" Version="9.2.1039" />
