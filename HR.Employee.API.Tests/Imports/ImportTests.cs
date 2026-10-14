@@ -246,6 +246,80 @@ public class ImportTests
         Assert.Equal(ImportErrorCodes.BadFile, Assert.Single(errors.Items).Code);
     }
 
+    private static MemoryStream Workbook(Action<IXLWorksheet> fill)
+    {
+        var template = ImportWorkbook.Template(ImportKind.Employees, EmployeeImport.Columns, []);
+        using var wb = new XLWorkbook(new MemoryStream(template));
+        fill(wb.Worksheet(ImportWorkbook.DataSheet));
+        var ms = new MemoryStream();
+        wb.SaveAs(ms);
+        ms.Position = 0;
+        return ms;
+    }
+
+    [Fact]
+    public void Columns_in_any_order_are_matched_by_name()
+    {
+        using var file = Workbook(data =>
+        {
+            // First name aur Last name ki jagah badal do
+            data.Cell(1, 2).Value = "Last name *";
+            data.Cell(1, 4).Value = "First name *";
+            data.Cell(2, 2).Value = "Khan";
+            data.Cell(2, 4).Value = "Ali";
+            data.Cell(2, 5).Value = "ali@company.com";
+        });
+
+        var errors = new ImportErrors();
+        var rows = ImportWorkbook.Read(file, EmployeeImport.Columns, errors);
+        Assert.Equal(0, errors.Count);
+        Assert.Equal("Ali", rows[0][EmployeeImport.FirstName.Key]);
+        Assert.Equal("Khan", rows[0][EmployeeImport.LastName.Key]);
+    }
+
+    [Fact]
+    public void Misspelled_and_repeated_columns_reject_the_file()
+    {
+        using var file = Workbook(data =>
+        {
+            data.Cell(1, 3).Value = "Midle name";                 // optional, ghalat spelling
+            data.Cell(1, 30).Value = "Salary";                     // template mein hai hi nahi
+            data.Cell(1, 31).Value = "first  NAME";                // First name dobara
+            data.Cell(2, 2).Value = "Ali";
+        });
+
+        var errors = new ImportErrors();
+        var rows = ImportWorkbook.Read(file, EmployeeImport.Columns, errors);
+        Assert.Empty(rows);
+        Assert.Contains(errors.Items, e => e.Code == ImportErrorCodes.UnknownColumn && e.Value == "Midle name"
+                                           && e.Args!["suggestion"] == "Middle name");
+        Assert.Contains(errors.Items, e => e.Code == ImportErrorCodes.UnknownColumn && e.Value == "Salary" && e.Args!["suggestion"] == "");
+        Assert.Contains(errors.Items, e => e.Code == ImportErrorCodes.DuplicateColumn && e.Column == "First name");
+    }
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData(" NULL ")]
+    [InlineData("N/A")]
+    [InlineData("undefined")]
+    [InlineData("None")]
+    public void Null_as_text_is_rejected(string text)
+    {
+        using var file = Workbook(data =>
+        {
+            data.Cell(2, 2).Value = "Ali";
+            data.Cell(2, 4).Value = text;
+            data.Cell(2, 5).Value = "ali@company.com";
+        });
+
+        var errors = new ImportErrors();
+        var rows = ImportWorkbook.Read(file, EmployeeImport.Columns, errors);
+        var error = Assert.Single(errors.Items);
+        Assert.Equal(ImportErrorCodes.NullText, error.Code);
+        Assert.Equal((2, "Last name"), (error.Row, error.Column));
+        Assert.Null(rows[0][EmployeeImport.LastName.Key]);
+    }
+
     [Theory]
     [InlineData("2026-01-31", 2026, 1, 31)]
     [InlineData("31/01/2026", 2026, 1, 31)]

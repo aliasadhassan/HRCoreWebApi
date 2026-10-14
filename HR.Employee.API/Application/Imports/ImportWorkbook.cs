@@ -45,23 +45,47 @@ public static class ImportWorkbook
                 return [];
             }
 
-            // Header → column number
+            // Header → column number. Columns kisi bhi tarteeb mein hon, naam se milte hain.
+            // Ghalat spelling / anjaan column / ek column do baar = file reject (warna data chupke se chhoot jata).
+            var known = columns.ToDictionary(col => HeaderKey(col.Header), col => col.Header);
             var map = new Dictionary<string, int>();
+            var headerErrors = 0;
             var lastColumn = used.LastColumn().ColumnNumber();
             for (var c = 1; c <= lastColumn; c++)
             {
-                var header = sheet.Cell(1, c).GetString();
+                var header = sheet.Cell(1, c).GetString().Trim();
                 var key = HeaderKey(header);
-                if (key.Length > 0)
-                    map.TryAdd(key, c);
+                if (key.Length == 0)
+                    continue;
+
+                if (!known.TryGetValue(key, out var name))
+                {
+                    var guess = Closest(key, known);
+                    errors.Add(1, header, header, ImportErrorCodes.UnknownColumn,
+                               guess is null
+                                   ? $"Column '{header}' is not in the template. Rename or remove it."
+                                   : $"Column '{header}' is not in the template. Did you mean '{guess}'?",
+                               ImportText.Args(("column", header), ("suggestion", guess ?? "")));
+                    headerErrors++;
+                }
+                else if (!map.TryAdd(key, c))
+                {
+                    errors.Add(1, name, header, ImportErrorCodes.DuplicateColumn, $"Column '{name}' appears more than once. Keep only one.",
+                               ImportText.Args(("column", name)));
+                    headerErrors++;
+                }
             }
 
-            var missing = columns.Where(col => col.Required && !map.ContainsKey(HeaderKey(col.Header))).ToList();
-            foreach (var col in missing)
+            foreach (var col in columns.Where(col => col.Required && !map.ContainsKey(HeaderKey(col.Header))))
+            {
                 errors.Add(1, col.Header, null, ImportErrorCodes.MissingColumn, $"Column '{col.Header}' is missing. Use the template.",
                            ImportText.Args(("column", col.Header)));
-            if (missing.Count > 0)
+                headerErrors++;
+            }
+            if (headerErrors > 0)
                 return [];
+
+            var headers = columns.ToDictionary(col => col.Key, col => col.Header);
 
             var positions = columns
                 .Select(col => (col.Key, Index: map.TryGetValue(HeaderKey(col.Header), out var i) ? i : 0))
@@ -74,7 +98,27 @@ public static class ImportWorkbook
             {
                 var values = new Dictionary<string, string?>();
                 foreach (var (key, index) in positions)
-                    values[key] = CellText(sheet.Cell(r, index));
+                {
+                    var cell = sheet.Cell(r, index);
+                    if (cell.Value.Type == XLDataType.Error)
+                    {
+                        errors.Add(r, headers[key], cell.Value.GetError().ToString(), ImportErrorCodes.CellError,
+                                   "This cell has an Excel error (like #N/A). Type the value instead of a formula.");
+                        values[key] = null;
+                        continue;
+                    }
+
+                    var text = CellText(cell);
+                    if (text is not null && NullWords.Contains(text.Trim()))
+                    {
+                        // "null"/"N/A" text DB mein naam/code ban kar na jaye — khali chhorna hai to cell khali chhoren
+                        errors.Add(r, headers[key], text.Trim(), ImportErrorCodes.NullText,
+                                   $"'{text.Trim()}' is not a value. Leave the cell empty instead.",
+                                   ImportText.Args(("value", text.Trim())));
+                        text = null;
+                    }
+                    values[key] = text;
+                }
 
                 if (values.Values.All(string.IsNullOrWhiteSpace))
                     continue;   // khali row chhor do
@@ -96,6 +140,35 @@ public static class ImportWorkbook
         }
     }
 
+    /// <summary>Placeholder text jo asal value nahi (case ignore). "NA" nahi — wo Namibia ka country code hai.</summary>
+    private static readonly HashSet<string> NullWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "null", "(null)", "nil", "none", "undefined", "n/a", "#n/a", "nan", "#null!", "-", "--"
+    };
+
+    /// <summary>Ghalat spelling wale header ke liye sab se qareeb template column (max 3 harf ka farq).</summary>
+    private static string? Closest(string key, IReadOnlyDictionary<string, string> known)
+    {
+        var best = known.Select(k => (Name: k.Value, Distance: Distance(key, k.Key)))
+                        .OrderBy(x => x.Distance)
+                        .FirstOrDefault();
+        return best.Name is not null && best.Distance <= Math.Max(1, Math.Min(3, key.Length / 3)) ? best.Name : null;
+    }
+
+    private static int Distance(string a, string b)
+    {
+        var prev = Enumerable.Range(0, b.Length + 1).ToArray();
+        for (var i = 1; i <= a.Length; i++)
+        {
+            var cur = new int[b.Length + 1];
+            cur[0] = i;
+            for (var j = 1; j <= b.Length; j++)
+                cur[j] = Math.Min(Math.Min(cur[j - 1] + 1, prev[j] + 1), prev[j - 1] + (a[i - 1] == b[j - 1] ? 0 : 1));
+            prev = cur;
+        }
+        return prev[b.Length];
+    }
+
     /// <summary>Date cell → yyyy-MM-dd, number → invariant (1.0 → "1"), baqi text jaisa.</summary>
     private static string? CellText(IXLCell cell)
     {
@@ -106,7 +179,6 @@ public static class ImportWorkbook
             XLDataType.DateTime => value.GetDateTime().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             XLDataType.Number => value.GetNumber().ToString("0.##########", CultureInfo.InvariantCulture),
             XLDataType.Boolean => value.GetBoolean() ? "Yes" : "No",
-            XLDataType.Error => null,
             _ => cell.GetString()
         };
     }

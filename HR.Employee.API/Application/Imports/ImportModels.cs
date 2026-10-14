@@ -63,6 +63,10 @@ public static class ImportErrorCodes
     public const string EmptyFile = "emptyFile";
     public const string TooManyRows = "tooManyRows";
     public const string MissingColumn = "missingColumn";
+    public const string UnknownColumn = "unknownColumn";
+    public const string DuplicateColumn = "duplicateColumn";
+    public const string NullText = "nullText";
+    public const string CellError = "cellError";
     public const string Required = "required";
     public const string TooLong = "tooLong";
     public const string InvalidCode = "invalidCode";
