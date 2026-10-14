@@ -2,6 +2,7 @@ namespace HR.Employee.API.Infrastructure.Logging;
 
 using FluentValidation;
 using HR.Employee.API.Application.Common.Exceptions;
+using HR.Employee.API.Application.Common.Interfaces;
 using HR.Employee.API.Domain.Common;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
@@ -37,6 +38,8 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
             NotFoundException => (StatusCodes.Status404NotFound, "Not found", exception.Message),
             Application.Ai.LlmException => (StatusCodes.Status502BadGateway, "AI service", exception.Message),
             ConflictException => (StatusCodes.Status409Conflict, "Conflict", exception.Message),
+            FileStorageException { NotConfigured: true } => (StatusCodes.Status503ServiceUnavailable, "File storage", exception.Message),
+            FileStorageException => (StatusCodes.Status502BadGateway, "File storage", exception.Message),
             DbUpdateConcurrencyException => (StatusCodes.Status409Conflict, "Concurrency conflict",
                 "This record was changed by someone else. Reload and try again."),
             DbUpdateException { InnerException: SqlException { Number: 2601 or 2627 } }

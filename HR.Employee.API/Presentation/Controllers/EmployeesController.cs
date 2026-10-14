@@ -2,6 +2,7 @@ namespace HR.Employee.API.Presentation.Controllers;
 
 using HR.Employee.API.Application.Common.Models;
 using HR.Employee.API.Application.Employees.Commands;
+using HR.Employee.API.Application.Employees.Photos;
 using HR.Employee.API.Application.Employees.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -53,6 +54,33 @@ public sealed class EmployeesController(ISender mediator) : ControllerBase
     public async Task<IActionResult> Exit(Guid id, [FromBody] ExitEmployeeCommand command, CancellationToken ct)
     {
         await mediator.Send(command with { EmployeeId = id }, ct);
+        return NoContent();
+    }
+
+    /// <summary>Login wale user ki apni photo (topbar, sidebar, My settings). Enabled=false: storage set nahi.</summary>
+    [HttpGet("me/photo")]
+    public async Task<ActionResult<MyPhotoDto>> GetMyPhoto(CancellationToken ct)
+        => Ok(await mediator.Send(new GetMyPhotoQuery(), ct));
+
+    /// <summary>JPG/PNG/WebP, max 5 MB → server 256px WebP bana kar private bucket mein rakhta hai.</summary>
+    [HttpPut("{id:guid}/photo")]
+    [RequestSizeLimit(PhotoImage.MaxUploadBytes + 64 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = PhotoImage.MaxUploadBytes + 64 * 1024)]
+    public async Task<ActionResult<EmployeePhotoDto>> UploadPhoto(Guid id, IFormFile file, CancellationToken ct)
+    {
+        if (file.Length > PhotoImage.MaxUploadBytes)
+            return Problem(statusCode: StatusCodes.Status413PayloadTooLarge, title: "Photo too large",
+                           detail: "The photo is too large. The limit is 5 MB.");
+
+        using var buffer = new MemoryStream((int)file.Length);
+        await file.CopyToAsync(buffer, ct);
+        return Ok(await mediator.Send(new UploadEmployeePhotoCommand(id, buffer.ToArray()), ct));
+    }
+
+    [HttpDelete("{id:guid}/photo")]
+    public async Task<IActionResult> RemovePhoto(Guid id, CancellationToken ct)
+    {
+        await mediator.Send(new RemoveEmployeePhotoCommand(id), ct);
         return NoContent();
     }
 

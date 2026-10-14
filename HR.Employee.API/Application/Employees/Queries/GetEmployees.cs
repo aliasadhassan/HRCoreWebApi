@@ -3,6 +3,7 @@ namespace HR.Employee.API.Application.Employees.Queries;
 using FluentValidation;
 using HR.Employee.API.Application.Common.Interfaces;
 using HR.Employee.API.Application.Common.Models;
+using HR.Employee.API.Application.Employees.Photos;
 using HR.Employee.API.Domain.Employees;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -30,10 +31,10 @@ public sealed class GetEmployeesValidator : AbstractValidator<GetEmployeesQuery>
     }
 }
 
-public sealed class GetEmployeesHandler(IAppDbContext db)
+public sealed class GetEmployeesHandler(IAppDbContext db, EmployeePhotoUrls photos)
     : IRequestHandler<GetEmployeesQuery, PagedResult<EmployeeListItemDto>>
 {
-    public Task<PagedResult<EmployeeListItemDto>> Handle(GetEmployeesQuery q, CancellationToken ct)
+    public async Task<PagedResult<EmployeeListItemDto>> Handle(GetEmployeesQuery q, CancellationToken ct)
     {
         var query = db.Employees.AsNoTracking();
 
@@ -54,7 +55,7 @@ public sealed class GetEmployeesHandler(IAppDbContext db)
         else if (!q.IncludeExited)
             query = query.Where(e => e.EmploymentStatus != EmploymentStatus.Exited);
 
-        return query
+        var page = await query
             .OrderBy(e => e.FirstName).ThenBy(e => e.LastName)
             .Select(e => new EmployeeListItemDto(
                 e.Id,
@@ -70,5 +71,12 @@ public sealed class GetEmployeesHandler(IAppDbContext db)
                 e.JoiningDate,
                 e.PhotoStorageKey))
             .ToPagedResultAsync(q.Page, q.PageSize, ct);
+
+        // Ek hi batch call mein poore page ki photos sign (cache hit pe koi call nahi)
+        var urls = await photos.ResolveAsync(page.Items.Select(i => i.PhotoUrl), ct);
+        return page with
+        {
+            Items = page.Items.Select(i => i with { PhotoUrl = i.PhotoUrl is { } k ? urls.GetValueOrDefault(k) : null }).ToList()
+        };
     }
 }
