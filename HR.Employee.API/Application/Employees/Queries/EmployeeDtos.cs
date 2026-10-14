@@ -15,7 +15,7 @@ public sealed record EmployeeListItemDto(
     EmploymentType EmploymentType,
     EmploymentStatus EmploymentStatus,
     DateOnly JoiningDate,
-    string? PhotoStorageKey);
+    string? PhotoUrl);   // short-lived signed URL (query mein pehle storage key, handler URL se badalta hai)
 
 /// <summary>NationalIdNumber jaan boojh kar nahi — sensitive, alag permission wale endpoint se aayega.</summary>
 public sealed record EmployeeDetailsDto(
@@ -46,7 +46,7 @@ public sealed record EmployeeDetailsDto(
     short? NoticePeriodDays,
     DateOnly? ExitDate,
     string? ExitReason,
-    string? PhotoStorageKey,
+    string? PhotoUrl,
     IReadOnlyList<EmergencyContactDto> EmergencyContacts,
     IReadOnlyList<JobHistoryDto> JobHistory);
 

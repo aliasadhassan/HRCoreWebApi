@@ -8,6 +8,8 @@ using HR.Employee.API.Consumers;
 using HR.Employee.API.Infrastructure.Identity;
 using HR.Employee.API.Infrastructure.Logging;
 using HR.Employee.API.Infrastructure.Persistence;
+using HR.Employee.API.Infrastructure.Storage;
+using HR.Employee.API.Application.Employees.Photos;
 using HR.Shared.Library.Authorization;
 using HR.Shared.Library.Helpers;
 using HR.Shared.Library.Persistence;
@@ -31,6 +33,9 @@ var connectionString = await kvHelper.GetDbConnectionStringAsync(KeyVaultSecrets
 
 // AI assistant: key optional — na ho to AI band (koi call nahi, koi kharcha nahi)
 var anthropicKey = await kvHelper.TryGetSecretValueAsync("AnthropicApiKey");
+
+// Employee photos (Supabase Storage): key optional — na ho to upload band, photos ki jagah initials
+var storageKey = await kvHelper.TryGetSecretValueAsync("SupabaseStorageKey");
 #endregion
 
 #region API + exception handling
@@ -56,6 +61,18 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         sql.EnableRetryOnFailure();
     }));
 builder.Services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+#endregion
+
+#region File storage (employee photos)
+builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection(StorageOptions.Section));
+builder.Services.PostConfigure<StorageOptions>(o =>
+{
+    if (!string.IsNullOrWhiteSpace(storageKey))
+        o.ServiceKey = storageKey;
+});
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient<IFileStorage, SupabaseStorage>(c => c.Timeout = TimeSpan.FromSeconds(30));
+builder.Services.AddScoped<EmployeePhotoUrls>();
 #endregion
 
 #region AI assistant

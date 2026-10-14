@@ -3,12 +3,13 @@ namespace HR.Employee.API.Application.Employees.Queries;
 using HR.Employee.API.Application.Common.Exceptions;
 using HR.Employee.API.Application.Common.Interfaces;
 using HR.Employee.API.Application.Common.Models;
+using HR.Employee.API.Application.Employees.Photos;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 public sealed record GetEmployeeByIdQuery(Guid Id) : IRequest<EmployeeDetailsDto>;
 
-public sealed class GetEmployeeByIdHandler(IAppDbContext db) : IRequestHandler<GetEmployeeByIdQuery, EmployeeDetailsDto>
+public sealed class GetEmployeeByIdHandler(IAppDbContext db, EmployeePhotoUrls photos) : IRequestHandler<GetEmployeeByIdQuery, EmployeeDetailsDto>
 {
     public async Task<EmployeeDetailsDto> Handle(GetEmployeeByIdQuery q, CancellationToken ct)
     {
@@ -41,6 +42,7 @@ public sealed class GetEmployeeByIdHandler(IAppDbContext db) : IRequestHandler<G
             .AsSplitQuery()
             .FirstOrDefaultAsync(ct);
 
-        return dto ?? throw new NotFoundException("Employee", q.Id);
+        if (dto is null) throw new NotFoundException("Employee", q.Id);
+        return dto with { PhotoUrl = await photos.ResolveAsync(dto.PhotoUrl, ct) };   // storage key → signed URL
     }
 }
