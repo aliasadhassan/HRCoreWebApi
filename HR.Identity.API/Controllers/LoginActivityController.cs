@@ -30,7 +30,7 @@ public sealed class LoginActivityController(AppDbContext db) : ControllerBase
         CancellationToken ct = default)
     {
         page = Math.Max(1, page);
-        pageSize = Math.Clamp(pageSize, 10, 100);
+        pageSize = Math.Clamp(pageSize, 10, 200);
         days = Math.Clamp(days, 1, 365);
 
         var tenantId = TenantId;

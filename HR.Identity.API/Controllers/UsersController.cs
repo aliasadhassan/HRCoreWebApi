@@ -49,7 +49,7 @@ public sealed class UsersController(
         CancellationToken ct = default)
     {
         page = Math.Max(1, page);
-        pageSize = Math.Clamp(pageSize, 5, 100);
+        pageSize = Math.Clamp(pageSize, 5, 200);
         var now = DateTime.UtcNow;
 
         var query = TenantUsers();
