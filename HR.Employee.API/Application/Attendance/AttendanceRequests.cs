@@ -42,7 +42,7 @@ public sealed class GetAttendanceRequestsValidator : AbstractValidator<GetAttend
         RuleFor(x => x.Type).IsInEnum();
         RuleFor(x => x.Status).IsInEnum();
         RuleFor(x => x.Page).GreaterThanOrEqualTo(1);
-        RuleFor(x => x.PageSize).InclusiveBetween(1, 100);
+        RuleFor(x => x.PageSize).InclusiveBetween(1, 200);
     }
 }
 
